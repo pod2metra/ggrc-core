@@ -41,23 +41,6 @@ VERSION = "0.9.7-Quince" + BUILD_NUMBER
 GOOGLE_ANALYTICS_ID = os.environ.get('GGRC_GOOGLE_ANALYTICS_ID', '')
 GOOGLE_ANALYTICS_DOMAIN = os.environ.get('GGRC_GOOGLE_ANALYTICS_DOMAIN', '')
 
-ANALYTICS_TEMPLATE = """
-<script type="text/javascript">
-(function (i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-ga('create', '%s', 'auto');
-ga('send', 'pageview');
-</script>
-"""
-
-if GOOGLE_ANALYTICS_ID:
-  GOOGLE_ANALYTICS_SCRIPT = ANALYTICS_TEMPLATE % GOOGLE_ANALYTICS_ID
-else:
-  GOOGLE_ANALYTICS_SCRIPT = ""
-
 # Initialize from environment if present
 SQLALCHEMY_DATABASE_URI = os.environ.get('GGRC_DATABASE_URI', '')
 SECRET_KEY = os.environ.get('GGRC_SECRET_KEY', 'Replace-with-something-secret')
