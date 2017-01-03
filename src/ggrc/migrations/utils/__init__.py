@@ -12,11 +12,8 @@ from collections import namedtuple
 from logging import getLogger
 
 from sqlalchemy.sql import and_
-from sqlalchemy.sql import column
-from sqlalchemy.sql import delete
 from sqlalchemy.sql import func
 from sqlalchemy.sql import select
-from sqlalchemy.sql import table
 from sqlalchemy.sql import tuple_
 
 from ggrc.models.relationship import Relationship
@@ -299,3 +296,78 @@ def remove_relationships(connection, event, context_id, user_id, pairs):
         relationship_tuple.in_(pairs)
       )
       connection.execute(delete_sql)
+
+
+def insert_payloads(connection, event, user_id,
+                    snapshots_payload, relationships_payload):
+  revisions_payload = []
+
+  if snapshots_payload:
+    connection.execute(
+        snapshots_table.insert().prefix_with("IGNORE"), snapshots_payload)
+
+    snapshot_quadtuples = {
+      (snapshot["parent_type"], snapshot["parent_id"],
+       snapshot["child_type"], snapshot["child_id"])
+      for snapshot in snapshots_payload
+      }
+
+    created_snapshots_sql = select([snapshots_table]).where(
+        tuple_(
+            snapshots_table.c.parent_type,
+            snapshots_table.c.parent_id,
+            snapshots_table.c.child_type,
+            snapshots_table.c.child_id,
+        ).in_(snapshot_quadtuples)
+    )
+    created_snapshots = connection.execute(created_snapshots_sql).fetchall()
+
+    for snapshot in created_snapshots:
+      revisions_payload += [{
+          "action": "created",
+          "event_id": event.id,
+          "content": dict(snapshot),
+          "modified_by_id": user_id,
+          "resource_id": snapshot.id,
+          "resource_type": "Snapshot",
+          "context_id": snapshot.context_id
+      }]
+
+  if relationships_payload:
+    connection.execute(
+        relationships_table.insert().prefix_with("IGNORE"),
+        relationships_payload)
+
+
+    relationship_quadtuples = {
+      (rel["source_type"], rel["source_id"],
+       rel["destination_type"], rel["destination_id"])
+      for rel in relationships_payload
+      }
+
+    created_relationships_sql = select([relationships_table]).where(
+        tuple_(
+            relationships_table.c.source_type,
+            relationships_table.c.source_id,
+            relationships_table.c.destination_type,
+            relationships_table.c.destination_id,
+        ).in_(relationship_quadtuples)
+    )
+
+    created_relationships = connection.execute(
+      created_relationships_sql).fetchall()
+
+    for relationship in created_relationships:
+      revisions_payload += [{
+          "action": "created",
+          "event_id": event.id,
+          "content": dict(relationship),
+          "modified_by_id": user_id,
+          "resource_id": relationship.id,
+          "resource_type": "Relationship",
+          "context_id": relationship.context_id
+      }]
+
+  if revisions_payload:
+    connection.execute(revisions_table.insert(), revisions_payload)
+

@@ -41,6 +41,7 @@ from ggrc.migrations.utils import get_migration_user_id
 from ggrc.migrations.utils import get_relationships
 from ggrc.migrations.utils import get_relationship_cache
 from ggrc.migrations.utils import get_revisions
+from ggrc.migrations.utils import insert_payloads
 from ggrc.migrations.utils import Stub
 
 
@@ -96,7 +97,7 @@ def process_objects(connection, event, user_id, caches, object_settings):
     key = Stub(object_klass, object_.id)
     objects = object_relationships[key]
     audit = [x for x in objects if x.type == "Audit"]
-    others = [x for x in objects if x.type != "Audit" and x.type in Types.all]
+    others = [x for x in objects if x.type in Types.all]
 
     # TODO remove for production run, we should never have more anything
     # different than one?
@@ -110,8 +111,6 @@ def process_objects(connection, event, user_id, caches, object_settings):
       existing_snapshots = parent_snapshot_cache[audit]
       missing_snapshots = others - existing_snapshots
       if missing_snapshots:
-        program_id = audit_programs[audit.id]
-        program_ctx_id = program_contexts[program_id]
         audit_context_id = audit_contexts[audit.id]
 
         for obj_ in missing_snapshots:
@@ -143,6 +142,9 @@ def process_objects(connection, event, user_id, caches, object_settings):
         missing_from_program_scope = (program_relationships[program_id] -
                                       existing_snapshots)
         if missing_from_program_scope:
+          program_id = audit_programs[audit.id]
+          program_ctx_id = program_contexts[program_id]
+
           for obj_ in missing_from_program_scope:
             relationships_payload += [{
                 "source_type": "Program",
@@ -153,73 +155,8 @@ def process_objects(connection, event, user_id, caches, object_settings):
                 "context_id": program_ctx_id,
             }]
 
-  if snapshots_payload:
-    connection.execute(
-        snapshots_table.insert().prefix_with("IGNORE"), snapshots_payload)
-
-    snapshot_quadtuples = {
-      (snapshot["parent_type"], snapshot["parent_id"],
-       snapshot["child_type"], snapshot["child_id"])
-      for snapshot in snapshots_payload
-      }
-
-    created_snapshots_sql = select([snapshots_table]).where(
-      tuple_(
-        snapshots_table.c.parent_type,
-        snapshots_table.c.parent_id,
-        snapshots_table.c.child_type,
-        snapshots_table.c.child_id,
-      ).in_(snapshot_quadtuples)
-    )
-    created_snapshots = connection.execute(created_snapshots_sql).fetchall()
-
-    for snapshot in created_snapshots:
-      revisions_payload += [{
-        "action": "created",
-        "event_id": event.id,
-        "content": dict(snapshot),
-        "modified_by_id": user_id,
-        "resource_id": snapshot.id,
-        "resource_type": "Snapshot",
-        "context_id": snapshot.context_id
-      }]
-
-  if relationships_payload:
-    connection.execute(
-        relationships_table.insert().prefix_with("IGNORE"),
-        relationships_payload)
-
-
-    relationship_quadtuples = {
-        (rel["source_type"], rel["source_id"],
-         rel["destination_type"], rel["destination_id"])
-        for rel in relationships_payload
-    }
-
-    created_relationships_sql = select([relationships_table]).where(
-        tuple_(
-            relationships_table.c.source_type,
-            relationships_table.c.source_id,
-            relationships_table.c.destination_type,
-            relationships_table.c.destination_id,
-        ).in_(relationship_quadtuples)
-    )
-
-    created_relationships = connection.execute(
-        created_relationships_sql).fetchall()
-
-    for relationship in created_relationships:
-      revisions_payload += [{
-        "action": "created",
-        "event_id": event.id,
-        "content": dict(relationship),
-        "modified_by_id": user_id,
-        "resource_id": relationship.id,
-        "resource_type": "Relationship",
-        "context_id": relationship.context_id
-      }]
-    connection.execute(revisions_table.insert(), revisions_payload)
-
+  insert_payloads(connection, event, user_id,
+                  snapshots_payload, relationships_payload)
 
 def get_scope_snapshots(connection):
   cache = defaultdict(set)

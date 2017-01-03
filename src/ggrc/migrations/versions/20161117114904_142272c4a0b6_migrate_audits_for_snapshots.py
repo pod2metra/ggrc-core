@@ -21,12 +21,18 @@ from sqlalchemy.sql import table
 
 from ggrc.models.event import Event
 from ggrc.models.relationship import Relationship
+from ggrc.models.revision import Revision
+from ggrc.models.snapshot import Snapshot
 
 from ggrc.migrations.utils import create_snapshots
 from ggrc.migrations.utils import create_relationships
 from ggrc.migrations.utils import remove_relationships
 from ggrc.migrations.utils import get_migration_user_id
 from ggrc.migrations.utils import get_relationships
+from ggrc.migrations.utils import get_relationship_cache
+from ggrc.migrations.utils import get_revisions
+from ggrc.migrations.utils import insert_payloads
+from ggrc.migrations.utils import Stub
 
 from ggrc.snapshotter.rules import Types
 
@@ -40,6 +46,8 @@ down_revision = '587e41a1593d'
 
 relationships_table = Relationship.__table__
 events_table = Event.__table__
+snapshots_table = Snapshot.__table__
+revisions_table = Revision.__table__
 
 audits_table = table(
     "audits",
@@ -66,31 +74,49 @@ def add_objects_to_program_scope(connection, event, user_id,
                        relationship_pairs)
 
 
-def process_audit(connection, event, user_id, program_context_id, audit):
-  print "processing audit ", audit.id
-  audit_scope_objects = get_relationships(
-      connection, "Audit", audit.id, Types.all)
-  program_scope_objects = get_relationships(
-      connection, "Program", audit.program_id, Types.all)
+def process_audits(connection, event, user_id, caches, audits):
+  relationships_payload = []
+  snapshots_payload = []
 
-  missing_in_program_scope = audit_scope_objects - program_scope_objects
+  program_relationships = caches["program_rels"]
+  audit_relationships = caches["audit_rels"]
+  program_contexts = caches["program_contexts"]
+  revisions_cache = caches["revisions"]
 
-  if missing_in_program_scope:
-    add_objects_to_program_scope(
-        connection, event, user_id,
-        audit.program_id, program_context_id, missing_in_program_scope)
+  for audit in audits:
+    parent_key = Stub("Audit", audit.id)
+    program_key = Stub("Program", audit.program_id)
+    audit_scope_objects = audit_relationships[parent_key]
+    program_scope_objects = program_relationships[program_key]
+    missing_in_program_scope = audit_scope_objects - program_scope_objects
 
-  if audit_scope_objects:
-    create_snapshots(
-        connection, event, user_id,
-        audit, audit.context_id, audit_scope_objects)
-    # TODO we probably shouldn't remove relationships since we still rely on
-    # them as a hack
-    # removal_pairs = {
-    #     ("Audit", audit.id, obj[0], obj[1])
-    #     for obj in audit_scope_objects}
-    # remove_relationships(
-    #     connection, event, audit.context_id, user_id, removal_pairs)
+    if missing_in_program_scope:
+      for obj_ in missing_in_program_scope:
+        if obj_ in revisions_cache:
+          relationships_payload += [{
+              "source_type": "Program",
+              "source_id": audit.program_id,
+              "destination_type": obj_.type,
+              "destination_id": obj_.id,
+              "modified_by_id": user_id,
+              "context_id": program_contexts[audit.program_id],
+          }]
+
+    if audit_scope_objects:
+      for obj_ in audit_scope_objects:
+        if obj_ in revisions_cache:
+          snapshots_payload += [{
+            "parent_type": "Audit",
+            "parent_id": audit.id,
+            "child_type": obj_.type,
+            "child_id": obj_.id,
+            "revision_id": revisions_cache[obj_],
+            "context_id": audit.context_id,
+            "modified_by_id": user_id,
+          }]
+
+  insert_payloads(connection, event, user_id,
+                  snapshots_payload, relationships_payload)
 
 
 def validate_database(connection):
@@ -171,23 +197,6 @@ def upgrade():
     # accidentally
     # raise Exception("Cannot perform migration.")
 
-  # TODO add MIGRATOR support
-  user_id = get_migration_user_id(connection)
-
-  event = {
-      "action": "BULK",
-      "resource_id": 0,
-      "resource_type": 0,
-      "context_id": 0,
-      "modified_by_id": user_id
-  }
-  connection.execute(events_table.insert(), event)
-
-  event_sql = select([events_table]).where(
-      events_table.c.action == "BULK").order_by(
-      events_table.c.id.desc()).limit(1)
-  event = connection.execute(event_sql).fetchone()
-
   audits = connection.execute(audits_table.select()).fetchall()
 
   program_ids = {audit.program_id for audit in audits}
@@ -198,13 +207,48 @@ def upgrade():
   programs = connection.execute(program_sql)
   program_contexts = {program.id: program.context_id for program in programs}
 
-  for audit in audits:
-    if audit.id not in corrupted_audit_ids:
-      print "processing uncorrupted audit: ID ", audit.id
-      process_audit(
-          connection, event, user_id,
-          program_contexts[audit.program_id], audit)
+  program_relationships = get_relationship_cache(
+      connection, "Program", Types.all)
+  audit_relationships = get_relationship_cache(connection, "Audit", Types.all)
 
+  audits = [audit for audit in audits if audit.id not in corrupted_audit_ids]
+
+  all_objects = (program_relationships.values() + audit_relationships.values())
+  revisionable_objects = all_objects.pop().union(*all_objects)
+  revision_cache = get_revisions(connection, revisionable_objects)
+
+  # TODO leave exception? remove?
+  # objects_missing_revision = revisionable_objects - set(revision_cache.keys())
+  # if objects_missing_revision:
+  #   print objects_missing_revision
+  #   raise Exception("There are still objects with missing revisions!")
+
+  caches = {
+      "program_contexts": program_contexts,
+      "program_rels": program_relationships,
+      "audit_rels": audit_relationships,
+      "revisions": revision_cache
+  }
+
+  if audits:
+    # TODO add MIGRATOR support
+    user_id = get_migration_user_id(connection)
+
+    event = {
+      "action": "BULK",
+      "resource_id": 0,
+      "resource_type": 0,
+      "context_id": 0,
+      "modified_by_id": user_id
+    }
+    connection.execute(events_table.insert(), event)
+
+    event_sql = select([events_table]).where(
+      events_table.c.action == "BULK").order_by(
+      events_table.c.id.desc()).limit(1)
+    event = connection.execute(event_sql).fetchone()
+
+    process_audits(connection, event, user_id, caches, audits)
 
 def downgrade():
   pass
