@@ -42,7 +42,7 @@ logger = getLogger(__name__)  # pylint: disable=invalid-name
 
 # revision identifiers, used by Alembic.
 revision = '142272c4a0b6'
-down_revision = '587e41a1593d'
+down_revision = '1aa39778da75'
 
 relationships_table = Relationship.__table__
 events_table = Event.__table__
@@ -131,23 +131,23 @@ def validate_database(connection):
   for klass_name in tables:
     sql_base_left = select([
         func.count(relationships_table.c.id).label("relcount"),
-        relationships_table.c.destination_id.label("audit_id"),
+        relationships_table.c.source_id.label("object_id"),
     ]).where(
         and_(
             relationships_table.c.source_type == klass_name,
             relationships_table.c.destination_type == "Audit"
         )
-    ).group_by(relationships_table.c.destination_id)
+    ).group_by(relationships_table.c.source_id)
 
     sql_base_right = select([
         func.count(relationships_table.c.id).label("relcount"),
-        relationships_table.c.source_id.label("audit_id"),
+        relationships_table.c.destination_id.label("object_id"),
     ]).where(
         and_(
             relationships_table.c.destination_type == klass_name,
             relationships_table.c.source_type == "Audit"
         )
-    ).group_by(relationships_table.c.source_id)
+    ).group_by(relationships_table.c.destination_id)
 
     sql_left_more = sql_base_left.having(sql_base_left.c.relcount > 1)
     sql_right_more = sql_base_right.having(sql_base_right.c.relcount > 1)
@@ -181,7 +181,7 @@ def upgrade():
     for klass_name, result in audits_more:
       ids = [id_ for _, id_ in result]
       corrupted_audit_ids = corrupted_audit_ids.union(set(ids))
-      print "The following Audits have more than one {klass}: {ids}".format(
+      print "The following {klass} have more than one Audit: {ids}".format(
           klass=klass_name,
           ids=",".join(map(str, ids))
       )
