@@ -198,39 +198,39 @@ def upgrade():
     # raise Exception("Cannot perform migration.")
 
   audits = connection.execute(audits_table.select()).fetchall()
-
-  program_ids = {audit.program_id for audit in audits}
-
-  program_sql = select([programs_table]).where(
-      programs_table.c.id.in_(program_ids)
-  )
-  programs = connection.execute(program_sql)
-  program_contexts = {program.id: program.context_id for program in programs}
-
-  program_relationships = get_relationship_cache(
-      connection, "Program", Types.all)
-  audit_relationships = get_relationship_cache(connection, "Audit", Types.all)
-
-  audits = [audit for audit in audits if audit.id not in corrupted_audit_ids]
-
-  all_objects = (program_relationships.values() + audit_relationships.values())
-  revisionable_objects = all_objects.pop().union(*all_objects)
-  revision_cache = get_revisions(connection, revisionable_objects)
-
-  # TODO leave exception? remove?
-  # objects_missing_revision = revisionable_objects - set(revision_cache.keys())
-  # if objects_missing_revision:
-  #   print objects_missing_revision
-  #   raise Exception("There are still objects with missing revisions!")
-
-  caches = {
-      "program_contexts": program_contexts,
-      "program_rels": program_relationships,
-      "audit_rels": audit_relationships,
-      "revisions": revision_cache
-  }
-
   if audits:
+    program_ids = {audit.program_id for audit in audits}
+
+    program_sql = select([programs_table]).where(
+        programs_table.c.id.in_(program_ids)
+    )
+    programs = connection.execute(program_sql)
+    program_contexts = {program.id: program.context_id for program in programs}
+
+    program_relationships = get_relationship_cache(
+        connection, "Program", Types.all)
+    audit_relationships = get_relationship_cache(connection, "Audit", Types.all)
+
+    audits = [audit for audit in audits if audit.id not in corrupted_audit_ids]
+
+    all_objects = (program_relationships.values() + audit_relationships.values())
+    revisionable_objects = set()
+    revisionable_objects = revisionable_objects.union(*all_objects)
+    revision_cache = get_revisions(connection, revisionable_objects)
+
+    # TODO leave exception? remove?
+    # objects_missing_revision = revisionable_objects - set(revision_cache.keys())
+    # if objects_missing_revision:
+    #   print objects_missing_revision
+    #   raise Exception("There are still objects with missing revisions!")
+
+    caches = {
+        "program_contexts": program_contexts,
+        "program_rels": program_relationships,
+        "audit_rels": audit_relationships,
+        "revisions": revision_cache
+    }
+
     # TODO add MIGRATOR support
     user_id = get_migration_user_id(connection)
 

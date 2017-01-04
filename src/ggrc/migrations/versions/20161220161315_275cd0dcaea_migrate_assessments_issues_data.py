@@ -173,69 +173,73 @@ def get_scope_snapshots(connection):
 def upgrade():
   connection = op.get_bind()
 
-  user_id = get_migration_user_id(connection)
-
-  event = {
-    "action": "BULK",
-    "resource_id": 0,
-    "resource_type": 0,
-    "context_id": 0,
-    "modified_by_id": user_id
-  }
-  connection.execute(events_table.insert(), event)
-
-  event_sql = select([events_table]).where(
-    events_table.c.action == "BULK").order_by(
-    events_table.c.id.desc()).limit(1)
-  event = connection.execute(event_sql).fetchone()
-
   program_sql = select([programs_table])
   programs = connection.execute(program_sql)
   program_contexts = {program.id: program.context_id for program in programs}
 
   audit_sql = select([audits_table])
   audits = connection.execute(audit_sql).fetchall()
-  audit_contexts = {audit.id: audit.context_id for audit in audits}
-  audit_programs = {audit.id: audit.program_id for audit in audits}
+  if audits:
+    audit_contexts = {audit.id: audit.context_id for audit in audits}
+    audit_programs = {audit.id: audit.program_id for audit in audits}
 
-  program_cache = get_relationship_cache(connection, "Program", Types.all)
-  audit_cache = get_relationship_cache(connection, "Audit", Types.all)
-  parent_snapshot_cache = get_scope_snapshots(connection)
-  assessments_cache = get_relationship_cache(connection, "Assessment",
-                                             Types.all | {"Audit"})
-  issues_cache = get_relationship_cache(connection, "Issue",
-                                        Types.all | {"Audit"})
+    program_cache = get_relationship_cache(connection, "Program", Types.all)
+    audit_cache = get_relationship_cache(connection, "Audit", Types.all)
+    parent_snapshot_cache = get_scope_snapshots(connection)
+    assessments_cache = get_relationship_cache(connection, "Assessment",
+                                               Types.all | {"Audit"})
+    issues_cache = get_relationship_cache(connection, "Issue",
+                                          Types.all | {"Audit"})
 
-  all_objects = (program_cache.values() + audit_cache.values() +
-                 assessments_cache.values() + issues_cache.values())
-  revisionable_objects = all_objects.pop().union(*all_objects)
-  revision_cache = get_revisions(connection, revisionable_objects)
+    all_objects = (program_cache.values() + audit_cache.values() +
+                   assessments_cache.values() + issues_cache.values())
 
-  caches = {
-    "program_rels": program_cache,
-    "audit_rels": audit_cache,
-    "snapshots": parent_snapshot_cache,
-    "program_contexts": program_contexts,
-    "audit_programs": audit_programs,
-    "audit_contexts": audit_contexts,
-    "revisions": revision_cache
-  }
+    revisionable_objects = set()
+    revisionable_objects = revisionable_objects.union(*all_objects)
+    revision_cache = get_revisions(connection, revisionable_objects)
 
-  objects = [
-      {
-        "type": "Assessment",
-        "select_all": assessments_table.select(),
-        "object_relationships": assessments_cache
-      },
-      {
-        "type": "Issue",
-        "select_all": issues_table.select(),
-        "object_relationships": issues_cache
-      },
-  ]
+    caches = {
+      "program_rels": program_cache,
+      "audit_rels": audit_cache,
+      "snapshots": parent_snapshot_cache,
+      "program_contexts": program_contexts,
+      "audit_programs": audit_programs,
+      "audit_contexts": audit_contexts,
+      "revisions": revision_cache
+    }
 
-  for object_settings in objects:
-    process_objects(connection, event, user_id, caches, object_settings)
+    objects = [
+        {
+          "type": "Assessment",
+          "select_all": assessments_table.select(),
+          "object_relationships": assessments_cache
+        },
+        {
+          "type": "Issue",
+          "select_all": issues_table.select(),
+          "object_relationships": issues_cache
+        },
+    ]
+
+    if assessments_cache or issues_cache:
+      user_id = get_migration_user_id(connection)
+
+      event = {
+        "action": "BULK",
+        "resource_id": 0,
+        "resource_type": 0,
+        "context_id": 0,
+        "modified_by_id": user_id
+      }
+      connection.execute(events_table.insert(), event)
+
+      event_sql = select([events_table]).where(
+        events_table.c.action == "BULK").order_by(
+        events_table.c.id.desc()).limit(1)
+      event = connection.execute(event_sql).fetchone()
+
+      for object_settings in objects:
+        process_objects(connection, event, user_id, caches, object_settings)
 
 
 def downgrade():
