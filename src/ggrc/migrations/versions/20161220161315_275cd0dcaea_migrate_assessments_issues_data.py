@@ -139,11 +139,11 @@ def process_objects(connection, event, user_id, caches, object_settings):
                 obj=obj_
             ))
 
+        program_id = audit_programs[audit.id]
+        program_ctx_id = program_contexts[program_id]
         missing_from_program_scope = (program_relationships[program_id] -
                                       existing_snapshots)
         if missing_from_program_scope:
-          program_id = audit_programs[audit.id]
-          program_ctx_id = program_contexts[program_id]
 
           for obj_ in missing_from_program_scope:
             relationships_payload += [{

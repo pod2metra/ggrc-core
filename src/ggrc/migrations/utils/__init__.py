@@ -16,6 +16,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql import select
 from sqlalchemy.sql import tuple_
 
+from ggrc import settings
+
 from ggrc.models.relationship import Relationship
 from ggrc.models.revision import Revision
 from ggrc.models.snapshot import Snapshot
@@ -153,6 +155,11 @@ def create_relationships(connection, event, context_id, user_id, pairs):
 def get_migration_user_id(connection, role_name="Administrator"):
   from ggrc_basic_permissions.models import UserRole
   from ggrc_basic_permissions.models import Role
+  from ggrc_basic_permissions.models import Person
+
+  admins = getattr(settings, "BOOTSTRAP_ADMIN_USERS", [])
+  if admins:
+    return Person.query.filter(Person.email==admins[0]).one().id
 
   roles_table = Role.__table__
   user_roles_table = UserRole.__table__
