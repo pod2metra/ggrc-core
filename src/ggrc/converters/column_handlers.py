@@ -33,6 +33,7 @@ It returns all dict like:
     }
 Thich contain handler for your Model.
 """
+import itertools
 
 from copy import deepcopy
 
@@ -48,7 +49,12 @@ from ggrc.converters.handlers import document
 from ggrc.converters.handlers.custom_control_column_handler import (
     CustomControlSnapshotInstanceColumnHandler
 )
+from ggrc.converters.handlers.snapshot_instance_column_handler import (
+    SnapshotInstanceColumnHandler
+)
 from ggrc.extensions import get_extension_modules
+from ggrc.snapshotter import rules as snapshoted_rules
+from ggrc import utils
 
 
 _DEFAULT_COLUMN_HANDLERS_DICT = {
@@ -132,6 +138,29 @@ _COLUMN_HANDLERS = {
         "__mapping__:control": CustomControlSnapshotInstanceColumnHandler,
     }
 }
+
+
+def populate_snapshoted_scope():
+    mapping_rules = utils.get_mapping_rules()
+    unmapping_rules = utils.get_unmapping_rules()
+
+    def fielder(prefix, rules):
+        for rule in rules:
+            yield "{}:{}".format(prefix, utils.title_from_camelcase(rule))
+
+    for model in snapshoted_rules.Types.scoped:
+        mappings = mapping_rules.get(model, set())
+        unmappings = unmapping_rules.get(model, set())
+        mapping_fields = fielder("__mapping__", mappings)
+        unmapping_fields = fielder("__unmapping__", unmappings)
+        model_dict = _COLUMN_HANDLERS.get(model, {})
+        for field in itertools.chain(mapping_fields, unmapping_fields):
+            if field not in model_dict:
+                model_dict[field] = SnapshotInstanceColumnHandler
+        _COLUMN_HANDLERS[model] = model_dict
+
+
+populate_snapshoted_scope()
 
 
 def get_extensions_column_handlers():
