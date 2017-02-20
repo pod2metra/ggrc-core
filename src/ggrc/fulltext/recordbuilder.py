@@ -11,7 +11,7 @@ from ggrc import db
 import ggrc.models.all_models
 from ggrc.models.reflection import AttributeInfo
 from ggrc.models.person import Person
-from ggrc.fulltext import Record
+from ggrc.fulltext import Record, FullTextAttr
 
 
 class RecordBuilder(object):
@@ -47,7 +47,13 @@ class RecordBuilder(object):
       attrs = AttributeInfo.gather_attrs(tgt_class, '_fulltext_attrs')
       return {attr: {"": obj.revision.content.get(attr)} for attr in attrs}
 
-    return {attr: {"": getattr(obj, attr)} for attr in self._fulltext_attrs}
+    properties = {}
+    for attr in self._fulltext_attrs:
+      if isinstance(attr, basestring):
+        properties[attr] = {"": getattr(obj, attr)}
+      elif isinstance(attr, FullTextAttr):
+        properties[attr.alias] = attr.get_property_for(obj)
+    return properties
 
   @staticmethod
   def get_person_id_name_email(person):

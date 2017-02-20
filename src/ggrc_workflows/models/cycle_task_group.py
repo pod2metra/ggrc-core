@@ -5,6 +5,7 @@
 """
 
 from sqlalchemy import orm
+from sqlalchemy import event
 
 from ggrc import db
 from ggrc.models.mixins import Base
@@ -92,3 +93,15 @@ class CycleTaskGroup(WithContact, Stateful, Slugged, Timeboxed, Described,
     return query.options(
         orm.joinedload('cycle_task_group_tasks')
     )
+
+
+@event.listens_for(db.session.__class__, 'before_commit')
+def update_cycle_indexer(session):
+  """Update cycle indexer on each CycleTaskGroup commit"""
+  cycles = {}
+  for instance in session.dirty:
+    if isinstance(instance, CycleTaskGroup):
+      cycle = instance.cycle
+      cycles[cycle.id] = cycle
+  for cycle in cycles.values():
+    cycle.update_indexer()

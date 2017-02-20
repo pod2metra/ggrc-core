@@ -5,6 +5,7 @@
 """
 
 from sqlalchemy import orm
+from sqlalchemy import event
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from ggrc import db
@@ -243,3 +244,15 @@ class CycleTaskable(object):
            .undefer_group('CycleTaskGroupObjectTask_complete')
            .joinedload('cycle')
     )
+
+
+@event.listens_for(db.session.__class__, 'before_commit')
+def update_cycle_indexer(session):
+  """Update cycle indexer on each CycleTaskGroupObjectTask commit"""
+  cycles = {}
+  for instance in session.dirty:
+    if isinstance(instance, CycleTaskGroupObjectTask):
+      cycle = instance.cycle_task_group.cycle
+      cycles[cycle.id] = cycle
+  for cycle in cycles.values():
+    cycle.update_indexer()

@@ -8,6 +8,7 @@ from datetime import date
 from ggrc_workflows import models
 from integration.ggrc.models.factories import ModelFactory
 from integration.ggrc.models.factories import TitledFactory
+from integration.ggrc.models.factories import PersonFactory
 
 
 class WorkflowFactory(TitledFactory):
@@ -59,6 +60,8 @@ class CycleTaskGroupFactory(TitledFactory):
     model = models.CycleTaskGroup
 
   cycle = factory.SubFactory(CycleFactory)
+  contact = factory.SubFactory(PersonFactory)
+  next_due_date = date(2015, 12, 4)
 
 
 class CycleTaskFactory(TitledFactory):
@@ -73,3 +76,4 @@ class CycleTaskFactory(TitledFactory):
   task_type = "text"
   start_date = date(2015, 12, 4)
   end_date = date(2015, 12, 27)
+  contact = factory.SubFactory(PersonFactory)

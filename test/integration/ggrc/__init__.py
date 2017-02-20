@@ -2,14 +2,11 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Base test case for all ggrc integration tests."""
-import os
+from collections import defaultdict
 import json
 import logging
+import os
 import tempfile
-from collections import defaultdict
-from os.path import abspath
-from os.path import dirname
-from os.path import join
 
 from sqlalchemy import exc
 from flask.ext.testing import TestCase as BaseTestCase
@@ -23,7 +20,7 @@ from integration.ggrc.api_helper import Api
 logging.disable(logging.CRITICAL)
 
 
-THIS_ABS_PATH = abspath(dirname(__file__))
+THIS_ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
 class SetEncoder(json.JSONEncoder):
@@ -41,7 +38,7 @@ class TestCase(BaseTestCase, object):
 
   """Base test case for all ggrc integration tests."""
 
-  CSV_DIR = join(THIS_ABS_PATH, "test_csvs/")
+  CSV_DIR = os.path.join(THIS_ABS_PATH, "test_csvs/")
 
   maxDiff = None
 
@@ -174,7 +171,8 @@ class TestCase(BaseTestCase, object):
 
   @classmethod
   def _import_file(cls, filename, dry_run=False, person=None):
-    data = {"file": (open(join(cls.CSV_DIR, filename)), filename)}
+    """Function that handle sending file to import_csv service"""
+    data = {"file": (open(os.path.join(cls.CSV_DIR, filename)), filename)}
     headers = {
         "X-test-only": "true" if dry_run else "false",
         "X-requested-by": "GGRC",
@@ -195,6 +193,11 @@ class TestCase(BaseTestCase, object):
       return response
 
   def export_csv(self, data):
+    """Export csv handle
+
+    return post action response to export_csv service with data argument as
+    sended data
+    """
     headers = {
         'Content-Type': 'application/json',
         "X-requested-by": "GGRC",
@@ -202,3 +205,34 @@ class TestCase(BaseTestCase, object):
     }
     return self.client.post("/_service/export_csv", data=json.dumps(data),
                             headers=headers)
+
+  def export_parsed_csv(self, data):
+    """returns the dict of list of dict
+
+    keys are humanreadable model name
+
+    values are list of dicts
+        keys of that dicts are the exportable field names
+        values are the values of this field for current instance
+    """
+    resp = self.export_csv(data)
+    self.assert200(resp)
+    rows = resp.data.split("\r\n")
+    object_type = None
+    keys = []
+    results = defaultdict(list)
+    for row in rows:
+      columns = row.split(',')
+      if not any(columns):
+        continue
+      if columns[0] == "Object type":
+        # new block started
+        object_type = None
+        keys = []
+        continue
+      if object_type is None:
+        keys = columns[1:]
+        object_type = columns[0]
+        continue
+      results[object_type].append(dict(zip(keys, columns[1:])))
+    return results

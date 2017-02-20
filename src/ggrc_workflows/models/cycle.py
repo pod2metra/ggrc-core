@@ -14,6 +14,9 @@ from ggrc.models.mixins import Stateful
 from ggrc.models.mixins import Timeboxed
 from ggrc.models.mixins import Titled
 from ggrc.models.mixins import WithContact
+from ggrc.fulltext import MultipleSubpropertyFullTextAttr, FullTextAttr
+from ggrc.fulltext.recordbuilder import fts_record_for
+from ggrc.fulltext import get_indexer, get_indexed_model_names
 
 
 class Cycle(WithContact, Stateful, Timeboxed, Described, Titled, Slugged,
@@ -59,6 +62,41 @@ class Cycle(WithContact, Stateful, Timeboxed, Described, Titled, Slugged,
       }
   }
 
+  _fulltext_attrs = [
+      MultipleSubpropertyFullTextAttr(
+          "group",
+          lambda instance: instance.cycle_task_groups,
+          ["title", "slug"],
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "group_assignee",
+          lambda instance: [g.contact for g in instance.cycle_task_groups],
+          ["name", "email"],
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "group_due_date",
+          lambda instance: instance.cycle_task_groups,
+          ["next_due_date"],
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "task",
+          lambda instance: instance.cycle_task_group_object_tasks,
+          ["title", "slug"],
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "task_assignee",
+          lambda instance: [t.contact for t in
+                            instance.cycle_task_group_object_tasks],
+          ["name", "email"],
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "task_due_date",
+          lambda instance: instance.cycle_task_group_object_tasks,
+          ["end_date"],
+      ),
+      FullTextAttr("due_date", "next_due_date"),
+  ]
+
   @classmethod
   def _filter_by_cycle_workflow(cls, predicate):
     from ggrc_workflows.models.workflow import Workflow
@@ -82,3 +120,19 @@ class Cycle(WithContact, Stateful, Timeboxed, Described, Titled, Slugged,
     return query.options(
         orm.joinedload('cycle_task_groups'),
     )
+
+  def update_indexer(self, commit=True):
+    """Update indexer for that cycle"""
+    if self.__class__.__name__ not in get_indexed_model_names():
+      return
+    indexer = get_indexer()
+    db.session.begin_nested()
+    db.session.query(
+        indexer.record_type
+    ).filter(
+        indexer.record_type.type == self.__class__.__name__,
+        indexer.record_type.key == self.id
+    ).delete()
+    indexer.create_record(fts_record_for(self), False)
+    if commit:
+      db.session.commit()
