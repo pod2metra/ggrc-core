@@ -108,10 +108,8 @@
       var isCustomAttr = /CustomAttr/.test(this.options.model.shortName);
       var isTreeView = this instanceof CMS.Controllers.TreeView;
       var isSubTree = this.options.is_subtree;
-      var pageInstance = GGRC.page_instance();
       var loader;
-      if (!isTreeView || isCustomAttr ||
-        (isSubTree && pageInstance.type === 'Workflow')) {
+      if (!isTreeView || isCustomAttr) {
         loader = this.fetch_list.bind(this);
       } else if (isSubTree) {
         loader = this.loadSubTree.bind(this);

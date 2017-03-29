@@ -218,7 +218,7 @@ class TestAssessmentImport(TestCase):
   def test_mapping_control_through_snapshot(self):
     "Test for add mapping control on assessment"
     audit = factories.AuditFactory()
-    assessment = factories.AssessmentFactory()
+    assessment = factories.AssessmentFactory(audit=audit)
     factories.RelationshipFactory(source=audit, destination=assessment)
     control = factories.ControlFactory()
     revision = models.Revision.query.filter(
@@ -344,7 +344,7 @@ class TestAssessmentExport(TestCase):
   def test_export_assesments_without_map_control(self):
     """Test export assesment without related control instance"""
     audit = factories.AuditFactory()
-    assessment = factories.AssessmentFactory()
+    assessment = factories.AssessmentFactory(audit=audit)
     factories.RelationshipFactory(source=audit, destination=assessment)
     control = factories.ControlFactory()
     revision = models.Revision.query.filter(
@@ -368,7 +368,7 @@ class TestAssessmentExport(TestCase):
     relation snapshot -> assessment
     """
     audit = factories.AuditFactory()
-    assessment = factories.AssessmentFactory()
+    assessment = factories.AssessmentFactory(audit=audit)
     factories.RelationshipFactory(source=audit, destination=assessment)
     control = factories.ControlFactory()
     revision = models.Revision.query.filter(
@@ -393,7 +393,7 @@ class TestAssessmentExport(TestCase):
     relation assessment -> snapshot
     """
     audit = factories.AuditFactory()
-    assessment = factories.AssessmentFactory()
+    assessment = factories.AssessmentFactory(audit=audit)
     factories.RelationshipFactory(source=audit, destination=assessment)
     control = factories.ControlFactory()
     revision = models.Revision.query.filter(

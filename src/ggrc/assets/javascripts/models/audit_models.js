@@ -95,7 +95,7 @@
         attr_title: 'Title',
         attr_name: 'title'
       }, {
-        attr_title: 'Audit Lead',
+        attr_title: 'Internal Audit Lead',
         attr_name: 'audit_lead',
         attr_sort_field: 'contact'
       }, {
@@ -108,13 +108,13 @@
         attr_title: 'Last Updated',
         attr_name: 'updated_at'
       }, {
-        attr_title: 'Start Date',
+        attr_title: 'Planned Start Date',
         attr_name: 'start_date'
       }, {
-        attr_title: 'End Date',
+        attr_title: 'Planned End Date',
         attr_name: 'end_date'
       }, {
-        attr_title: 'Report Period',
+        attr_title: 'Planned Report Period to',
         attr_name: 'report_period',
         attr_sort_field: 'report_end_date'
       }, {

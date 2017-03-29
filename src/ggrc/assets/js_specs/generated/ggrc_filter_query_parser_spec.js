@@ -137,7 +137,6 @@ describe('GGRC.query_parser', function() {
     });
 
     it('parses \'~\' queries', function(){
-
       expect(GGRC.query_parser.parse('5words ~ just')).toEqual({
           expression: {
             left: '5words',
@@ -149,10 +148,21 @@ describe('GGRC.query_parser', function() {
           keys: ['5words'],
           evaluate: jasmine.any(Function)
         });
-
     });
-
-    it('works with order by statement', function(){
+    it('parses \'is\' queries', function () {
+      expect(GGRC.query_parser.parse('5words is empty')).toEqual({
+        expression: {
+          left: '5words',
+          op: {name: 'is'},
+          right: 'empty',
+          evaluate: jasmine.any(Function)
+        },
+        order_by: {keys: [], order: '', compare: null},
+        keys: ['5words'],
+        evaluate: jasmine.any(Function)
+      });
+    });
+    it('works with order by statement', function (){
 
       expect(GGRC.query_parser
           .parse('5words ~ just order by some,"name with spaces" desc'))

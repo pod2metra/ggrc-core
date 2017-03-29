@@ -6,18 +6,16 @@
     <spinner {toggle}="isLoading" {extra-css-class}="spinnerCss" class="spinner-wrapper active"></spinner>
 {{else}}
   {{#if items.length}}
-    {{#items}}
-        <object-list-item {instance}="instance" {is-selected}="isSelected" {selection-el}="objectListItemSelector"
-                          (selectItem)="selectItem($element, %viewModel.instance)"
-                          (deselectItem)="clearSelection()">
+    {{#each items}}
+        <object-list-item ($click)="modifySelection(%context, %event, $element)">
             <div class="object-list-item {{#if isSelected}}selected{{/if}}">
                 <content>No item component or template is provided</content>
             </div>
         </object-list-item>
-    {{/items}}
+    {{/each}}
   {{else}}
       <span class="empty-message">
-        {{getEmptyMessage}}
+        {{emptyMessage}}
       </span>
   {{/if}}
 {{/if}}

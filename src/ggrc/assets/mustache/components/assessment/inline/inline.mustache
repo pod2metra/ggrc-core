@@ -5,21 +5,22 @@
 
 <div class="inline-edit
   {{#if isEdit}}inline-edit--active{{/if}}
-  {{#if readonly}}inline-edit--readonly{{/if}}">
-    <spinner toggle="isSaving"></spinner>
-  {{^if isSaving}}
+  {{^if isEditable}}inline-edit--readonly{{/if}}">
+  {{#if isSaving}}
+    <spinner {toggle}="isSaving"></spinner>
+  {{else}}
       <div class="inline-edit__content {{#if_equals type 'text'}}inline-edit__content--wide{{/if_equals}}">
         {{#renderInnerTemplateByType type}}{{/renderInnerTemplateByType}}
+        {{#if isEditable}}
           <ul class="inline-edit__controls {{#if isEdit}}inline-edit__controls--edit-mode{{/if}}">
             {{#if isEdit}}
-                <li><a can-click="onSave"><i class="fa fa-check"></i></a></li>
-                <li><a can-click="onCancel"><i class="fa fa-times"></i></a></li>
+                <li><a ($click)="onSave"><i class="fa fa-check"></i></a></li>
+                <li><a ($click)="onCancel"><i class="fa fa-times"></i></a></li>
             {{else}}
-              {{^if readonly}}
-                  <li><a can-click="enableEdit"><i class="fa fa-pencil"></i></a></li>
-              {{/if}}
+                  <li><a ($click)="enableEdit"><i class="fa fa-pencil"></i></a></li>
             {{/if}}
           </ul>
+          {{/if}}
       </div>
   {{/if}}
 </div>

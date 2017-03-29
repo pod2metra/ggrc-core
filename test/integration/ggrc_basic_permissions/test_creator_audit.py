@@ -143,6 +143,12 @@ class TestCreatorAudit(TestCase):
         test_case_name (string): test case to init for
     """
     # Create a program
+    dummy_audit = factories.AuditFactory()
+    unrelated_audit = {
+        "type": "Audit",
+        "context_id": dummy_audit.context.id,
+        "id": dummy_audit.id,
+    }
     test_case = self.test_cases[test_case_name]
     editor = self.people.get('editor')
     self.api.set_user(editor)
@@ -165,20 +171,41 @@ class TestCreatorAudit(TestCase):
     context = response.json.get("audit").get("context")
     audit_id = response.json.get("audit").get("id")
     self.objects["audit"] = all_models.Audit.query.get(audit_id)
+    audits = {
+        "mapped": {
+            "type": "Audit",
+            "context_id": context["id"],
+            "id": audit_id,
+        },
+        "unrelated": unrelated_audit,
+    }
 
-    for prefix in ("mapped", "unrelated"):
+    for prefix, audit_dict in audits.items():
       random_title = factories.random_str()
-      obj_context = context if prefix == "mapped" else None
 
       response = self.api.post(all_models.Issue, {
-          "issue": {"title": random_title, "context": obj_context},
+          "issue": {
+              "title": random_title,
+              "context": {
+                  "type": "Context",
+                  "id": audit_dict["context_id"],
+              },
+              "audit": audit_dict,
+          },
       })
       self.assertEqual(response.status_code, 201)
       issue_id = response.json.get("issue").get("id")
       self.objects[prefix + "_Issue"] = all_models.Issue.query.get(issue_id)
 
       response = self.api.post(all_models.Assessment, {
-          "assessment": {"title": random_title, "context": obj_context},
+          "assessment": {
+              "title": random_title,
+              "context": {
+                  "type": "Context",
+                  "id": audit_dict["context_id"],
+              },
+              "audit": audit_dict,
+          },
       })
       self.assertEqual(response.status_code, 201)
       assessment_id = response.json.get("assessment").get("id")

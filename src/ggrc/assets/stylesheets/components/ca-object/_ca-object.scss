@@ -8,6 +8,7 @@
     max-width: 50%;
     width: 50%;
     box-sizing: border-box;
+    margin: 0 0 8px 0;
   }
 
   .validation-title-empty {
@@ -36,6 +37,11 @@
     &.validation-icon-valid {
       color: $icon-color-valid;
     }
+  }
+
+  .limit-button-container {
+    width: 100%;
+    padding:0 0 0 12px;
   }
 
   ca-object-validation-icon {
@@ -72,16 +78,23 @@
 
   .inline-edit {
     padding: 0;
-    margin: 0 0 16px;
+    margin: 0;
   }
 
   .inline-edit__title {
-    line-height: 22px;
-    margin: 0;
-    box-sizing: border-box;
-    padding: 0 48px 0 4px;
     position: relative;
     display: flex;
+    margin: 0;
+    padding: 0 48px 0 4px;
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    line-height: 22px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
 
     .fa {
       width: 24px;
@@ -102,6 +115,7 @@
         position: absolute;
         right: 0;
         top: 0;
+
         &.fa-question-circle {
           color: $icon-color-dark;
         }
@@ -138,31 +152,20 @@
   }
 
   .inline-edit--active {
+    .inline-edit__content {
+      padding: 2px 2px 2px 4px;
+      background: $white;
+    }
     .inline-edit__content--wide {
       width: auto;
     }
   }
-  .inline-edit__controls--edit-mode {
-    background: #fff;
-    box-sizing: border-box;
-    height: 32px;
-    bottom: -33px;
-    line-height: 32px;
-    margin: 0;
-    padding: 0;
-    width: 66px;
-    z-index: 1;
 
-    li {
-      box-sizing: border-box;
-      float: left;
-      width: 32px;
-      line-height: 31px;
+  .inline-edit--readonly {
+    .inline-edit__content {
 
-      a {
-        display: inline-block;
-        line-height: 31px;
-        width: 32px;
+      &:hover {
+        background: transparent;
       }
     }
   }
@@ -170,23 +173,70 @@
   .inline-edit__content {
     box-sizing: border-box;
     width: auto;
-    line-height: 24px;
+    line-height: 28px;
+    height: 34px;
     margin-left: 0;
+    padding: 2px 34px 2px 4px;
 
     &:hover {
-      background: #fff;
+      background: $white;
+    }
+
+    select, input {
+      border: 1px solid transparent;
+      background: transparent;
+      box-shadow: none;
+      outline: none;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    .inline-edit__controls {
+      width: 32px;
+      padding: 0;
+      margin: 0;
+
+      li {
+          box-sizing: border-box;
+          float: left;
+          width: 32px;
+          line-height: 31px;
+
+          a {
+            box-sizing: border-box;
+            display: inline-block;
+            line-height: 31px;
+            width: 32px;
+            cursor: pointer;
+          }
+        }
+
+      &.inline-edit__controls--edit-mode {
+        background: $white;
+        box-sizing: border-box;
+        height: 32px;
+        bottom: -33px;
+        line-height: 32px;
+        margin: 0;
+        padding: 0;
+        width: 66px;
+        z-index: 1;
+      }
     }
 
     .inline-edit__text {
       overflow: auto;
     }
 
-    input[type="checkbox"] {
-      float: left;
-      margin: 3px 6px 3px 0;
+    .inline-edit__checkbox {
+      margin: 0;
+      line-height: 28px;
     }
+
     .datepicker__calendar {
-      top: -250px;
+      top: -242px;
       left: -6px;
       z-index: 4000;
     }

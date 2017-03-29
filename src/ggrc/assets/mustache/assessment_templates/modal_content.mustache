@@ -117,7 +117,7 @@
         <div class="row-fluid choose-from-select">
           <div class="span6 bottom-spacing">
             <label>
-              Default Assignees
+              Default Assessors
               <span class="required">*</span>
             </label>
             <dropdown
@@ -156,7 +156,6 @@
           <div class="span6 bottom-spacing">
             <label>
               Default Verifier
-              <span class="required">*</span>
             </label>
 
             <dropdown
@@ -164,6 +163,7 @@
               options-list="instance.people_values"
               name="instance.default_people.verifiers"
               on-change="instance.defaultVerifiersChanged"
+              no-value="true"
             ></dropdown>
           </div>
 

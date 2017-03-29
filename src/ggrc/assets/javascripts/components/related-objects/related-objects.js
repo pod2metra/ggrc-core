@@ -11,7 +11,19 @@
   can.Component.extend({
     tag: 'related-objects',
     viewModel: {
-      isLoading: false,
+      define: {
+        noRelatedObjectsMessage: {
+          type: 'string',
+          get: function () {
+            return 'No Related ' + this.attr('relatedItemsType') + 's ' +
+              'were found';
+          }
+        },
+        isLoading: {
+          type: 'boolean',
+          value: false
+        }
+      },
       baseInstance: null,
       relatedObjects: [],
       relatedItemsType: '@',
@@ -80,8 +92,9 @@
             var data = responseArr[0];
             var values = data[relatedType].values;
             var result = values.map(function (item) {
-              item.instance = new CMS.Models[relatedType](item);
-              return item;
+              return {
+                instance: CMS.Models[relatedType].model(item)
+              };
             });
             // Update paging object
             this.updatePaging(data[relatedType].total);

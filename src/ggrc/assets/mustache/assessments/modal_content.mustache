@@ -45,14 +45,14 @@
   </div>
 
   <div class="row-fluid">
-    <div data-id="description_hidden" class="span6 hidable">
+    <div data-id="test_plan_hidden" class="span6 hidable">
       <label>
-        Description
-        <i class="fa fa-question-circle" rel="tooltip" title="Provide more details on the purpose of this {{model.model_singular}} and provide context for how and when this {{model.model_singular}} might be used."></i>
+        Test Plan
+        <i class="fa fa-question-circle" rel="tooltip" title="Provide a test plan for this {{model.model_singular}}."></i>
         <a data-id="hide_description_lk" href="javascript://" class="field-hide" tabindex="-1">hide</a>
       </label>
       <div class="wysiwyg-area">
-        <textarea tabindex="2" id="control_description" class="span12 triple wysihtml5" name="description" placeholder="Enter Description">{{{description}}}</textarea>
+        <textarea tabindex="2" id="control_test_plan" class="span12 triple wysihtml5" name="test_plan" placeholder="Enter Test Plan">{{{test_plan}}}</textarea>
       </div>
     </div>
     <div class="span6">
@@ -174,17 +174,16 @@
   </div>
 
   <div class="row-fluid">
-    <div data-id="test_plan_hidden" class="span6 hidable">
+    <div data-id="note_hidden" class="span6 hidable">
       <label>
-        Test Plan
-        <i class="fa fa-question-circle" rel="tooltip" title="Provide a test plan for this {{model.model_singular}}."></i>
-        <a data-id="hide_description_lk" href="javascript://" class="field-hide" tabindex="-1">hide</a>
+        Notes
+        <i class="fa fa-question-circle" rel="tooltip" title="Append simple text or html notes here."></i>
+        <a data-id="hide_note_lk" href="javascript://" class="field-hide" tabindex="-1">hide</a>
       </label>
       <div class="wysiwyg-area">
-        <textarea tabindex="2" id="control_test_plan" class="span12 triple wysihtml5" name="test_plan" placeholder="Enter Test Plan">{{{test_plan}}}</textarea>
+        <textarea data-id="note_txtbx" tabindex="5" id="notes" class="span12 double wysihtml5" name="notes" placeholder="Enter Notes">{{{notes}}}</textarea>
       </div>
     </div>
-
 
     <div class="span6 hide-wrap hidable">
       {{> '/static/mustache/base_objects/modal_contact_fields.mustache'}}
@@ -192,16 +191,17 @@
     </div>
 
     <div class="row-fluid">
-      <div data-id="note_hidden" class="span6 hidable">
+      <div data-id="description_hidden" class="span6 hidable">
         <label>
-          Notes
-          <i class="fa fa-question-circle" rel="tooltip" title="Append simple text or html notes here."></i>
-          <a data-id="hide_note_lk" href="javascript://" class="field-hide" tabindex="-1">hide</a>
+          Description
+          <i class="fa fa-question-circle" rel="tooltip" title="Provide more details on the purpose of this {{model.model_singular}} and provide context for how and when this {{model.model_singular}} might be used."></i>
+          <a data-id="hide_description_lk" href="javascript://" class="field-hide" tabindex="-1">hide</a>
         </label>
         <div class="wysiwyg-area">
-          <textarea data-id="note_txtbx" tabindex="5" id="notes" class="span12 double wysihtml5" name="notes" placeholder="Enter Notes">{{{notes}}}</textarea>
+          <textarea tabindex="2" id="control_description" class="span12 triple wysihtml5" name="description" placeholder="Enter Description">{{{description}}}</textarea>
         </div>
       </div>
+
       <div class="span6 hide-wrap hidable">
         <div class="row-fluid inner-hide">
           <div data-id="url_hidden" class="span12 hidable">

@@ -355,15 +355,19 @@
           this.get_roles(person, instance).then(function (result) {
             var roles = result.roles;
             var relationship = result.relationship;
+            var resultPromise;
 
             roles = _.without(roles, roleToRemove);
 
             if (roles.length) {
               relationship.attrs.attr('AssigneeType', roles.join(','));
-              relationship.save();
+              resultPromise = relationship.save();
             } else {
-              relationship.destroy();
+              resultPromise = relationship.destroy();
             }
+            resultPromise.then(function () {
+              instance.refresh();
+            });
           });
         }
       },

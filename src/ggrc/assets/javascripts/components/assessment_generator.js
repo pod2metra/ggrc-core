@@ -124,16 +124,6 @@
           template: assessmentTemplate && assessmentTemplate.stub(),
           title: title
         };
-
-        if (assessmentTemplate) {
-          if (_.exists(assessmentTemplate, 'procedure_description.length')) {
-            data.test_plan = assessmentTemplate.procedure_description;
-          }
-          if (_.exists(assessmentTemplate, 'test_plan_procedure') &&
-              _.exists(object, 'test_plan.length')) {
-            data.test_plan = object.test_plan;
-          }
-        }
         data.run_in_background = true;
         return new CMS.Models.Assessment(data).save();
       },

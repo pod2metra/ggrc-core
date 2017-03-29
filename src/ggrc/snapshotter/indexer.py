@@ -137,6 +137,22 @@ def reindex():
     db.session.commit()
 
 
+def reindex_snapshots(snapshot_ids):
+  """Reindex selected snapshots"""
+  if not snapshot_ids:
+    return
+  columns = db.session.query(
+      models.Snapshot.parent_type,
+      models.Snapshot.parent_id,
+      models.Snapshot.child_type,
+      models.Snapshot.child_id,
+  ).filter(models.Snapshot.id.in_(snapshot_ids))
+  for query_chunk in generate_query_chunks(columns):
+    pairs = {Pair.from_4tuple(p) for p in query_chunk}
+    reindex_pairs(pairs)
+    db.session.commit()
+
+
 def delete_records(snapshot_ids):
   """Delete all records for some snapshots.
   Args:

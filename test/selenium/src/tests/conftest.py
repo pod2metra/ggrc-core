@@ -231,6 +231,14 @@ def update_control_rest(new_control_rest):
 
 
 @pytest.yield_fixture(scope="function")
+def delete_control_rest(new_control_rest):
+  """Delete existing Control object via REST API.
+  Return: lib.entities.entity.Control
+  """
+  yield ControlsService().delete(objs=new_control_rest)
+
+
+@pytest.yield_fixture(scope="function")
 def map_controls_to_program_rest(new_program_rest, new_controls_rest):
   """Create new Program, Controls objects via REST API and map created
   Controls to Program via REST API.

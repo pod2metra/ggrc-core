@@ -10,6 +10,7 @@
     '/components/object-popover/object-popover.mustache');
   var tag = 'object-popover';
   var defaultMaxInnerHeight = 400;
+  var defaultRightPosition = 60;
   /**
    * Assessment specific mapped objects popover view component
    */
@@ -32,14 +33,16 @@
         var pos = el[0].getBoundingClientRect();
         var top = Math.floor(el.position().top);
         var left = Math.floor(pos.width / 2);
-        var width = Math
-          .floor(window.innerWidth - (pos.right - pos.width / 2));
+        var width = (direction !== 'right') ?
+          Math.floor(window.innerWidth - (pos.right - pos.width / 2)) :
+          Math.floor(pos.width * 0.7);
         var topStyle = 'top: ' + top + 'px;';
         var leftStyle = 'left: ' + left + 'px;';
         var widthStyle = 'width: ' + width + 'px;';
+        var rightStyle = 'right: ' + defaultRightPosition + 'px;';
 
         if (direction === 'right') {
-          return topStyle + 'width: 480px; right: 80px;';
+          return topStyle + rightStyle + widthStyle;
         }
         return topStyle + leftStyle + widthStyle;
       },
@@ -56,6 +59,7 @@
         this.viewModel.setStyle(el);
       },
       '.object-popover-wrapper click': function (el, event) {
+        event.preventDefault();
         event.stopPropagation();
       },
       '{viewModel} expanded': function (scope, ev, isExpanded) {

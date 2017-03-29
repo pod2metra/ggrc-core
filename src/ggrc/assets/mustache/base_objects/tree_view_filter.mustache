@@ -3,9 +3,7 @@
     Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 }}
 
-  <div class="tree-filter tree-filter_paging"
-       data-height="42"
-       data-margin-bottom="25">
+  <div class="tree-filter tree-filter_paging">
     <div class="sticky-filter inner-filter-sticky">
       <div class="tree-filter__inline-filtering clearfix" {{ (el) -> el.ggrc_controllers_tree_filter() }} >
 
@@ -29,7 +27,7 @@
           </div>
           <div class="tree-filter__status-wrap">
             {{#if statusFilterVisible}}
-            <multiselect-dropdown 
+            <multiselect-dropdown
               {options}="filter_states"
               placeholder="Filter by State",
               plural="States">

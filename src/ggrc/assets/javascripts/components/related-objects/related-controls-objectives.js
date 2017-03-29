@@ -17,7 +17,7 @@
           value: {}
         },
         mappedSnapshots: {
-          type: Boolean,
+          type: 'boolean',
           value: true
         },
         // Load only Controls and Objectives

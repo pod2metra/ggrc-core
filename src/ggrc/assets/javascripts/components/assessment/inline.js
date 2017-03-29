@@ -3,7 +3,7 @@
  Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
  */
 
-(function (_, can, GGRC) {
+(function (can, GGRC) {
   'use strict';
 
   var tpl = can.view(GGRC.mustache_path +
@@ -18,12 +18,22 @@
   GGRC.Components('assessmentInlineEdit', {
     tag: 'assessment-inline-edit',
     template: tpl,
-    scope: {
-      titleText: null,
-      type: null,
+    viewModel: {
+      define: {
+        readonly: {
+          type: 'htmlbool',
+          value: false
+        },
+        isEditable: {
+          get: function () {
+            return !(this.attr('readonly'));
+          }
+        }
+      },
+      titleText: '',
+      type: '',
       value: null,
-      options: null,
-      readonly: false, // whether or not the value can be edited
+      options: [],
       isSaving: false,
       isEdit: false,
       context: {
@@ -51,13 +61,14 @@
        *
        * @param {can.Map} scope - the scope object itself (this)
        * @param {jQuery.Element} $el - the DOM element that triggered the event
-       * @param {jQuery.Event} ev - the event object
+       * @param {jQuery.Event} event - the event object
        */
-      enableEdit: function (scope, $el, ev) {
+      enableEdit: function (scope, $el, event) {
         var confirmation;
         var onBeforeEdit = this.$rootEl.attr('can-' + scope._EV_BEFORE_EDIT);
 
-        ev.preventDefault();
+        event.preventDefault();
+        event.stopPropagation();
 
         if (this.attr('readonly')) {
           return;
@@ -77,7 +88,7 @@
         }.bind(this));   // and do nothing if no confirmation by the user
       },
       onCancel: function (scope) {
-        var value = scope.attr('_value');
+        var value = scope.attr('value');
         scope.attr('isEdit', false);
         scope.attr('context.value', value);
       },
@@ -102,30 +113,26 @@
           }
         }
 
-        this.attr('_value', value);
         this.attr('value', value);
         this.attr('isSaving', true);
       }
     },
-    init: function (element, options) {
-      var scope = this.scope;
-      var value = scope.attr('value');
+    init: function () {
+      var viewModel = this.viewModel;
+      var value = viewModel.attr('value');
 
-      scope.attr('_value', value);
-      scope.attr('context.value', value);
-
-      scope.attr('$rootEl', $(element));
+      viewModel.attr('context.value', value);
     },
     events: {
+      inserted: function (el) {
+        this.viewModel.attr('$rootEl', $(el));
+      },
       '{window} mousedown': function (el, ev) {
-        var scope = this.scope;
-        var isInside = this.element.has(ev.target).length ||
-          this.element.is(ev.target);
+        var viewModel = this.viewModel;
+        var isInside = GGRC.Utils.events.isInnerClick(this.element, ev.target);
 
-        if (!isInside && scope.attr('isEdit')) {
-          _.defer(function () {
-            scope.onCancel(scope);
-          });
+        if (!isInside && viewModel.attr('isEdit')) {
+          viewModel.onCancel(viewModel);
         }
       }
     },
@@ -135,4 +142,4 @@
       }
     }
   });
-})(window._, window.can, window.GGRC);
+})(window.can, window.GGRC);

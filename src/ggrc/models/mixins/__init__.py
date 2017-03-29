@@ -568,7 +568,7 @@ class Base(ChangeTracked, ContextRBAC, Identifiable):
           self._person_stub(owner.id) for owner in self.owners if owner
       ]
 
-    for attr_name in self._publish_attrs:
+    for attr_name in AttributeInfo.gather_publish_attrs(self.__class__):
       if is_attr_of_type(self, attr_name, models.Option):
         attr = getattr(self, attr_name)
         if attr:

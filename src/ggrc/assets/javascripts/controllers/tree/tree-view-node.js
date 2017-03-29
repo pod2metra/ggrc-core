@@ -290,7 +290,7 @@
 
     display_path: function (path) {
       return this.display().then(this._ifNotRemoved(function () {
-        return GGRC.Utils._display_tree_subpath(this.element, path);
+        return GGRC.Utils.TreeView.displayTreeSubpath(this.element, path);
       }.bind(this)));
     },
 

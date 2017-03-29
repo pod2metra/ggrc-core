@@ -5,10 +5,10 @@
 
 {{#if isEdit}}
   {{#if context.value}}
-    <a href="#" can-click="unsetPerson" class="inline-block">
+    <a href="#" ($click)="unsetPerson" class="inline-block">
       <i class="fa fa-times" aria-hidden="true"></i>
     </a>
-    <person-info class="inline-block" person-obj="context.value"></person-info>
+    <person-info class="inline-block" {person-obj}="context.value"></person-info>
   {{/if}}
   <autocomplete
     search-items-type="Person"
@@ -18,7 +18,7 @@
   ></autocomplete>
 {{else}}
   {{#if context.value}}
-    <person-info person-obj="context.value"></person-info>
+    <person-info {person-obj}="context.value"></person-info>
   {{else}}
     <span class="empty-message">No person</span>
   {{/if}}

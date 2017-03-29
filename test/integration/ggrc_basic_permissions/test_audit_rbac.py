@@ -2,14 +2,23 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Test audit RBAC"""
+import copy
 
 from os.path import abspath
 from os.path import dirname
 from os.path import join
 from collections import defaultdict
+
+from ggrc.models import all_models
+# pylint: disable=unused-import
+from ggrc.app import app  # NOQA
+import ggrc_basic_permissions as perms
+
 from integration.ggrc import TestCase
 from integration.ggrc.api_helper import Api
-from ggrc.models import all_models
+from integration.ggrc.generator import ObjectGenerator
+
+from appengine import base
 
 
 class TestAuditRBAC(TestCase):
@@ -88,3 +97,107 @@ class TestAuditRBAC(TestCase):
       expected_statuses[exception] = 403
     errors = self.call_api(self.update, expected_statuses)
     assert not errors, "\n".join(errors)
+
+
+@base.with_memcache
+class TestPermissionsOnAssessmentTemplate(TestCase):
+  """ Test check permissions for ProgramEditor on
+
+  get and post assessment_temaplte action"""
+
+  def setUp(self):
+    super(TestPermissionsOnAssessmentTemplate, self).setUp()
+    self.api = Api()
+    self.generator = ObjectGenerator()
+    _, program = self.generator.generate_object(all_models.Program)
+    program_id = program.id
+    _, self.editor = self.generator.generate_person(
+        user_role="Creator"
+    )
+    role = perms.all_models.Role.query.filter(
+        perms.all_models.Role.name == "ProgramEditor"
+    ).first()
+    self.generator.generate_user_role(
+        self.editor,
+        role,
+        all_models.Program.query.get(program_id)
+    )
+    _, audit = self.generator.generate_object(
+        all_models.Audit,
+        {
+            "title": "Audit",
+            "program": {"id": program_id},
+            "status": "Planned"
+        },
+    )
+    audit_id = audit.id
+
+    generated_at = self.generator.generate_object(
+        all_models.AssessmentTemplate,
+        {
+            "title": "Template",
+            "_NON_RELEVANT_OBJ_TYPES": {},
+            "_objectTypes": {},
+            "audit": {"id": audit.id},
+            "audit_title": audit.title,
+            "people_value": [],
+            "default_people": {
+                "assessors": "Object Owners",
+                "verifiers": "Object Owners",
+            },
+            "context": {"id": audit.context.id},
+        }
+    )
+    self.assessment_template_resp, assessment_template = generated_at
+    assessment_template_id = assessment_template.id
+    self.api.set_user(self.editor)
+    self.perms_data = self.api.client.get("/permissions").json
+    self.audit = all_models.Audit.query.get(audit_id)
+    self.assessment_template = all_models.AssessmentTemplate.query.get(
+        assessment_template_id)
+
+  def test_post_action(self):
+    """Test create action on AssessmentTemplate created by api"""
+    data = [{
+        "assessment_template": {
+            "_NON_RELEVANT_OBJ_TYPES": {},
+            "_objectTypes": {},
+            "audit": {"id": self.audit.id},
+            "audit_title": self.audit.title,
+            "people_value": [],
+            "default_people": {
+                "assessors": "Object Owners",
+                "verifiers": "Object Owners",
+            },
+            "context": {"id": self.audit.context.id},
+            "title": "123",
+        }
+    }]
+    self.api.set_user(self.editor)
+    resp = self.api.post(all_models.AssessmentTemplate, data)
+    self.assert200(resp)
+
+  def test_get_action(self):
+    """Test read action on AssessmentTemplate created by api"""
+    resp = self.api.get(all_models.AssessmentTemplate,
+                        self.assessment_template.id)
+    self.assert200(resp)
+
+  def test_put_action(self):
+    """Test update action on AssessmentTemplate created by api"""
+    to_update = copy.deepcopy(self.assessment_template_resp.json)
+    new_title = "new_{}".format(self.assessment_template.title)
+    to_update['assessment_template']['title'] = new_title
+    resp = self.api.put(self.assessment_template, to_update)
+    self.assert200(resp)
+    assessment_tmpl = all_models.AssessmentTemplate.query.get(
+        self.assessment_template.id
+    )
+    self.assertEqual(new_title, assessment_tmpl.title)
+
+  def test_delete_action(self):
+    """Test delete action on AssessmentTemplate created by api"""
+    resp = self.api.delete(self.assessment_template)
+    self.assert200(resp)
+    self.assertFalse(all_models.AssessmentTemplate.query.filter(
+        all_models.AssessmentTemplate == self.assessment_template.id).all())

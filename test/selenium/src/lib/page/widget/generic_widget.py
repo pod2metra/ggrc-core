@@ -304,11 +304,6 @@ class Controls(Widget):
 
   def __init__(self, driver,):
     super(Controls, self).__init__(driver)
-    self.label_title = base.Label(driver, locator.ObjectWidget.HEADER_TITLE)
-    self.label_owner = base.Label(driver, locator.ObjectWidget.HEADER_OWNER)
-    self.label_state = base.Label(driver, locator.ObjectWidget.HEADER_STATE)
-    self.label_last_asmt_date = base.Label(
-        driver, locator.ObjectWidget.HEADER_LAST_ASSESSMENT_DATE)
     self.tree_view = TreeView(
         driver, widget_name=self._locator_filter.widget_name)
 
@@ -326,6 +321,18 @@ class Controls(Widget):
     self.tree_view.select_member_by_title(obj_title)
     info_panel = self.info_widget_cls(self._driver)
     return info_panel.open_info_3bbs().is_edit_exist()
+
+  def is_openable(self, obj_title):
+    """Check Control is openable via Info panel from Tree View."""
+    self.tree_view.select_member_by_title(obj_title)
+    info_panel = self.info_widget_cls(self._driver)
+    return info_panel.open_info_3bbs().is_open_exist()
+
+  def is_updateble(self, obj_title):
+    """Check Control is updateble via Info panel from Tree View."""
+    self.tree_view.select_member_by_title(obj_title)
+    info_panel = self.info_widget_cls(self._driver)
+    return info_panel.is_link_get_latest_ver_exist()
 
   def set_visible_fields(self):
     """Set visible fields for display Controls on Tree View."""

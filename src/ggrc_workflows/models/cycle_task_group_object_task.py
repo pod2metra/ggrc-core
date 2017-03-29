@@ -21,11 +21,13 @@ from ggrc.models.relationship import Relatable
 from ggrc.models.types import JsonType
 from ggrc_workflows.models.cycle import Cycle
 from ggrc_workflows.models.cycle_task_group import CycleTaskGroup
+from ggrc.fulltext.attributes import FullTextAttr
+from ggrc.fulltext.mixin import Indexed
 
 
 class CycleTaskGroupObjectTask(
-        WithContact, Stateful, Timeboxed, Relatable, Notifiable,
-        Described, Titled, Slugged, db.Model):
+        WithContact, Stateful, Slugged, Timeboxed, Relatable, Notifiable,
+        Described, Titled, Indexed, db.Model):
   """Cycle task model
   """
   __tablename__ = 'cycle_task_group_object_tasks'
@@ -50,6 +52,27 @@ class CycleTaskGroupObjectTask(
   # Note: this statuses are used in utils/query_helpers to filter out the tasks
   # that should be visible on My Tasks pages.
   ACTIVE_STATES = ("Assigned", "InProgress", "Finished", "Declined")
+
+  PROPERTY_TEMPLATE = u"task {}"
+
+  _fulltext_attrs = [
+      FullTextAttr("due date", 'end_date',),
+      FullTextAttr("assignee", 'contact', ['name', 'email']),
+      FullTextAttr("group title", 'cycle_task_group', ['title'], False),
+      FullTextAttr("cycle title", 'cycle', ['title'], False),
+      FullTextAttr("group assignee",
+                   lambda x: x.cycle_task_group.contact,
+                   ['email', 'name'], False),
+      FullTextAttr("cycle assignee",
+                   lambda x: x.cycle.contact,
+                   ['email', 'name'], False),
+      FullTextAttr("group due date",
+                   lambda x: x.cycle_task_group.next_due_date,
+                   with_template=False),
+      FullTextAttr("cycle due date",
+                   lambda x: x.cycle.next_due_date,
+                   with_template=False),
+  ]
 
   cycle_id = db.Column(
       db.Integer,

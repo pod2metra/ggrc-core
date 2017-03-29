@@ -96,6 +96,9 @@ class BlockConverter(object):
     # it, so it is expected to hold a lot of instance attributes.
     # The protected access is a false warning for inflector access.
     self._mapping_cache = None
+    self._owners_cache = None
+    self._roles_cache = None
+    self._user_roles_cache = None
     self._ca_definitions_cache = None
     self.converter = converter
     self.offset = options.get("offset", 0)
@@ -169,16 +172,18 @@ class BlockConverter(object):
       self._ca_definitions_cache = self._create_ca_definitions_cache()
     return self._ca_definitions_cache
 
-  def _create_mapping_cache(self):
-    """Create mapping cache for object in the current block."""
-    def identifier(obj):
-      return getattr(obj, "slug", getattr(obj, "email", None))
-
+  def _get_relationships(self):
+    """Get all relationships for any of the object in the current block."""
     relationship = models.Relationship
-
-    with benchmark("cache for: {}".format(self.object_class.__name__)):
-      with benchmark("cache query"):
-        relationships = relationship.eager_query().filter(or_(
+    with benchmark("Fetch all block relationships"):
+      relationships = []
+      if self.object_ids:
+        relationships = db.session.query(
+            relationship.source_id,
+            relationship.source_type,
+            relationship.destination_id,
+            relationship.destination_type,
+        ).filter(or_(
             and_(
                 relationship.source_type == self.object_class.__name__,
                 relationship.source_id.in_(self.object_ids),
@@ -188,29 +193,115 @@ class BlockConverter(object):
                 relationship.destination_id.in_(self.object_ids),
             )
         )).all()
+      return relationships
+
+  def _get_identifier_mappings(self, relationships):
+    """Get object and id mapping to user visible identifier."""
+    object_ids = defaultdict(set)
+    for rel in relationships:
+      if rel.source_type == self.object_class.__name__:
+        object_ids[rel.destination_type].add(rel.destination_id)
+      else:
+        object_ids[rel.source_type].add(rel.source_id)
+
+    id_map = {}
+    for object_type, ids in object_ids.items():
+      model = getattr(models.all_models, object_type, None)
+      id_column = getattr(model, "slug", getattr(model, "email", None))
+      if id_column:
+        query = db.session.query(model.id, id_column).filter(model.id.in_(ids))
+        id_map[object_type] = dict(query)
+      else:
+        # invalid model
+        pass
+    return id_map
+
+  def _create_mapping_cache(self):
+    """Create mapping cache for object in the current block."""
+
+    with benchmark("cache for: {}".format(self.object_class.__name__)):
+      relationships = self._get_relationships()
+      id_map = self._get_identifier_mappings(relationships)
       with benchmark("building cache"):
         cache = defaultdict(lambda: defaultdict(list))
         for rel in relationships:
-          try:
-            if rel.source_type == self.object_class.__name__:
-              if rel.destination:
-                cache[rel.source_id][rel.destination_type].append(
-                    identifier(rel.destination))
-            elif rel.source:
-              cache[rel.destination_id][rel.source_type].append(
-                  identifier(rel.source))
-          except AttributeError:
-            # Some relationships have an invalid state in the database and make
-            # rel.source or rel.destination fail. These relationships are
-            # ignored everywhere and should eventually be purged from the db
-            logger.error("Failed adding object to relationship cache. "
-                         "Rel id: %s", rel.id)
+          if rel.source_type == self.object_class.__name__:
+            identifier = id_map.get(rel.destination_type, {}).get(
+                rel.destination_id)
+            if identifier:
+              cache[rel.source_id][rel.destination_type].append(identifier)
+          else:
+            identifier = id_map.get(rel.source_type, {}).get(rel.source_id)
+            if identifier:
+              cache[rel.destination_id][rel.source_type].append(identifier)
       return cache
 
   def get_mapping_cache(self):
     if self._mapping_cache is None:
       self._mapping_cache = self._create_mapping_cache()
     return self._mapping_cache
+
+  def get_role(self, name):
+    """Get role from local cache for a given name."""
+    if not self._roles_cache:
+      self._roles_cache = {role.name: role for role in
+                           models.all_models.Role.query}
+    return self._roles_cache[name]
+
+  def _create_user_roles_cache(self):
+    """Create cache for user roles.
+
+    The cache returns a list of emails for a role in a context.
+    """
+    cache = defaultdict(lambda: defaultdict(set))
+    context_ids = {rc.obj.context_id for rc in self.row_converters}
+    user_roles = db.session.query(
+        models.all_models.UserRole.context_id,
+        models.all_models.UserRole.role_id,
+        models.all_models.UserRole.person_id,
+    ).filter(
+        models.all_models.UserRole.context_id.in_(context_ids)
+    ).all()
+
+    people_ids = {role[2] for role in user_roles}
+
+    emails_map = dict(db.session.query(
+        models.Person.id,
+        models.Person.email
+    ).filter(
+        models.Person.id.in_(people_ids)
+    ))
+
+    for context_id, role_id, person_id in user_roles:
+      cache[context_id][role_id].add(emails_map[person_id])
+    return cache
+
+  def get_user_roles_cache(self):
+    """Get cache for emails on user roles by context."""
+    if self._user_roles_cache is None:
+      self._user_roles_cache = self._create_user_roles_cache()
+    return self._user_roles_cache
+
+  def _create_owners_cache(self):
+    """Create a cache of emails for all object owners."""
+    owner_ids = set()
+    for row_converter in self.row_converters:
+      owners = getattr(row_converter.obj, "object_owners", None)
+      if owners:
+        owner_ids |= {o.person_id for o in owners}
+    query = db.session.query(
+        models.Person.id,
+        models.Person.email
+    ).filter(
+        models.Person.id.in_(owner_ids)
+    )
+    return dict(query)
+
+  def get_owners_cache(self):
+    """Get object owners email cache."""
+    if self._owners_cache is None:
+      self._owners_cache = self._create_owners_cache()
+    return self._owners_cache
 
   def check_for_duplicate_columns(self, raw_headers):
     """Check for duplicate column names in the current block.
@@ -241,7 +332,7 @@ class BlockConverter(object):
       if self.object_headers[field]["mandatory"]:
         display_name += "*"
       headers.append([description, display_name])
-    return map(list, zip(*headers))
+    return [list(header) for header in zip(*headers)]
 
   def generate_csv_body(self):
     """ Generate 2D array populated with object values """

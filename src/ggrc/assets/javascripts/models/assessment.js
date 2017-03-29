@@ -71,6 +71,15 @@
       }, {
         attr_title: 'Reference URL',
         attr_name: 'reference_url'
+      }, {
+        attr_title: 'Creators',
+        attr_name: 'creators'
+      }, {
+        attr_title: 'Assignees',
+        attr_name: 'assessors'
+      }, {
+        attr_title: 'Verifiers',
+        attr_name: 'verifiers'
       }]
     },
     info_pane_options: {
@@ -237,9 +246,26 @@
 
       model = oldModel && can.isFunction(oldModel.attr) ?
         oldModel.attr(attributes) :
-        new this(attributes);
+          new this(attributes);
+
+      if (attributes.assignees) {
+        this.leaveUniqueAssignees(model, attributes, 'Verifier');
+        this.leaveUniqueAssignees(model, attributes, 'Assessor');
+        this.leaveUniqueAssignees(model, attributes, 'Creator');
+      }
 
       return model;
+    },
+    leaveUniqueAssignees: function (model, attributes, type) {
+      var assignees = attributes.assignees[type];
+      var unique = [];
+      if (assignees) {
+        unique = _.uniq(assignees, function (item) {
+          return item.id;
+        });
+      }
+
+      model.assignees.attr(type, unique);
     },
     /**
      * Replace Cacheble#findInCacheById method with the latest feature of can.Model - store
@@ -258,11 +284,10 @@
     before_create: function (dfd) {
       if (!this.audit) {
         throw new Error('Cannot save assessment, audit not set.');
-      } else if (!this.audit.program || !this.audit.context) {
+      } else if (!this.audit.context) {
         throw new Error(
-          'Cannot save assessment, audit context or program not set.');
+          'Cannot save assessment, audit context not set.');
       }
-      this.attr('program', this.attr('audit.program'));
       this.attr('context', this.attr('audit.context'));
     },
     after_save: function () {

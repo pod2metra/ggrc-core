@@ -12,6 +12,7 @@ from integration.ggrc.models import factories
 
 
 class TestBasicCsvImport(TestCase):
+  """Test basic CSV imports."""
 
   def setUp(self):
     super(TestBasicCsvImport, self).setUp()
@@ -29,6 +30,7 @@ class TestBasicCsvImport(TestCase):
       }, "Administrator")
 
   def test_policy_basic_import(self):
+    """Test basic policy import."""
     filename = "policy_basic_import.csv"
     self.import_file(filename)
     policies = models.Policy.query.count()
@@ -41,6 +43,7 @@ class TestBasicCsvImport(TestCase):
     self.assertEqual(policy.modified_by.email, "user@example.com")
 
   def test_policy_import_working_with_warnings(self):
+    """Test Policy import with warnings."""
     def test_owners(policy):
       self.assertNotEqual([], policy.owners)
       self.assertEqual("user@example.com", policy.owners[0].email)
@@ -67,6 +70,7 @@ class TestBasicCsvImport(TestCase):
       test_owners(policy)
 
   def test_policy_same_titles(self):
+    """Test Policy imports with title collisions."""
     def test_owners(policy):
       self.assertNotEqual([], policy.owners)
       self.assertEqual("user@example.com", policy.owners[0].email)
@@ -150,14 +154,20 @@ class TestBasicCsvImport(TestCase):
     filename = "pci_program_update.csv"
     response = self.import_file(filename)
 
-    self._check_csv_response(response, {})
+    self._check_csv_response(response, {
+        "Assessment": {
+            "row_warnings": {
+                errors.UNMODIFIABLE_COLUMN.format(line=3, column_name="Audit")
+            }
+        }
+    })
 
     assessment = models.Assessment.query.filter_by(slug="CA.PCI 1.1").first()
     audit = models.Audit.query.filter_by(slug="AUDIT-Consolidated").first()
     self.assertEqual(assessment.contact.email, "albert@reciprocitylabs.com")
     self.assertEqual(assessment.design, "Needs improvement")
     self.assertEqual(assessment.operationally, "Ineffective")
-    self.assertIsNotNone(models.Relationship.find_related(assessment, audit))
+    self.assertIsNone(models.Relationship.find_related(assessment, audit))
 
   def test_person_imports(self):
     """Test imports for Person object with user roles."""
@@ -181,7 +191,7 @@ class TestBasicCsvImport(TestCase):
     self.assertEqual(0, len(response["row_warnings"]))
     self.assertEqual(0, len(response["row_errors"]))
 
-  def test_duplicate_people_objective_error(self):
+  def test_duplicate_people_objective(self):
     """Test duplicate error that causes request to fail."""
     self.generator.generate_object(models.Objective, {"slug": "objective1"})
     filename = "duplicate_object_person_objective_error.csv"

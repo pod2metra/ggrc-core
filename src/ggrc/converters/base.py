@@ -6,6 +6,7 @@
 from collections import defaultdict
 
 from ggrc import settings
+from ggrc.utils import benchmark
 from ggrc.utils import structures
 from ggrc.cache.memcache import MemCache
 from ggrc.converters import get_exportables
@@ -29,6 +30,7 @@ class Converter(object):
       "Program",
       "Risk Assessment",
       "Audit",
+      "Issue",
       "Policy",
       "Regulation",
       "Standard",
@@ -47,6 +49,7 @@ class Converter(object):
       "slug",
       "delete",
       "task_type",
+      "audit",
   ]
 
   def __init__(self, **kwargs):
@@ -61,9 +64,12 @@ class Converter(object):
     self.indexer = get_indexer()
 
   def to_array(self):
-    self.block_converters_from_ids()
-    self.handle_row_data()
-    return self.to_block_array()
+    with benchmark("Create block converters"):
+      self.block_converters_from_ids()
+    with benchmark("Handle row data"):
+      self.handle_row_data()
+    with benchmark("Make block array"):
+      return self.to_block_array()
 
   def to_block_array(self):
     """ exporting each in it's own block separated by empty lines

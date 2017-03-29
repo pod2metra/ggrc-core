@@ -80,7 +80,10 @@ class CustomAttributeColumHandler(handlers.TextColumnHandler):
             return getattr(obj, "email", getattr(obj, "slug", None))
         elif value.custom_attribute.attribute_type == _types.CHECKBOX:
           attr_val = value.attribute_value if value.attribute_value else u"0"
-          attr_val = int(attr_val)
+          try:
+            attr_val = int(attr_val)
+          except ValueError:
+            attr_val = False
           return str(bool(attr_val)).upper()
         else:
           return value.attribute_value

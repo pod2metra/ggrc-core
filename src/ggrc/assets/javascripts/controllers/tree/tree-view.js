@@ -44,7 +44,8 @@
       // { property: "controls", model: CMS.Models.Control, }
       // { parent_find_param: "system_id" ... }
       scroll_page_count: 1, // pages above and below viewport
-      is_subtree: false
+      is_subtree: false,
+      subTreeElementsLimit: 20
     },
     do_not_propagate: [
       'header_view',
@@ -294,9 +295,9 @@
           this.page_loader = new GGRC.ListLoaders.TreePageLoader(
             this.options.model, this.options.parent_instance,
             this.options.mapping);
-        } else if (this.options.attr('is_subtree') &&
-          GGRC.page_instance().type !== 'Workflow') {
-          if (GGRC.Utils.CurrentPage.isObjectContextPage()) {
+        } else if (this.options.attr('is_subtree')) {
+          if (GGRC.Utils.CurrentPage.isObjectContextPage() &&
+            GGRC.page_instance().type !== 'Workflow') {
             this.options.attr('drawSubTreeExpander', true);
           }
           this.page_loader = new GGRC.ListLoaders.SubTreeLoader(
@@ -410,14 +411,11 @@
                 .find('.tree-filter__status-wrap');
               // set state filter (checkboxes)
               can.bind.call(statusControl.ready(function () {
-                var unwrappedStates = self.options.attr('selectStateList')
-                  .map(function (state) {
-                    return state.replace(/"/g, '');
-                  });
+                var selectStateList = self.options.attr('selectStateList');
 
-                var checkAll = unwrappedStates.length === 0;
+                var checkAll = selectStateList.length === 0;
                 self.options.attr('filter_states').forEach(function (item) {
-                  if (checkAll || unwrappedStates.indexOf(item.value) > -1) {
+                  if (checkAll || selectStateList.indexOf(item.value) > -1) {
                     item.attr('checked', true);
                   }
                 });
@@ -509,7 +507,7 @@
 
     display_path: function (path, refetch) {
       return this.display(refetch).then(this._ifNotRemoved(function () {
-        return GGRC.Utils._display_tree_subpath(this.element, path);
+        return GGRC.Utils.TreeView.displayTreeSubpath(this.element, path);
       }.bind(this)));
     },
 
@@ -862,11 +860,7 @@
     },
     update_header: function () {
       var treeFilter;
-      var filterHeight;
-      var headerHeight;
-      var parentWidth;
       var headerContentHeight;
-      var treeHeaderContent;
       var elementParent;
 
       if (!this.element || !this.element.parent) {
@@ -874,25 +868,15 @@
       }
 
       elementParent = this.element.parent();
-      treeFilter = elementParent.find('.tree-filter');
+      treeFilter = elementParent.find('.tree-header-content');
 
       if (treeFilter.length === 0) {
         return;
       }
 
-      filterHeight = Number(treeFilter.attr('data-height')) +
-        Number(treeFilter.attr('data-margin-bottom'));
-      headerHeight = elementParent.find('.tree-header').height();
-      parentWidth = elementParent.width();
-      headerContentHeight = filterHeight + headerHeight;
-      treeHeaderContent = elementParent.find('.tree-header-content');
+      headerContentHeight = treeFilter.height();
 
       this.element.css('margin-top', headerContentHeight);
-
-      if (treeHeaderContent) {
-        treeHeaderContent.css('width', parentWidth);
-        treeHeaderContent.height(headerContentHeight);
-      }
     },
     draw_items: function (optionsList) {
       var items;
@@ -929,11 +913,40 @@
       res.then(function () {
         _.defer(this.draw_visible.bind(this));
       }.bind(this)).always(function () {
-        if (this.options.is_subtree && this.options.drawSubTreeExpander) {
-          this.addSubTreeExpander(items);
+        if (this.options.is_subtree) {
+          if (this.options.attr('showAllRelated')) {
+            this.addSubTreeShowRelated();
+          }
+
+          if (this.options.drawSubTreeExpander) {
+            this.addSubTreeExpander(items);
+          }
         }
       }.bind(this));
       return res;
+    },
+
+    insertSubTreeLink: function (view, element) {
+      if (element.length) {
+        $(view).insertBefore(element);
+      } else {
+        this.element.append(view);
+      }
+    },
+
+    addSubTreeShowRelated: function () {
+      var treeOptions = this.options;
+      var options = {
+        showAllRelated: treeOptions.attr('showAllRelated'),
+        showAllRelatedLink: treeOptions.parent_instance ?
+          treeOptions.parent_instance.viewLink :
+          ''
+      };
+      var relatedLink = can.view(GGRC.mustache_path +
+       '/base_objects/sub_tree_all_related_link.mustache', options);
+      var element = this.element.find('.not-directly-related:first');
+
+      this.insertSubTreeLink(relatedLink, element);
     },
 
     addSubTreeExpander: function () {
@@ -957,11 +970,7 @@
       expander = can.view(GGRC.mustache_path +
         '/base_objects/sub_tree_expand.mustache', options);
 
-      if (element.length) {
-        $(expander).insertBefore(element);
-      } else {
-        this.element.append(expander);
-      }
+      this.insertSubTreeLink(expander, element);
     },
 
     ' removeChildNode': function (el, ev, data) { // eslint-disable-line quote-props
@@ -1174,10 +1183,8 @@
         return;
       }
 
-      selectedStates.forEach(function (state) {
-        // wrap in quotes
-        var value = '"' + state.value + '"';
-        stateToSave.push(value);
+      stateToSave = selectedStates.map(function (state) {
+        return state.value;
       });
 
       this.options.attr('selectStateList', stateToSave);
@@ -1294,50 +1301,135 @@
       this.refreshList();
     },
 
+    buildSubTreeCountMap: function (originalOrder, relevant, elementsLimit) {
+      var self = this;
+      var queryAPI = GGRC.Utils.QueryAPI;
+      var currentElementsCount = 0;
+      var countQuery = queryAPI.buildCountParams(originalOrder, relevant);
+
+      return queryAPI.makeRequest({data: countQuery}).then(function (response) {
+        var countMap = [];
+
+        response.forEach(function (item) {
+          var count;
+          var propertyName = originalOrder.find(function (type) {
+            return item[type];
+          });
+
+          var obj = {
+            type: propertyName,
+            count: item[propertyName].total
+          };
+
+          self.options.attr('showAllRelated',
+            currentElementsCount >= elementsLimit);
+
+          if (self.options.attr('showAllRelated') || obj.count === 0) {
+            return;
+          }
+
+          if (elementsLimit - currentElementsCount >= obj.count) {
+            count = obj.count;
+          } else {
+            count = elementsLimit - currentElementsCount;
+            self.options.attr('showAllRelated', true);
+          }
+
+          currentElementsCount += count;
+
+          countMap.push({
+            type: obj.type,
+            count: count
+          });
+        });
+
+        return countMap;
+      });
+    },
+
     loadSubTree: function () {
       var parent = this.options.parent_instance;
-      var queryAPI = GGRC.Utils.QueryAPI;
-      var snapshots = GGRC.Utils.Snapshots;
       var parentCtrl = this.element.closest('section')
         .find('.cms_controllers_tree_view').control();
-      var originalOrder =
-        can.makeArray(GGRC.tree_view.attr('orderedWidgetsByType')[parent.type]);
+      var snapshots = GGRC.Utils.Snapshots;
       var relevant = {
         type: parent.type,
         id: snapshots.isSnapshot(parent) ? parent.snapshot.child_id : parent.id,
         operation: 'relevant'
       };
+      var originalOrder = GGRC.Utils.TreeView.getModelsForSubTier(parent.type);
+      var limit = this.options.subTreeElementsLimit;
       var states = parentCtrl.options.attr('selectStateList');
       var statesFilter = GGRC.Utils.State.statusFilter(states, '');
       var statesQuery = GGRC.query_parser.parse(statesFilter);
-      var reqParams;
-      var filter;
+      var typeModels;
+      var fields = [
+        'child_id',
+        'child_type',
+        'context',
+        'email',
+        'id',
+        'is_latest_revision',
+        'name',
+        'revision',
+        'revisions',
+        'selfLink',
+        'slug',
+        'status',
+        'title',
+        'type',
+        'viewLink',
+        'workflow_state'
+      ];
 
-      reqParams = originalOrder.map(function (model) {
-        if (GGRC.Utils.State.hasState(model)) {
-          filter = statesQuery;
-        }
-        return queryAPI.buildParam(model, {}, relevant, [
-          'child_id',
-          'child_type',
-          'context',
-          'email',
-          'id',
-          'is_latest_revision',
-          'name',
-          'revision',
-          'revisions',
-          'selfLink',
-          'slug',
-          'status',
-          'title',
-          'type',
-          'viewLink',
-          'workflow_state'
-        ], filter);
+      if (!originalOrder.length) {
+        originalOrder = GGRC.Mappings.getMappingList(parent.type);
+      }
+
+      if (GGRC.Utils.CurrentPage.getPageType() === 'Workflow') {
+        typeModels = originalOrder.map(function (item) {
+          var typeModels = {
+            type: item,
+            fields: [],
+            page: {}
+          };
+          var rootFilter = parentCtrl.options.attr('paging.filter');
+          if (rootFilter) {
+            typeModels.filter = GGRC.query_parser.parse(rootFilter);
+          }
+
+          return typeModels;
+        });
+
+        return this.loadSubTreeData(typeModels, relevant);
+      }
+
+      return this.buildSubTreeCountMap(originalOrder, relevant, limit)
+        .then(function (countMap) {
+          countMap.forEach(function (item) {
+            item.fields = fields;
+            item.page = {current: 1, pageSize: item.count};
+
+            if (GGRC.Utils.State.hasState(item.type)) {
+              item.filter = statesQuery;
+            }
+          });
+
+          return this.loadSubTreeData(countMap, relevant);
+        }.bind(this));
+    },
+
+    loadSubTreeData: function (typeModels, relevant) {
+      var queryAPI = GGRC.Utils.QueryAPI;
+      var reqParams = typeModels.map(function (model) {
+        return queryAPI.buildParam(
+          model.type, model.page, relevant, model.fields, model.filter);
       });
 
-      return this.page_loader.load({data: reqParams}, originalOrder);
+      return this.page_loader.load({data: reqParams},
+        typeModels.map(function (item) {
+          return item.type;
+        }));
     },
 
     loadPage: function () {

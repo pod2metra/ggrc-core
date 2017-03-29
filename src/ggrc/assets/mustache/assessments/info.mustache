@@ -60,24 +60,24 @@
                 </div>
             </div>
             <div class="tabs-wrap">
-                <tabs instance="instance">
-                    <tab-panel panels="panels" title-text="Assessment Attributes" instance="instance">
-                        <div class="atrribute-tab-panel-column">
+                <tab-container>
+                    <tab-panel {(panels)}="panels" title-text="Assessment Attributes">
+                        <div class="attribute-tab-panel-column">
                             <collapsible-panel title-text="Description" title-icon="fa-list-ol" class="details-item">
-                                <read-more text="description"></read-more>
+                                <read-more {text}="description"></read-more>
                             </collapsible-panel>
                             <collapsible-panel title-text="People" title-icon="fa-users" class="details-item">
-                                <people-list instance="instance" editable="true" disable-title="true"></people-list>
+                                <people-list {instance}="instance" editable="true" disable-title="true"></people-list>
                             </collapsible-panel>
                             <collapsible-panel title-text="Dates" title-icon="fa-calendar" class="details-item">
                               {{> '/static/mustache/assessments/dates_list.mustache'}}
                             </collapsible-panel>
                             <collapsible-panel title-text="Notes" title-icon="fa-sticky-note-o" class="details-item">
-                                <read-more text="notes"></read-more>
+                                <read-more {text}="notes"></read-more>
                             </collapsible-panel>
                         </div>
 
-                        <div class="atrribute-tab-panel-column">
+                        <div class="attribute-tab-panel-column">
                           <collapsible-panel title-text="URL" title-icon="fa-link" class="details-item">
                             {{> '/static/mustache/assessments/urls.mustache'}}
                           </collapsible-panel>
@@ -129,16 +129,16 @@
                           </collapsible-panel>
                         </div>
                     </tab-panel>
-                    <tab-panel panels="panels" title-text="Assessment Log" instance="instance">
+                    <tab-panel {(panels)}="panels" title-text="Assessment Log">
                         <revision-log instance="instance"></revision-log>
                     </tab-panel>
-                    <tab-panel panels="panels" title-text="Related Assessments" instance="instance">
+                    <tab-panel {(panels)}="panels" title-text="Related Assessments">
                       {{> '/static/mustache/assessments/related-assessments.mustache' }}
                     </tab-panel>
-                    <tab-panel panels="panels" title-text="Related Issues" instance="instance">
+                    <tab-panel {(panels)}="panels" title-text="Related Issues">
                       {{> '/static/mustache/assessments/related_issues.mustache' }}
                     </tab-panel>
-                </tabs>
+                </tab-container>
             </div>
         </div><!-- tier-content end -->
     </section>

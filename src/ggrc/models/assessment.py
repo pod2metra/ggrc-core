@@ -66,6 +66,9 @@ class Assessment(statusable.Statusable, AuditRelationship,
 
   design = deferred(db.Column(db.String), "Assessment")
   operationally = deferred(db.Column(db.String), "Assessment")
+  audit_id = deferred(
+      db.Column(db.Integer, db.ForeignKey('audits.id'), nullable=False),
+      'Assessment')
 
   @declared_attr
   def object_level_definitions(self):
@@ -88,7 +91,6 @@ class Assessment(statusable.Statusable, AuditRelationship,
         cascade='all, delete-orphan')
 
   object = {}  # we add this for the sake of client side error checking
-  audit = {}
 
   VALID_CONCLUSIONS = frozenset([
       "Effective",
@@ -101,7 +103,7 @@ class Assessment(statusable.Statusable, AuditRelationship,
   _publish_attrs = [
       'design',
       'operationally',
-      PublishOnly('audit'),
+      'audit',
       PublishOnly('object')
   ]
 

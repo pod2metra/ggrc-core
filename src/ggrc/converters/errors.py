@@ -119,3 +119,6 @@ ILLEGAL_APPEND_CONTROL_VALUE = ("Line {line}: "
                                 "You can not map {mapped_type} to "
                                 "{object_type}, because this {mapped_type} is "
                                 "not mapped to the related audit.")
+
+UNMODIFIABLE_COLUMN = ("Line {line}: Column '{column_name}' can not be "
+                       "modified. The value will be ignored.")

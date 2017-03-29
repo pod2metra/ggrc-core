@@ -64,7 +64,6 @@
     'Program'
   ];
   var baseWidgetsByType;
-  var orderedWidgetsByType = {};
 
   var filteredTypes = _.difference(allCoreTypes, excludeMappingConfig);
   // Audit is excluded and created a separate logic for it
@@ -102,23 +101,7 @@
     Vendor: filteredTypes
   };
 
-  allCoreTypes.forEach(function (type) {
-    var related = baseWidgetsByType[type].slice(0);
-
-    orderedWidgetsByType[type] = _.chain(related)
-      .map(function (type) {
-        return {
-          name: type,
-          order: defaultOrderTypes[type]
-        };
-      })
-      .sortByAll(['order', 'name'])
-      .map('name')
-      .value();
-  });
-
   GGRC.tree_view = GGRC.tree_view || new can.Map();
   GGRC.tree_view.attr('base_widgets_by_type', baseWidgetsByType);
-  GGRC.tree_view.attr('orderedWidgetsByType', orderedWidgetsByType);
   GGRC.tree_view.attr('defaultOrderTypes', defaultOrderTypes);
 })(window.GGRC, window._);

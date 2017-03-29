@@ -50,3 +50,11 @@ def remap_keys_for_list_dicts(dict_transformation_keys, list_dicts):
  """
   return [{dict_transformation_keys[key]: value for key, value
            in dic.iteritems()} for dic in list_dicts]
+
+
+def convert_to_list(items):
+  """Converts items to list items:
+  - if items are already list items then skip;
+  - if are not list items then convert to list items."""
+  list_items = items if isinstance(items, list) else [items, ]
+  return list_items

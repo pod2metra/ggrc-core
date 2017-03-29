@@ -3,6 +3,7 @@
 
 """Module for control model and related classes."""
 
+from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
 
@@ -67,7 +68,6 @@ class ControlCategorized(Categorizable):
 
   @classmethod
   def eager_query(cls):
-    from sqlalchemy import orm
     query = super(ControlCategorized, cls).eager_query()
     return query.options(
         orm.subqueryload('categorizations').joinedload('category'),
@@ -100,7 +100,6 @@ class AssertionCategorized(Categorizable):
 
   @classmethod
   def eager_query(cls):
-    from sqlalchemy import orm
     query = super(AssertionCategorized, cls).eager_query()
     return query.options(
         orm.subqueryload('categorized_assertions').joinedload('category'),
@@ -263,12 +262,14 @@ class Control(HasObjectState, Relatable, CustomAttributable,
 
   @classmethod
   def eager_query(cls):
-    from sqlalchemy import orm
     query = super(Control, cls).eager_query()
     return cls.eager_inclusions(query, Control._include_links).options(
         orm.joinedload('directive'),
         orm.joinedload('principal_assessor'),
         orm.joinedload('secondary_assessor'),
+        orm.joinedload('kind'),
+        orm.joinedload('means'),
+        orm.joinedload('verify_frequency'),
     )
 
   def log_json(self):

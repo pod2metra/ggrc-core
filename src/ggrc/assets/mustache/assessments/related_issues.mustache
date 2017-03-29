@@ -41,15 +41,15 @@ Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
         </div>
     </div>
     <div class="grid-data-body {{#isLoading}}loading{{/isLoading}}">
-        <object-list items="relatedObjects" is-loading="isLoading" spinner-css="grid-spinner">
+        <object-list {items}="relatedObjects" {is-loading}="isLoading" spinner-css="grid-spinner">
             <div class="grid-data-row flex-row flex-box">
                 <div class="flex-size-2">
-                    <a href="{{viewLink}}" target="_blank">
-                      {{title}}
+                    <a href="{{instance.viewLink}}" target="_blank">
+                      {{instance.title}}
                     </a>
                 </div>
                 <div class="flex-size-3">
-                    <read-more text="description"></read-more>
+                    <read-more {text}="instance.description"></read-more>
                 </div>
             </div>
         </object-list>

@@ -13,6 +13,7 @@
   var isObjectBrowser;
   var modelName;
   var widgetList;
+  var widgetModels;
 
   var sortByNameEmail = function (list) {
     return new list.constructor(can.makeArray(list).sort(function (a, b) {
@@ -187,14 +188,6 @@
     instance = GGRC.page_instance();
     modelName = instance.constructor.shortName;
 
-    if (GGRC.tree_view.base_widgets_by_type[modelName]) {
-      GGRC.Utils.CurrentPage
-        .initCounts(GGRC.tree_view.base_widgets_by_type[modelName], {
-          type: instance.type,
-          id: instance.id
-        });
-    }
-
     initWidgets();
 
     widgetList = GGRC.WidgetList.get_widget_list_for(modelName);
@@ -210,6 +203,17 @@
     if (isObjectBrowser) {
       defaults.splice(defaults.indexOf('info'), 1);
       defaults.splice(defaults.indexOf('task'), 1);
+    }
+
+    widgetModels = defaults.map(function (widgetName) {
+      return widgetList[widgetName].content_controller_options.model.shortName;
+    });
+
+    if (!isAssessmentsView && GGRC.Utils.CurrentPage.getPageType() !== 'Workflow') {
+      GGRC.Utils.QueryAPI.initCounts(widgetModels, {
+        type: instance.type,
+        id: instance.id
+      });
     }
 
     $area.cms_controllers_page_object(can.extend({

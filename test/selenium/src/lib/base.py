@@ -465,14 +465,15 @@ class Widget(AbstractPage):
     Args: driver (CustomDriver)
     """
     super(Widget, self).__init__(driver)
-    object_name, id_, widget_name = re.search(
+    matched_url_parts = re.search(
         constants.regex.URL_WIDGET_INFO, self.url).groups()
-    self.object_id = id_
-    self.name_from_url = widget_name.split("_")[0] or \
-        constants.element.WidgetBar.INFO
-    self.object_name = object_name
-    self.is_under_audit = (
-        self.object_name == objects.AUDITS and self.name_from_url != "info")
+    source_obj_plural, source_obj_id, widget = matched_url_parts
+    self.source_obj_from_url = source_obj_plural
+    self.source_obj_id_from_url = source_obj_id
+    self.widget_name_from_url = (widget.split("_")[0] or
+                                 constants.element.WidgetBar.INFO)
+    self.is_under_audit = (self.source_obj_from_url == objects.AUDITS and
+                           self.widget_name_from_url != "info")
 
 
 class TreeView(Component):

@@ -40,7 +40,7 @@
       footer_view: GGRC.mustache_path + '/base_objects/tree_footer.mustache',
       add_item_view: GGRC.mustache_path + '/task_groups/tree_add_item.mustache',
       mapper_attr_list: [
-        {attr_title: 'Title', attr_name: 'title'},
+        {attr_title: 'Summary', attr_name: 'title'},
         {attr_title: 'Assignee', attr_name: 'assignee',
           attr_sort_field: 'contact'}
       ],
@@ -106,7 +106,7 @@
       attr_view: GGRC.mustache_path +
         '/task_group_tasks/tree-item-attr.mustache',
       mapper_attr_list: [
-        {attr_title: 'Title', attr_name: 'title'},
+        {attr_title: 'Summary', attr_name: 'title'},
         {attr_title: 'Assignee', attr_name: 'assignee',
           attr_sort_field: 'contact'}
       ],

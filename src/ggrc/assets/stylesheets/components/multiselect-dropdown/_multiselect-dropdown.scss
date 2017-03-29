@@ -4,6 +4,13 @@
  */
 
 .multiselect-dropdown {
+  .dropdown-focus {
+    outline-color: rgb(59, 153, 252);
+    outline-offset: -2px;
+    outline-style: auto;
+    outline-width: 5px;
+  }
+
   input.multiselect-dropdown__input {
     width: 100%;
     padding: 4px 24px 4px 8px;
@@ -16,6 +23,17 @@
     user-select: none;
     text-overflow: ellipsis;
     background-color: white;
+    border-radius: 5px;
+    color: rgb(85, 85, 85);
+    font-size: 12px;
+
+    &:focus {
+      @extend .dropdown-focus;
+     }
+  }
+
+  input.multiselect-dropdown__input::-webkit-input-placeholder{
+    color: #969696;
   }
 
   label.multiselect-dropdown__label {
@@ -43,7 +61,7 @@
       z-index: 2000;
       float: none;
       display: block;
-      border-radius: 0;
+      border-radius: 5px;
     }
 
     &__body-wrapper {
@@ -79,6 +97,10 @@
       cursor: pointer;
       line-height: 28px;
       position: relative;
+
+      &:focus {
+        @extend .dropdown-focus;
+      }
     }
   }
 }

@@ -752,8 +752,7 @@ class QueryHelper(object):
           `predicate(value of corresponding custom attribute)` otherwise.
       """
       key = key.lower()
-      key, filter_by = self.attr_name_map[
-          tgt_class].get(key, (key, None))
+      key, filter_by = self.attr_name_map[tgt_class].get(key, (key, None))
 
       if callable(filter_by):
         return filter_by(predicate)
@@ -914,10 +913,28 @@ class QueryHelper(object):
       """Handle ~ operator with SQL LIKE."""
       return left.ilike(u"%{}%".format(right))
 
+    def is_filter(left, right):
+      """Handle 'is' operator.
+
+      As in 'CA is empty' expression
+      """
+      if right != u"empty":
+        raise BadQueryException(u"Invalid operator near 'is': {}".format(
+            right))
+      left = left.lower()
+      left, _ = self.attr_name_map[tgt_class].get(left, (left, None))
+      subquery = db.session.query(Record.key).filter(
+          Record.type == object_class.__name__,
+          Record.property == left,
+          sa.not_(sa.or_(Record.content == u"", Record.content.is_(None))),
+      )
+      return object_class.id.notin_(subquery)
+
     ops = {
         "AND": lambda: lift_bin(sa.and_),
         "OR": lambda: lift_bin(sa.or_),
 
+        "is": lambda: is_filter(exp["left"], exp["right"]),
         "=": lambda: build_op_shortcut(operator.eq),
         "!=": lambda: sa.not_(build_op_shortcut(operator.eq)),
         "~": lambda: build_op_shortcut(like),

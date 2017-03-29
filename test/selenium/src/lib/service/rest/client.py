@@ -52,7 +52,7 @@ class RestClient(object):
     return req_headers
 
   def create_object(self, type, **kwargs):
-    """Create an object or make other operations used POST request and
+    """Create object or make other operations used POST request and
     return raw response.
     """
     if type == self._count:
@@ -63,8 +63,7 @@ class RestClient(object):
     return resp
 
   def update_object(self, href, **kwargs):
-    """Update an object used GET, POST requests and return raw response.
-    """
+    """Update object used GET, POST requests and return raw response."""
     obj_url = urlparse.urljoin(environment.APP_URL, href)
     obj_resp_headers = self.get_object(obj_url)["resp_headers"]
     obj_resp_body = self.get_object(obj_url)["resp_body"]
@@ -75,8 +74,17 @@ class RestClient(object):
                                 headers=new_obj_req_headers)
     return new_obj_resp
 
+  def delete_object(self, href):
+    """Delete object used GET, POST requests and return raw response."""
+    obj_url = urlparse.urljoin(environment.APP_URL, href)
+    obj_resp_headers = self.get_object(obj_url)["resp_headers"]
+    del_obj_req_headers = self.generate_req_headers(
+        resp_headers=obj_resp_headers)
+    del_obj_resp = requests.delete(url=obj_url, headers=del_obj_req_headers)
+    return del_obj_resp
+
   def get_object(self, obj_url):
-    """Get an object used GET request and return dictionary:
+    """Get object used GET request and return dictionary:
     {"resp_body": resp.text, "resp_headers": resp.headers}.
     """
     req_headers = self.generate_req_headers()

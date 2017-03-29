@@ -22,5 +22,5 @@ class TestRiskThreatPage(base.Test):
     and closing lhn_modal we're redirected to an url that contains an
     object id.
     """
-    assert (
-        url.RISKS + "/" + new_risk_ui.object_id in new_risk_ui.url)
+    assert (url.RISKS + "/" + new_risk_ui.source_obj_id_from_url in
+            new_risk_ui.url)

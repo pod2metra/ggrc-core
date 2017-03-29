@@ -50,7 +50,7 @@
 
       <div class="row-fluid wrap-row">
         <div class="span6">
-          <h6>Assignee</h6>
+          <h6>{{modifyFieldTitle instance.type 'Assignee'}}</h6>
           {{#if_cycle_assignee_privileges instance}}
           <div data-force-refresh="true" {{#instance}}{{data 'model'}}{{/instance}} {{ (el) -> el.ggrc_controllers_quick_form({ instance : el.data('model')}); }}>
             {{#using contact=instance.contact}}
@@ -66,7 +66,7 @@
           {{/if_cycle_assignee_privileges}}
         </div>
         <div class="span3">
-          <h6>Start date</h6>
+          <h6>{{modifyFieldTitle instance.type 'Start date'}}</h6>
           {{#if instance.start_date}}
             <p>
               {{localize_date instance.start_date}}
@@ -77,7 +77,7 @@
         </div>
 
         <div class="span3">
-          <h6>End date</h6>
+          <h6>{{modifyFieldTitle instance.type 'Due date'}}</h6>
           {{#if instance.end_date}}
             <p>
               {{localize_date instance.end_date }}

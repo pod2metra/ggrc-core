@@ -57,16 +57,17 @@ class TestWithSimilarityScore(TestCase):
     Returns: the six generated assessments and their weights in a dict.
     """
 
-    assessments = [factories.AssessmentFactory()
-                   for _ in range(len(assessment_mappings))]
-    for assessment, all_mappings in zip(assessments, assessment_mappings):
+    assessments = []
+    for all_mappings in assessment_mappings:
       audit = [x for x in all_mappings if x.type == "Audit"][0]
+      assessment = factories.AssessmentFactory(audit=audit)
       mappings = all_mappings[1:]
       ordinary_mappings = [x for x in mappings if x.type not in Types.all]
       snapshot_mappings = [x for x in mappings if x.type in Types.all]
       self.make_relationships(assessment, [audit] + ordinary_mappings)
       self.make_scope_relationships(assessment, audit,
                                     snapshot_mappings)
+      assessments.append(assessment)
 
     return assessments
 
@@ -97,31 +98,31 @@ class TestWithSimilarityScore(TestCase):
     program_2 = models.Program.query.filter_by(title="Program 2").one()
     control_program_1 = models.Control.query.filter_by(title="Control 1").one()
 
-    _, audit_1 = self.obj_gen.generate_object(models.Audit, {
+    audit_1 = self.obj_gen.generate_object(models.Audit, {
         "title": "Audit 1",
         "program": {"id": program_1.id},
         "status": "Planned"
-    })
+    })[1]
 
-    _, audit_2 = self.obj_gen.generate_object(models.Audit, {
+    audit_2 = self.obj_gen.generate_object(models.Audit, {
         "title": "Audit 2",
         "program": {"id": program_2.id},
         "status": "Planned"
-    })
+    })[1]
 
     assessment_mappings = [
         [audit_1, control_program_1],
         [audit_2, control_program_1],
     ]
 
-    assessment_1, assessment_2 = self.make_assessments(assessment_mappings)
+    assessments = self.make_assessments(assessment_mappings)
 
     similar_objects = models.Assessment.get_similar_objects_query(
-        id_=assessment_1.id,
+        id_=assessments[0].id,
         types=["Assessment"],
     ).all()
 
-    expected_ids = {assessment_2.id}
+    expected_ids = {assessments[1].id}
 
     self.assertSetEqual(
         {obj.id for obj in similar_objects},
@@ -135,7 +136,7 @@ class TestWithSimilarityScore(TestCase):
             "expression": {
                 "op": {"name": "similar"},
                 "object_name": "Assessment",
-                "ids": [str(assessment_1.id)],
+                "ids": [str(assessments[0].id)],
             },
         },
     }]
@@ -221,21 +222,20 @@ class TestWithSimilarityScore(TestCase):
         [audit_3],
     ]
 
-    assessment_1, assessment_2, assessment_3 = self.make_assessments(
-        assessment_mappings)
+    assessments = self.make_assessments(assessment_mappings)
 
     similar_objects = models.Assessment.get_similar_objects_query(
-        id_=assessment_1.id,
+        id_=assessments[0].id,
         types=["Assessment"],
     ).all()
 
-    expected_ids = {assessment_2.id}
+    expected_ids = {assessments[1].id}
 
     self.assertSetEqual(
         {obj.id for obj in similar_objects},
         expected_ids,
     )
-    self.assertNotIn(assessment_3.id, similar_objects)
+    self.assertNotIn(assessments[2].id, similar_objects)
 
     query = [{
         "object_name": "Assessment",
@@ -244,7 +244,7 @@ class TestWithSimilarityScore(TestCase):
             "expression": {
                 "op": {"name": "similar"},
                 "object_name": "Assessment",
-                "ids": [str(assessment_1.id)],
+                "ids": [str(assessments[0].id)],
             },
         },
     }]
@@ -446,9 +446,9 @@ class TestWithSimilarityScore(TestCase):
   def test_asmt_issue_similarity(self):
     """Test Issues related to assessments."""
     audit = factories.AuditFactory()
-    assessment1 = factories.AssessmentFactory()
-    assessment2 = factories.AssessmentFactory()
-    issue = factories.IssueFactory()
+    assessment1 = factories.AssessmentFactory(audit=audit)
+    assessment2 = factories.AssessmentFactory(audit=audit)
+    issue = factories.IssueFactory(audit=audit)
     control = factories.ControlFactory()
 
     snapshot = factories.SnapshotFactory(

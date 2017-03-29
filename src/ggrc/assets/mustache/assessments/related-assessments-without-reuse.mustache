@@ -2,9 +2,9 @@
 Copyright (C) 2017 Google Inc.
 Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 }}
-<related-objects base-instance="instance" related-items-type="Assessment" order-by="finished_date,created_at">
+<related-objects {base-instance}="instance" related-items-type="Assessment" order-by="finished_date,created_at">
     <div class="grid-data-toolbar flex-box">
-        <tree-pagination paging="paging"></tree-pagination>
+        <tree-pagination {(paging)}="paging"></tree-pagination>
     </div>
     <div class="grid-data-header flex-row flex-box">
         <div class="grid-data-item-index">
@@ -33,22 +33,22 @@ Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
         </div>
     </div>
     <div class="grid-data-body center-empty-message {{#if isLoading}}loading{{/if}}">
-        <object-list {items}="relatedObjects" {is-loading}="isLoading" spinner-css="grid-spinner" ({selected-item})="selectedItem"
-                    {object-list-item-selector}="objectSelectorEl" empty-message="No Related Assessments were found">
+        <object-list {items}="relatedObjects" {is-loading}="isLoading" spinner-css="grid-spinner" {(selected-item)}="selectedItem"
+                    {item-selector}="objectSelectorEl" {empty-message}="noRelatedObjectsMessage">
             <div class="grid-data-row flex-row flex-box">
                 <div class="grid-data-item-index">
-                    <state-colors-map {state}="status"></state-colors-map>
+                    <state-colors-map {state}="instance.status"></state-colors-map>
                 </div>
                 <div class="grid-data-item-index">
-                  {{localize_date finished_date}}
+                  {{localize_date instance.finished_date}}
                 </div>
                 <div class="grid-data-item-index">
-                  {{localize_date created_at}}
+                  {{localize_date instance.created_at}}
                 </div>
                 <div class="flex-size-3">
                     <related-controls-objectives {parent-instance}="instance">
                         <mapped-objects
-                                mapped-snapshots="mappedSnapshots"
+                                {mapped-snapshots}="mappedSnapshots"
                                 {filter}="filter"
                                 {parent-instance}="parentInstance">
                             <business-object-list-item {instance}="instance"></business-object-list-item>
@@ -83,6 +83,6 @@ Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
                 </div>
             </div>
         </object-list>
-        <related-assessment-popover class="object-popover" {selected-assessment}="selectedItem"></related-assessment-popover>
+        <related-assessment-popover class="object-popover related-assessments__object-popover" {selected-assessment}="selectedItem"></related-assessment-popover>
     </div>
 </related-objects>

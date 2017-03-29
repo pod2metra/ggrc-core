@@ -59,7 +59,7 @@
       ].concat(can.Model.Cacheable.attr_list.filter(function (attr) {
         return attr.attr_name !== 'owner';
       })).concat([
-        {attr_title: 'URL', attr_name: 'url'},
+        {attr_title: 'Program URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'},
         {attr_title: 'Effective Date', attr_name: 'start_date'},
         {attr_title: 'Stop Date', attr_name: 'end_date'}
@@ -146,7 +146,7 @@
           attr_name: 'last_assessment_date',
           order: 45 // between State and Primary Contact
         },
-        {attr_title: 'URL', attr_name: 'url'},
+        {attr_title: 'Objective URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'}
       ]),
       display_attr_names: ['title', 'owner', 'status', 'last_assessment_date'],

@@ -96,5 +96,5 @@ Standard,Code*,Title*,Description,Notes,Owner*,Effective Date,Stop Date,State,Pr
 ,,,,,,,,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,
 Object type,"Must be unique. Can be left empty for autogeneration. If updating or deleting, code is required", ,,,,,,,,,,,,,,,,,,,,,
-Issue,Code*,Title*,Description,Notes,Test Plan,Owner*,Effective Date,Stop Date,State,Primary Contact,Secondary Contact,Issue URL,Reference URL,Audit,,,,,,,,,
+Issue,Code*,Title*,Description,Notes,Remediation Plan,Owner*,Effective Date,Stop Date,State,Primary Contact,Secondary Contact,Issue URL,Reference URL,Audit,,,,,,,,,
 ,PMRBACISSUE-1,Program Manager Audit RBAC Test,,,,user@example.com,,,Draft,user@example.com,,,,AUDIT-1,,,,,,,,,

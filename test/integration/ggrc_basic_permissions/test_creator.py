@@ -11,6 +11,7 @@ from ggrc.models import all_models
 from integration.ggrc.api_helper import Api
 from integration.ggrc.generator import Generator
 from integration.ggrc.generator import ObjectGenerator
+from integration.ggrc.models import factories
 
 
 class TestCreator(TestCase):
@@ -36,11 +37,12 @@ class TestCreator(TestCase):
   def test_admin_page_access(self):
     for role, code in (("creator", 403), ("admin", 200)):
       self.api.set_user(self.users[role])
-      self.assertEqual(self.api.tc.get("/admin").status_code, code)
+      self.assertEqual(self.api.client.get("/admin").status_code, code)
 
   def test_creator_can_crud(self):
     """ Test Basic create/read,update/delete operations """
     self.api.set_user(self.users["creator"])
+    audit_id = factories.AuditFactory().id
     all_errors = []
     base_models = set([
         "Control", "DataAsset", "Contract",
@@ -63,6 +65,10 @@ class TestCreator(TestCase):
                     "type": "Person",
                     "id": self.users["creator"].id,
                 },
+                "audit": {  # this is ignored on everything but Issues
+                    "id": audit_id,
+                    "type": "Audit",
+                }
             },
         })
         if response.status_code != 201:
@@ -116,8 +122,8 @@ class TestCreator(TestCase):
               .format(model_singular))
           continue
       except:
-          all_errors.append("{} exception thrown".format(model_singular))
-          raise
+        all_errors.append("{} exception thrown".format(model_singular))
+        raise
     self.assertEqual(all_errors, [])
 
   def test_creator_search(self):

@@ -11,6 +11,7 @@ from ggrc import db
 import ggrc.models as models
 from ggrc.snapshotter.rules import Types
 
+from integration.ggrc.models import factories
 from integration.ggrc.snapshotter import SnapshotterBaseTestCase
 from integration.ggrc.snapshotter import snapshot_identity
 
@@ -28,12 +29,8 @@ class TestSnapshoting(SnapshotterBaseTestCase):
     control = self.create_object(models.Control, {
         "title": "Test Control Snapshot 1"
     })
-    assessment = self.create_object(models.Assessment, {
-        "title": "Test Assessment Snapshot 1"
-    })
 
     self.create_mapping(program, control)
-    self.create_mapping(program, assessment)
 
     control = self.refresh_object(control)
 
@@ -104,7 +101,7 @@ class TestSnapshoting(SnapshotterBaseTestCase):
     self.assertEqual(relationship_revision.count(), 1)
 
   def test_snapshot_update(self):
-    """Test simple snapshot creation with a simple change"""
+    """Test snapshot update with a simple change"""
     program = self.create_object(models.Program, {
         "title": "Test Program Snapshot 1"
     })
@@ -275,8 +272,78 @@ class TestSnapshoting(SnapshotterBaseTestCase):
     self.assertEqual(control_snapshot.first().revision.content["title"],
                      "Test Control Snapshot 1 EDIT 2")
 
-  def test_snapshot_creation_with_custom_attribute_values(self):
-    pass
+  def test_snapshot_update_after_CA_value_changed(self):
+    """Test update of a snapshot after CA value changed
+
+    1. Create program with mapped control.
+    2. Create audit, verify there is a snapshot for control
+    3. Update control's CA value
+    4. Run refresh on control's snapshot object
+    5. Verify control's CA is changed
+    """
+    custom_attribute_defs = self.create_custom_attribute_definitions()
+    program = self.create_object(models.Program, {
+        "title": "Test Program Snapshot 1"
+    })
+    control = self.create_object(models.Control, {
+        "title": "Test Control Snapshot 1"
+    })
+    cav = {
+        "custom_attribute": custom_attribute_defs["control"],
+        "attributable": control,
+        "attribute_value": "CA value 1",
+    }
+    factories.CustomAttributeValueFactory(**cav)
+    self.create_mapping(program, control)
+    control = self.refresh_object(control)
+    self.create_audit(program)
+    audit = db.session.query(models.Audit).filter(
+        models.Audit.title.like("%Snapshotable audit%")).one()
+    self.assertEqual(
+        db.session.query(models.Snapshot).filter(
+            models.Snapshot.parent_type == "Audit",
+            models.Snapshot.parent_id == audit.id
+        ).count(), 1)
+    control = self.refresh_object(control)
+    cad2 = models.CustomAttributeDefinition.query.filter(
+        models.CustomAttributeDefinition.title == "control text field 1"
+    ).one()
+    val2 = models.CustomAttributeValue(attribute_value="CA value 1",
+                                       custom_attribute=cad2)
+    self.api.modify_object(control, {
+        "custom_attribute_values": [{
+            "attributable_id": control.id,
+            "attributable_type": "Assessment",
+            "id": val2.id,
+            "custom_attribute_id": cad2.id,
+            "attribute_value": "CA value 1 EDIT 1",
+        }]
+    })
+    control_snapshot = db.session.query(models.Snapshot).filter(
+        models.Snapshot.child_type == "Control",
+        models.Snapshot.child_id == control.id
+    ).first()
+    cav = control_snapshot.revision.content["custom_attribute_values"][0]
+    self.assertEqual(cav["attribute_value"], "CA value 1")
+
+    self.api.modify_object(control_snapshot, {"update_revision": "latest"})
+
+    expected = [
+        (control, "CA value 1 EDIT 1"),
+    ]
+    for obj, expected_title in expected:
+      snapshot = db.session.query(models.Snapshot).filter(
+          models.Snapshot.child_type == obj.__class__.__name__,
+          models.Snapshot.child_id == obj.id
+      ).first()
+      cav = snapshot.revision.content["custom_attribute_values"][0]
+      self.assertEquals(cav["attribute_value"], expected_title)
+
+    control_snapshot_revisions = db.session.query(models.Revision).filter(
+        models.Revision.resource_type == "Snapshot",
+        models.Revision.resource_id == control_snapshot.id
+    )
+    self.assertEqual(control_snapshot_revisions.count(), 2)
 
   def test_creation_of_snapshots_for_multiple_parent_objects(self):
     pass
@@ -705,7 +772,7 @@ class TestSnapshoting(SnapshotterBaseTestCase):
         models.Audit.title.like("%Snapshotable audit%")).one()
 
     self.create_mapping(audit, objective)
-    self.create_mapping(audit, control)
+    self.create_mapping(control, audit)  # different direction than above
 
     objective_snapshot = db.session.query(models.Snapshot).filter(
         models.Snapshot.child_type == "Objective",

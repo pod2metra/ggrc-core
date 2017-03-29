@@ -1,0 +1,10 @@
+Object type,,,,,,
+Assessment,audit*,code*,Date or arbitrary text,Date or text styled as date,Creator,Assignee
+,AUDIT,ASMT-SPECIAL-DATE,10/31/2016,11/09/2016,anze@example.com,anze@example.com
+,AUDIT,ASMT-SPECIAL-TEXT,Some text 2016,11/09/2016,albert@example.com,albert@example.com
+,,,,,,
+,,,,,,
+Object type,,,,,,
+Person,Name,Email*,Company,Role,,
+,three,anze@example.com,,Administrator,,
+,four,albert@example.com,,Administrator,,

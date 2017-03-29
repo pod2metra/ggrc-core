@@ -26,8 +26,6 @@
             return this._create_relationship(instance, item);
           }.bind(this)) :
           [];
-        dfd.push(this._create_relationship(instance, instance.audit));
-        dfd.push(this._create_relationship(instance, instance.assessment));
         instance.delay_resolving_save_until($.when.apply($, dfd));
       }.bind(this));
     },

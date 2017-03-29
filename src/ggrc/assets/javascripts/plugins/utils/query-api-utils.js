@@ -267,7 +267,13 @@
       buildRelevantIdsQuery: buildRelevantIdsQuery,
       makeRequest: makeRequest,
       makeExpression: makeExpression,
+<<<<<<< HEAD
       batchRequests: batchRequests
+=======
+      initCounts: initCounts,
+      batchRequests: batchRequests,
+      buildCountParams: buildCountParams
+>>>>>>> 0.10.10-Raspberry
     };
   })();
 })(jQuery, window.GGRC);

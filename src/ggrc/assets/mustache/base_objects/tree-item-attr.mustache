@@ -50,6 +50,25 @@
     {{/using}}
   {{/case}}
 
+  {{#case 'creators'}}
+      <tree-assignee-field type="Creator"
+        {instance}='instance'>
+        {{assigneeStr}}
+      </tree-assignee-field>
+  {{/case}}
+  {{#case 'assessors'}}
+      <tree-assignee-field type="Assessor"
+        {instance}='instance'>
+        {{assigneeStr}}
+      </tree-assignee-field>
+  {{/case}}
+  {{#case 'verifiers'}}
+      <tree-assignee-field type="Verifier"
+        {instance}='instance'>
+        {{assigneeStr}}
+      </tree-assignee-field>
+  {{/case}}
+
   {{#default}}
     {{get_default_attr_value attr_name instance}}
   {{/default}}

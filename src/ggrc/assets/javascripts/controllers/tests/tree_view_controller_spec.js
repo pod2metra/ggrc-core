@@ -166,4 +166,141 @@ describe('CMS.Controllers.TreeView', function () {
       }
     );
   });
+
+  describe('buildSubTreeCountMap() method', function () {
+    var originalOrder = ['Control', 'Vendor', 'Assessment', 'Audit'];
+    var relevant = {
+      type: 'Audit',
+      id: '555',
+      operation: 'relevant'
+    };
+    var limit = 20;
+    var method;
+
+    beforeEach(function () {
+      Ctrl.prototype.options = new can.Map({
+        model: {shortName: 'foo'}
+      });
+
+      method = Ctrl.prototype.buildSubTreeCountMap.bind(Ctrl.prototype);
+    });
+
+    function setUpMakeRequestSpy(controls, vendors, assessments, audits) {
+      var serverResponse = [
+        {Control: {total: controls}},
+        {Vendor: {total: vendors}},
+        {Assessment: {total: assessments}},
+        {Audit: {total: audits}}
+      ];
+
+      spyOn(GGRC.Utils.QueryAPI, 'makeRequest')
+        .and.returnValue(new can.Deferred().resolve(serverResponse));
+    }
+
+    it('buildSubTreeCountMap should not shrink array of counts',
+      function (done) {
+        var dfd;
+
+        setUpMakeRequestSpy(5, 3, 10, 2);
+
+        dfd = method(originalOrder, relevant, limit);
+
+        setTimeout(function () {
+          dfd.then(function (countMap) {
+            expect(countMap.length).toEqual(originalOrder.length);
+
+            // check first
+            expect(countMap[0].type).toEqual('Control');
+            expect(countMap[0].count).toEqual(5);
+
+            // check last
+            expect(countMap[3].type).toEqual('Audit');
+            expect(countMap[3].count).toEqual(2);
+            done();
+          });
+        }, 1);
+      }
+    );
+
+    it('buildSubTreeCountMap should not return types with 0 total',
+      function (done) {
+        var dfd;
+
+        setUpMakeRequestSpy(5, 0, 10, 0);
+
+        // Vendor and Audit don't contain elements.
+        // Do not return Vendor and Audit.
+        dfd = method(originalOrder, relevant, limit);
+
+        setTimeout(function () {
+          dfd.then(function (countMap) {
+            expect(countMap.length).toEqual(2);
+
+            // check first
+            expect(countMap[0].type).toEqual('Control');
+            expect(countMap[0].count).toEqual(5);
+
+            // check last
+            expect(countMap[1].type).toEqual('Assessment');
+            expect(countMap[1].count).toEqual(10);
+            done();
+          });
+        }, 1);
+      }
+    );
+
+    it('buildSubTreeCountMap should shrink total of last element',
+      function (done) {
+        var dfd;
+
+        setUpMakeRequestSpy(5, 4, 10, 33);
+
+        // Shrink total of 'Audit'
+        dfd = method(originalOrder, relevant, limit);
+
+        setTimeout(function () {
+          dfd.then(function (countMap) {
+            expect(countMap.length).toEqual(originalOrder.length);
+
+            // check first
+            expect(countMap[0].type).toEqual('Control');
+            expect(countMap[0].count).toEqual(5);
+
+            // check last
+            expect(countMap[3].type).toEqual('Audit');
+            expect(countMap[3].count).toEqual(1);
+            done();
+          });
+        }, 1);
+      }
+    );
+
+    it('buildSubTreeCountMap should shrink "originalOrder" array',
+      function (done) {
+        var dfd;
+
+        setUpMakeRequestSpy(5, 12, 10, 33);
+
+        // First 3 types contain more than 20 element.
+        // Do not save 'Audit' type.
+        // Shrink total of 'Assessment'
+        dfd = method(originalOrder, relevant, limit);
+
+        setTimeout(function () {
+          dfd.then(function (countMap) {
+            expect(countMap.length).toEqual(3);
+
+            // check first
+            expect(countMap[0].type).toEqual('Control');
+            expect(countMap[0].count).toEqual(5);
+
+            // check last
+            expect(countMap[2].type).toEqual('Assessment');
+            expect(countMap[2].count).toEqual(3);
+            done();
+          });
+        }, 1);
+      }
+    );
+  });
 });

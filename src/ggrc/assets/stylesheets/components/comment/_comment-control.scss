@@ -5,7 +5,6 @@
 .comment-control {
   padding: 12px 0;
   line-height: 26px;
-  flex-direction: row-reverse;
 
   label {
     display: flex;
@@ -22,9 +21,5 @@
 
   button {
     min-width: 68px;
-  }
-
-  > * {
-    margin: 0 0 0 16px;
   }
 }

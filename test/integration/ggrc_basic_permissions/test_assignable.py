@@ -10,6 +10,7 @@ from integration.ggrc import TestCase
 from integration.ggrc.api_helper import Api
 from integration.ggrc.generator import Generator
 from integration.ggrc.generator import ObjectGenerator
+from integration.ggrc.models import factories
 
 
 class TestReader(TestCase):
@@ -17,6 +18,7 @@ class TestReader(TestCase):
 
   def setUp(self):
     super(TestReader, self).setUp()
+    self.audit_id = factories.AuditFactory().id
     self.generator = Generator()
     self.api = Api()
     self.object_generator = ObjectGenerator()
@@ -40,6 +42,10 @@ class TestReader(TestCase):
         "assessment": {
             "title": "Assessment",
             "context": None,
+            "audit": {
+                "id": self.audit_id,
+                "type": "Audit"
+            }
         }
     })
     obj_id = response.json.get("assessment").get("id")
@@ -61,7 +67,7 @@ class TestReader(TestCase):
         }, "context": None},
     })
 
-  def test_basic_operations_with_no_assignee(self):
+  def test_basic_with_no_assignee(self):
     """Editor creates an Assessment, but doesn't assign Reader/Creator as
        assignee. Reader should have Read access, Creator should have no access
     """
@@ -84,7 +90,7 @@ class TestReader(TestCase):
     response = self._post_relationship(self.users["reader"], self.obj.id)
     self.assertEqual(response.status_code, 403)
 
-  def test_basic_operations_with_assignee(self):
+  def test_basic_with_assignee(self):
     """Test if Reader/Creator have CRUD access once they become assignees"""
 
     # Admin adds reader as an assignee
@@ -113,7 +119,7 @@ class TestReader(TestCase):
     response = self._post_relationship(self.users["admin"], self.obj.id)
     self.assertEqual(response.status_code, 201)
 
-  def test_readability_of_mapped_objects(self):
+  def test_read_of_mapped_objects(self):
     """Test if assignees get Read access on all mapped objects"""
 
     # Editor creates a System object and maps it to the assignable object

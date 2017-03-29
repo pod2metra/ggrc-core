@@ -90,3 +90,12 @@
     }
   }
 }
+
+.related-assessments__object-popover {
+  &.object-popover {
+    .object-popover-content {
+      border: 0;
+      padding: 0;
+    }
+  }
+}

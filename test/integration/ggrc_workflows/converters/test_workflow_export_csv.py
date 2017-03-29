@@ -67,8 +67,8 @@ class TestExportMultipleObjects(TestCase):
   @classmethod
   def setUpClass(cls):  # pylint: disable=C0103
     TestCase.clear_data()
-    cls.tc = app.test_client()
-    cls.tc.get("/login")
+    cls.client = app.test_client()
+    cls.client.get("/login")
     cls.import_file("workflow_big_sheet.csv")
 
   @classmethod
@@ -78,8 +78,8 @@ class TestExportMultipleObjects(TestCase):
         "X-test-only": "true" if dry_run else "false",
         "X-requested-by": "GGRC",
     }
-    cls.tc.post("/_service/import_csv",
-                data=data, headers=headers)
+    cls.client.post("/_service/import_csv",
+                    data=data, headers=headers)
 
   def activate(self):
     """ activate workflows just once after the class has been initialized
@@ -301,15 +301,15 @@ class TestExportMultipleObjects(TestCase):
     cycle = wf.cycles[0]
     cycle_tasks = []
     for cycle_task in cycle.cycle_task_group_object_tasks:
-        is_related = False
-        for related_object in cycle_task.related_objects:
-            if related_object.slug == "p1":
-                is_related = True
-        if is_related:
-            cycle_tasks.append(cycle_task)
+      is_related = False
+      for related_object in cycle_task.related_objects:
+        if related_object.slug == "p1":
+          is_related = True
+      if is_related:
+        cycle_tasks.append(cycle_task)
 
     cycle_task_groups = list({cycle_task.cycle_task_group
-                             for cycle_task in cycle_tasks})
+                              for cycle_task in cycle_tasks})
 
     self.assertEqual(1, response.count("wf-"))
 

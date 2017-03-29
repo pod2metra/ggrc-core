@@ -59,6 +59,7 @@ class CycleTaskGroupFactory(TitledFactory):
     model = models.CycleTaskGroup
 
   cycle = factory.SubFactory(CycleFactory)
+  next_due_date = date(2015, 12, 4)
 
 
 class CycleTaskFactory(TitledFactory):

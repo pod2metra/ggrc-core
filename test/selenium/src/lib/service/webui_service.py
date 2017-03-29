@@ -91,6 +91,15 @@ class BaseWebUiService(object):
     objs_widget = gen_widget(self.driver)
     return objs_widget.is_editable(obj_title=obj.title)
 
+  def is_obj_page_exist_via_info_panel(self, widget_url, gen_widget, obj):
+    """Navigate to widget URL, select object from Tree View by title and
+    check via Info panel that object page is exist.
+    """
+    # pylint: disable=invalid-name
+    selenium_utils.open_url(self.driver, widget_url)
+    objs_widget = gen_widget(self.driver)
+    return objs_widget.is_openable(obj_title=obj.title)
+
 
 class AuditsService(BaseWebUiService):
   """Service for working with entity Audits entities."""
@@ -145,6 +154,14 @@ class AuditsService(BaseWebUiService):
     audit_info_page = Audits.info_widget_cls(self.driver)
     (audit_info_page.
      open_info_3bbs().select_update_objs().confirm_update())
+
+  def is_obj_updateble_via_info_panel(self, widget_url, gen_widget, obj):
+    """Navigate to widget URL, select object from Tree View by title and
+    check via Info panel that object is updateble.
+    """
+    selenium_utils.open_url(self.driver, widget_url)
+    objs_widget = gen_widget(self.driver)
+    return objs_widget.is_updateble(obj_title=obj.title)
 
   def get_obj_from_info_widget(self, audit_obj):
     """Get and return Audit object from Info widget."""
@@ -251,6 +268,20 @@ class ControlsService(BaseWebUiService):
     """Check that Control object is editable via Info panel from Tree View.
     If editable then return 'True' if no editable then return 'False'."""
     return self.is_obj_editable_via_info_panel(
+        widget_url=Controls.URL.format(source_obj_url=source_obj.url),
+        gen_widget=Controls, obj=control_obj)
+
+  def is_updateble_via_info_panel(self, source_obj, control_obj):
+    """Check that Control object is updateble via Info panel from Tree View.
+    If updateble then return 'True' if no updateble then return 'False'."""
+    return AuditsService(self.driver).is_obj_updateble_via_info_panel(
+        widget_url=Controls.URL.format(source_obj_url=source_obj.url),
+        gen_widget=Controls, obj=control_obj)
+
+  def is_openable_via_info_panel(self, source_obj, control_obj):
+    """Check that Control object is openable via Info panel from Tree View.
+    If openable then return 'True' if no openable then return 'False'."""
+    return self.is_obj_page_exist_via_info_panel(
         widget_url=Controls.URL.format(source_obj_url=source_obj.url),
         gen_widget=Controls, obj=control_obj)
 

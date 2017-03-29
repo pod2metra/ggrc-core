@@ -2,14 +2,14 @@
     Copyright (C) 2017 Google Inc.
     Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 }}
-<div class="comment-control flex-box">
+<div class="comment-control">
   {{#if isSaving}}
-    <spinner toggle="isSaving"></spinner>
+    <spinner class="pull-right" toggle="isSaving"></spinner>
   {{else}}
-      <button {{#if isEmpty}}disabled{{/if}} class="btn btn-success btn-small pull-right" can-click="save">Add</button>
-      <label>
-          <input type="checkbox" name="send_notification" can-value="comment.checked">
-          Send Notifications
-      </label>
+    <label class="pull-left">
+      <input type="checkbox" name="send_notification" can-value="comment.checked">
+      Send Notifications
+    </label>
+    <button {{#if isEmpty}}disabled{{/if}} class="btn btn-success btn-small pull-right" can-click="save">Add</button>
   {{/if}}
 </div>

@@ -27,7 +27,7 @@
     },
     tree_view_options: {
       attr_list: can.Model.Cacheable.attr_list.concat([
-        {attr_title: 'URL', attr_name: 'url'},
+        {attr_title: 'Issue', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'}
       ]),
       attr_view: GGRC.mustache_path + '/base_objects/tree-item-attr.mustache'

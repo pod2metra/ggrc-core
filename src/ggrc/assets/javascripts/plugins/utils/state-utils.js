@@ -121,7 +121,8 @@
      */
     function buildStatusesFilterString(statuses) {
       return statuses.map(function (item) {
-        return 'Status=' + item;
+        // wrap in quotes
+        return 'Status="' + item + '"';
       }).join(' Or ');
     }
 
@@ -131,9 +132,8 @@
      * @return {String} statuses filter
      */
     function buildAssessmentFilter(statuses) {
-      // statuses wrapped in quotes
-      var verifiedIndex = statuses.indexOf('"Completed and Verified"');
-      var completedIndex = statuses.indexOf('"Completed (no verification)"');
+      var verifiedIndex = statuses.indexOf('Completed and Verified');
+      var completedIndex = statuses.indexOf('Completed (no verification)');
       var isVerified = false;
       var filter;
 
@@ -148,7 +148,7 @@
       if (verifiedIndex > -1 && completedIndex > -1) {
         // server doesn't know about "Completed (no verification)"
         // we replace it with "Completed"
-        statuses.splice(completedIndex, 1, '"Completed"');
+        statuses.splice(completedIndex, 1, 'Completed');
 
         // database doesn't have "Verified" status
         // remove it
@@ -158,11 +158,11 @@
       }
 
       if (completedIndex > -1 && verifiedIndex === -1) {
-        statuses.splice(completedIndex, 1, '"Completed"');
+        statuses.splice(completedIndex, 1, 'Completed');
       } else if (verifiedIndex > -1 && completedIndex === -1) {
         isVerified = true;
         statuses.splice(verifiedIndex, 1);
-        statuses.push('"Completed"');
+        statuses.push('Completed');
       }
 
       filter = buildStatusesFilterString(statuses);
@@ -178,7 +178,7 @@
       var states = [];
 
       if (GGRC.Utils.CurrentPage.isMyAssessments()) {
-        states = ['"Not Started"', '"In Progress"'];
+        states = ['Not Started', 'In Progress'];
       }
 
       return states;

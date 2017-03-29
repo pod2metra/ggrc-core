@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2017 Google Inc.
+ * Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
+ */
+.nav-tabs {
+  li {
+    a {
+      cursor: pointer;
+    }
+  }
+}
+.related-assessments__tab-container {
+  .nav {
+    &.nav-tabs {
+      background: $contentBgnd;
+      margin: 0;
+      padding: 0;
+      border-style: solid;
+      border-color: #c7c7c7;
+      border-width: 1px 0;
+      height: 36px;
+      display: flex;
+
+      li {
+        line-height: 36px;
+        margin: 0;
+        position: relative;
+        top: -1px;
+        bottom: -1px;
+        float: none;
+
+        a {
+          transition: background-color 0.13s ease-in;
+          cursor: pointer;
+          border-color: transparent;
+          border-bottom-color: #c7c7c7;
+          background: transparent;
+          color: #666;
+          margin: 0;
+          padding: 9px 20px;
+
+          &:hover {
+            background-color: darken($contentBgnd, 3%);
+          }
+        }
+
+        &.active {
+          a {
+            background: #fff;
+            border: 1px solid #c7c7c7;
+            border-bottom-color: transparent;
+            font-weight: bold;
+            color: #444;
+          }
+
+          &:first-child {
+            a {
+              border-left-color: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+}

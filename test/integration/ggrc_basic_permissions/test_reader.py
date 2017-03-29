@@ -36,7 +36,7 @@ class TestReader(TestCase):
     return
     for role, code in (("reader", 403), ("admin", 200)):
       self.api.set_user(self.users[role])
-      self.assertEqual(self.api.tc.get("/admin").status_code, code)
+      self.assertEqual(self.api.client.get("/admin").status_code, code)
 
   def test_reader_can_crud(self):
     return

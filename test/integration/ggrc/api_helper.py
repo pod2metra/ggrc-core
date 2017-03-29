@@ -21,12 +21,11 @@ from ggrc.app import app
 from ggrc.services.common import Resource
 
 
-# style: should the class name be all capitals?
 class Api(object):
 
   def __init__(self):
-    self.tc = app.test_client()
-    self.tc.get("/login")
+    self.client = app.test_client()
+    self.client.get("/login")
     self.resource = Resource()
     self.headers = {'Content-Type': 'application/json',
                     "X-Requested-By": "GGRC"
@@ -50,8 +49,8 @@ class Api(object):
       self.user_headers = {}
       self.person_name, self.person_email = None, None
 
-    self.tc.get("/logout")
-    self.tc.get("/login", headers=self.user_headers)
+    self.client.get("/logout")
+    self.client.get("/login", headers=self.user_headers)
     db.session.commit()
     db.session.flush()
 
@@ -68,6 +67,7 @@ class Api(object):
     return response
 
   def send_request(self, request, obj, data, headers=None, api_link=None):
+    """Send an API request."""
     headers = headers or {}
     if api_link is None:
       api_link = self.api_link(obj)
@@ -84,27 +84,32 @@ class Api(object):
     return self.data_to_json(response)
 
   def put(self, obj, data):
+    name = obj._inflector.table_singular
     response = self.get(obj, obj.id)
     headers = {
         "If-Match": response.headers.get("Etag"),
         "If-Unmodified-Since": response.headers.get("Last-Modified")
     }
-    api_link = self.api_link(obj, obj.id)
+    api_link = response.json[name]["selfLink"]
+    if name not in data:
+      response.json[name].update(data)
+      data = response.json
+
     return self.send_request(
-        self.tc.put, obj, data, headers=headers, api_link=api_link)
+        self.client.put, obj, data, headers=headers, api_link=api_link)
 
   def post(self, obj, data):
-    return self.send_request(self.tc.post, obj, data)
+    return self.send_request(self.client.post, obj, data)
 
   def get(self, obj, id_):
-    return self.data_to_json(self.tc.get(self.api_link(obj, id_)))
+    return self.data_to_json(self.client.get(self.api_link(obj, id_)))
 
   def get_collection(self, obj, ids):
-    return self.data_to_json(self.tc.get(
+    return self.data_to_json(self.client.get(
         "{}?ids={}".format(self.api_link(obj), ids)))
 
   def get_query(self, obj, query):
-    return self.data_to_json(self.tc.get(
+    return self.data_to_json(self.client.get(
         "{}?{}".format(self.api_link(obj), query)))
 
   def modify_object(self, obj, data=None):
@@ -147,10 +152,10 @@ class Api(object):
     }
     headers.update(self.headers)
     api_link = self.api_link(obj, obj.id)
-    return self.tc.delete(api_link, headers=headers)
+    return self.client.delete(api_link, headers=headers)
 
   def search(self, types, q="", counts=False, relevant_objects=None):
     query = '/search?q={}&types={}&counts_only={}'.format(q, types, counts)
     if relevant_objects is not None:
       query += '&relevant_objects=' + relevant_objects
-    return (self.tc.get(query), self.headers)
+    return (self.client.get(query), self.headers)

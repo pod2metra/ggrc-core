@@ -57,7 +57,7 @@
           {{/if}}
         </div>
         <div class="span4">
-          <h6>Planned Report Period</h6>
+          <h6>Report Period</h6>
           {{#if instance.report_start_date}}
             {{#if instance.report_end_date}}
               {{localize_date instance.report_start_date}} - {{localize_date instance.report_end_date}}
@@ -76,7 +76,7 @@
 
       <div class="row-fluid wrap-row">
         <div class="span4">
-          <h6>Audit Lead</h6>
+          <h6>Internal Audit Lead</h6>
           {{#if instance.contact}}
             {{#using person=instance.contact}}
               {{>'/static/mustache/people/popover.mustache'}}

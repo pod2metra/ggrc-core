@@ -8,15 +8,63 @@
   var tpl = can.view(GGRC.mustache_path +
     '/components/assessment/custom-attributes.mustache');
 
-  can.Component.extend({
+  GGRC.Components('assessmentCustomAttributes', {
     tag: 'assessment-custom-attributes',
     template: tpl,
     viewModel: {
-      instance: null,
+      define: {
+        isLocked: {
+          type: 'htmlbool',
+          value: false
+        },
+        hasLimit: {
+          type: 'htmlbool',
+          value: false
+        },
+        limit: {
+          type: 'number',
+          value: 5
+        },
+        isOverLimit: {
+          get: function () {
+            return this.attr('hasLimit') &&
+              this.attr('items').length > this.attr('limit');
+          }
+        },
+        shouldShowAllItems: {
+          type: 'boolean',
+          value: function () {
+            return this.attr('isOverLimit');
+          }
+        },
+        visibleItems: {
+          get: function () {
+            var limit = this.attr('limit');
+            var isOverLimit = this.attr('isOverLimit');
+            var limitVisible = !this.attr('shouldShowAllItems') && isOverLimit;
+            return limitVisible ?
+              this.attr('items').slice(0, limit) :
+              this.attr('items');
+          }
+        },
+        showAllButtonText: {
+          get: function () {
+            return !this.attr('shouldShowAllItems') ?
+            'Show more (' + this.attr('items').length + ')' :
+              'Show less';
+          }
+        }
+      },
+      items: [],
+      instance: {},
       modal: {
         open: false
       },
-      save: function (scope) {
+      toggleShowAll: function () {
+        var newValue = !this.attr('shouldShowAllItems');
+        this.attr('shouldShowAllItems', newValue);
+      },
+      saveCustomAttribute: function (scope) {
         var items = this.attr('items');
         var itemToSave;
         var errors;
@@ -94,7 +142,7 @@
     },
     events: {
       'ca-object saveCustomAttribute': function (el, ev, scope) {
-        this.viewModel.save(scope);
+        this.viewModel.saveCustomAttribute(scope);
       }
     }
   });

@@ -6,7 +6,7 @@
 {{#if allow_mapping_or_creating}}
   {{#if_instance_of parent_instance 'Audit'}}
     {{#if allow_creating}}
-    {{#is_allowed_to_map parent_instance model.shortName}}
+    {{#is_allowed 'create' 'Assessment' context=parent_instance.context}}
       <a href="javascript://"
          class="section-create action-button create-button"
          rel="tooltip"
@@ -19,7 +19,7 @@
          data-object-plural="{{model.table_plural}}">
         Create
       </a>
-    {{/is_allowed_to_map}}
+    {{/is_allowed}}
     {{/if}}
   {{/if_instance_of}}
 {{/if}}

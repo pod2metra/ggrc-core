@@ -29,7 +29,7 @@ class AssessmentTemplate(assessment.AuditRelationship, relationship.Relatable,
   object.
   """
   __tablename__ = "assessment_templates"
-  _mandatory_default_people = ("assessors", "verifiers")
+  _mandatory_default_people = ("assessors",)
 
   PER_OBJECT_CUSTOM_ATTRIBUTABLE = True
 
@@ -70,13 +70,13 @@ class AssessmentTemplate(assessment.AuditRelationship, relationship.Relatable,
 
   _aliases = {
       "default_assessors": {
-          "display_name": "Default Assessors",
+          "display_name": "Default Assignee",
           "mandatory": True,
           "filter_by": "_nop_filter",
       },
       "default_verifier": {
           "display_name": "Default Verifier",
-          "mandatory": True,
+          "mandatory": False,
           "filter_by": "_nop_filter",
       },
       "default_test_plan": {

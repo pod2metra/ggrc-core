@@ -42,10 +42,14 @@ dashboard-js-files:
   - plugins/lodash_helpers.js
   - plugins/persistent_notifier.js
   - ggrc_base.js
+  - apps/base_widgets.js
+  - application.js
   - plugins/ggrc_utils.js
   - plugins/utils/query-api-utils.js
   - plugins/utils/current-page-utils.js
   - plugins/utils/state-utils.js
+  - plugins/utils/ggrcq-utils.js
+  - plugins/utils/tree-view-utils.js
   - plugins/datepicker.js
   - plugins/can_control.js
   - plugins/wysiwyg.js
@@ -57,8 +61,6 @@ dashboard-js-files:
   - plugins/tooltip.js
   - plugins/popover.js
   - plugins/popover_template.js
-  - apps/base_widgets.js
-  - application.js
   - client_record_replay.js
   - mustache_helper.js
   - generated/ggrc_filter_query_parser.js
@@ -173,7 +175,6 @@ dashboard-js-files:
   - components/related-objects/related-controls-objectives.js
   - components/object-state-toolbar/object-state-toolbar.js
   - components/object-list/object-list.js
-  - components/object-list/object-list-item.js
   - components/ca-object/ca-object.js
   - components/ca-object/ca-object-validation-icon.js
   - components/ca-object/ca-object-value-mapper.js
@@ -205,7 +206,8 @@ dashboard-js-files:
   - components/reusable_objects.js
   - components/assessment_generator.js
   - components/paginate.js
-  - components/tabs.js
+  - components/tabs/tab-container.js
+  - components/tabs/tab-panel.js
   - components/assessment_attributes.js
   - components/lazy_open_close.js
   - components/object_history/object_history.js
@@ -240,12 +242,14 @@ dashboard-js-files:
   - components/snapshotter/revisions-comparer.js
   - components/snapshotter/scope-update.js
   - components/info-pin-buttons/info-pin-buttons.js
+  - components/questions-link/questions-link.js
   - components/textarea-array/textarea-array.js
   - components/object-selection/object-selection.js
   - components/object-selection/object-selection-item.js
   - components/last-assessment-date/last-assessment-date.js
   - components/tree/tree-node-actions.js
   - components/tree/tree-no-results.js
+  - components/tree/tree-assignee-field.js
   - components/page-header/page-header.js
   #- d3.v2.js
   #- related_graph.js
@@ -255,6 +259,8 @@ app-init-files:
   - dashboard.js
 
 dashboard-js-template-files:
+  - components/tabs/tab-container.mustache
+  - components/tabs/tab-panel.mustache
   - components/object-state-toolbar/object-state-toolbar.mustache
   - components/object-selection/object-selection-item.mustache
   - components/mapping-controls/mapping-type-selector.mustache
@@ -297,7 +303,7 @@ dashboard-js-template-files:
   - components/view-object-buttons/view-object-buttons.mustache
   - components/add-object-button/add-object-button.mustache
   - components/info-pin-buttons/info-pin-buttons.mustache
-  - add_widget_menu.mustache
+  - components/questions-link/questions-link.mustache
   - base_objects/empty.mustache
   - base_objects/autocomplete_result.mustache
   - base_objects/confirm_delete.mustache
@@ -315,10 +321,7 @@ dashboard-js-template-files:
   - base_objects/dropdown_menu_tier2.mustache
   - base_objects/view_link.mustache
   - base_objects/unmap.mustache
-  - base_objects/map_related_modal_content.mustache
   - base_objects/mappings_detail.mustache
-  - base_objects/tabs.mustache
-  - base_objects/tab_panel.mustache
   - base_objects/page_header.mustache
   - base_objects/paginate.mustache
   - base_objects/search_actions.mustache
@@ -334,18 +337,12 @@ dashboard-js-template-files:
   - base_objects/tree_column_selector.mustache
   - base_objects/tree_column_names.mustache
   - base_objects/sub_tree_expand.mustache
+  - base_objects/sub_tree_all_related_link.mustache
   - base_objects/generate_assessments_button.mustache
   - base_objects/states.mustache
   - base_objects/form_restore.mustache
   - base_objects/info-pane-utility.mustache
   - base_objects/info_header.mustache
-  - base_objects/filters/advanced_search_filter_actions.mustache
-  - base_objects/filters/modal_filter_actions.mustache
-  - base_objects/filters/filter_by_person.mustache
-  - base_objects/filters/filter_by_relevance.mustache
-  - base_objects/filters/filter_by_text.mustache
-  - base_objects/filters/filter_by_type.mustache
-  - base_objects/notes_and_code.mustache
   - base_objects/modal_contact_fields.mustache
   - base_objects/open_close.mustache
   - base_objects/sub_tree_type_selector.mustache
@@ -382,7 +379,6 @@ dashboard-js-template-files:
   - controls/tree.mustache
   - controls/tree-item-attr.mustache
   - assessments/modal_content.mustache
-  - assessments/tree.mustache
   - assessments/tree_header.mustache
   - assessments/tree_add_item.mustache
   - assessments/info.mustache
@@ -396,7 +392,6 @@ dashboard-js-template-files:
   - assessment_templates/attribute_add_field.mustache
   - assessment_templates/modal_content.mustache
   - assessment_templates/info.mustache
-  - assessment_templates/tier2_content.mustache
   - assessment_templates/tree_add_item.mustache
   - assessments/related_issues.mustache
   - issues/modal_content.mustache
@@ -467,7 +462,6 @@ dashboard-js-template-files:
   - help/help_modal_header.mustache
   - help/filters_helper_content.mustache
   - markets/modal_content.mustache
-  - mapped_objects/dropdown_menu_tier2.mustache
   - modals/close_buttons.mustache
   - modals/confirm.mustache
   - modals/prompt_buttons.mustache
@@ -497,14 +491,11 @@ dashboard-js-template-files:
   - people/info.mustache
   - people/list.mustache
   - people/modal_content.mustache
-  - people/multitype_option_detail.mustache
-  - people/multitype_option_items.mustache
   - people/object_list.mustache
   - people/option_column.mustache
   - people/option_detail.mustache
   - people/owners_modal_connector.mustache
   - people/popover.mustache
-  - people/tier2_content.mustache
   - people/tree.mustache
   - people/tree-item-attr.mustache
   - people/tree_add_item.mustache
@@ -531,12 +522,6 @@ dashboard-js-template-files:
   - sections/dropdown_menu.mustache
   - selectors/active_column.mustache
   - selectors/base_modal.mustache
-  - selectors/multitype_base_modal.mustache
-  - selectors/multitype_object_detail.mustache
-  - selectors/multitype_option_column.mustache
-  - selectors/multitype_option_detail.mustache
-  - selectors/multitype_option_items.mustache
-  - selectors/multitype_option_mappings_popover.mustache
   - selectors/option_column.mustache
   - selectors/option_detail.mustache
   - standards/modal_content.mustache
@@ -556,26 +541,12 @@ dashboard-js-template-files:
   - audits/object_cloner.mustache
   - base_templates/subtree.mustache
   - objectives/autocomplete_result.mustache
-  - meetings/modal_content.mustache
-  - meetings/tree_add_item.mustache
-  - meetings/tree.mustache
   - documents/autocomplete_result.mustache
   - documents/pbc_tree.mustache
   - org_groups/autocomplete_result.mustache
   - vendors/autocomplete_result.mustache
   - base_objects/edit_object_link.mustache
-  - base_objects/tier2_content.mustache
-  - controls/tier2_content.mustache
-  - directives/tier2_content.mustache
-  - documents/tier2_content.mustache
-  - objectives/tier2_content.mustache
-  - programs/tier2_content.mustache
   - programs/search_result.mustache
-  - sections/tier2_content.mustache
-  - search/advanced_search_base_modal.mustache
-  - search/advanced_search_option_column.mustache
-  - search/advanced_search_option_items.mustache
-  - search/advanced_search_people_items.mustache
   - import_export/import_export_buttons.mustache
   - import_export/create_template.mustache
   - import_export/import_test_result.mustache

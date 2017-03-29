@@ -11,7 +11,7 @@ class Option(Described, Base, db.Model):
 
   role = db.Column(db.String)
   # TODO: inherit from Titled mixin (note: title is nullable here)
-  title = deferred(db.Column(db.String), 'Option')
+  title = db.Column(db.String)
   required = deferred(db.Column(db.Boolean), 'Option')
 
   def __str__(self):

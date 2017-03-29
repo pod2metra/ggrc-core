@@ -25,7 +25,6 @@ permissions = {
     "create": [
         "Assessment",
         "Issue",
-        "Relationship",
         "Comment",
     ],
     "view_object_page": [

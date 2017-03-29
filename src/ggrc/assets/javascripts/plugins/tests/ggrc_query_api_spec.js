@@ -252,4 +252,52 @@ describe('GGRC Utils Query API', function () {
       }, 150);
     });
   });
+
+  describe('buildCountParams() method', function () {
+    var queryAPI = GGRC.Utils.QueryAPI;
+    var relevant = {
+      type: 'Audit',
+      id: '555',
+      operation: 'relevant'
+    };
+
+    it('empty arguments. buildCountParams should return empty array',
+      function () {
+        var queries = queryAPI.buildCountParams();
+        expect(Array.isArray(queries)).toBe(true);
+        expect(queries.length).toEqual(0);
+      }
+    );
+
+    it('No relevant. buildCountParams should return array of queries',
+      function () {
+        var types = ['Assessment', 'Control'];
+
+        var queries = queryAPI.buildCountParams(types);
+        var query = queries[0];
+
+        expect(queries.length).toEqual(types.length);
+        expect(query.object_name).toEqual(types[0]);
+        expect(query.type).toEqual('count');
+        expect(query.filters).toBe(undefined);
+      }
+    );
+
+    it('Pass relevant. buildCountParams should return array of queries',
+      function () {
+        var types = ['Assessment', 'Control'];
+
+        var queries = queryAPI.buildCountParams(types, relevant);
+        var query = queries[0];
+        var expression = query.filters.expression;
+
+        expect(queries.length).toEqual(types.length);
+        expect(query.object_name).toEqual(types[0]);
+        expect(query.type).toEqual('count');
+        expect(expression.object_name).toEqual(relevant.type);
+        expect(expression.ids[0]).toEqual(relevant.id);
+        expect(expression.op.name).toEqual('relevant');
+      }
+    );
+  });
 });

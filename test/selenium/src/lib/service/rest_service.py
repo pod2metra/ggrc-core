@@ -12,6 +12,7 @@ from lib.entities.entities_factory import (
   ProgramsFactory, AuditsFactory, AssessmentTemplatesFactory,
   AssessmentsFactory, ControlsFactory, IssuesFactory, PersonsFactory)
 from lib.service.rest.client import RestClient
+from lib.utils import string_utils
 
 
 class BaseService(object):
@@ -114,9 +115,15 @@ class ControlsService(BaseService):
     return self.create_list_objs(factory=ControlsFactory(), count=count)
 
   def update(self, objs):
-    """Update an existing Controls objects via REST API and return updated."""
+    """Update existing Controls objects via REST API and return updated."""
     return self.update_list_objs(
-        list_old_objs=[objs], factory=ControlsFactory())
+        list_old_objs=string_utils.convert_to_list(objs),
+        factory=ControlsFactory())
+
+  def delete(self, objs):
+    """Delete existing Controls objects via REST API."""
+    return [self.client.delete_object(href=obj.href) for obj
+            in string_utils.convert_to_list(objs)]
 
 
 class ProgramsService(BaseService):
@@ -179,15 +186,10 @@ class RelationshipsService(BaseService):
     """Create relationship from source to destination objects and
     return created.
     """
-    if isinstance(dest_objs, list):
-      return [
-          self.client.create_object(
-              type=self._relationship, source=src_obj.__dict__,
-              destination=dest_obj.__dict__) for dest_obj in dest_objs]
-    else:
-      return self.client.create_object(
-          type=self._relationship, source=src_obj.__dict__,
-          destination=dest_objs.__dict__)
+    return [self.client.create_object(
+        type=self._relationship, source=src_obj.__dict__,
+        destination=dest_obj.__dict__) for dest_obj in
+            string_utils.convert_to_list(dest_objs)]
 
 
 class ObjectsOwnersService(BaseService):
@@ -196,15 +198,9 @@ class ObjectsOwnersService(BaseService):
 
   def create(self, objs, owner=PersonsFactory().default()):
     """Assign of an owner to objects."""
-    if isinstance(objs, list):
-      return [
-          self.client.create_object(
-              type=self._object_owner, ownable=obj.__dict__,
-              person=owner.__dict__) for obj in objs]
-    else:
-      return self.client.create_object(
-          type=self._object_owner, ownable=objs.__dict__,
-          person=owner.__dict__)
+    return [self.client.create_object(
+        type=self._object_owner, ownable=obj.__dict__,
+        person=owner.__dict__) for obj in string_utils.convert_to_list(objs)]
 
 
 class ObjectsInfoService(BaseService):

@@ -161,6 +161,9 @@
         filters = relevantList.attr()
           .map(function (relevant) {
             if (!relevant.value || !relevant.filter) {
+              if (!relevant.textValue) {
+                return null;
+              }
               return {
                 type: relevant.model_name,
                 operation: 'relevant',
@@ -172,6 +175,8 @@
               operation: 'relevant',
               id: Number(relevant.filter.id)
             };
+          }).filter(function (v) {
+            return v !== null;
           });
         return filters;
       },

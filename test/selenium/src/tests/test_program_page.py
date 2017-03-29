@@ -25,7 +25,7 @@ class TestProgramPage(base.Test):
     _, program_info_page = new_program_ui
     lhn_menu = dashboard.Header(selenium).open_lhn_menu().select_my_objects()
     assert (lhn_menu.toggle_programs.members_count >=
-            int(program_info_page.object_id))
+            int(program_info_page.source_obj_id_from_url))
 
   @pytest.mark.smoke_tests
   def test_modal_redirects(self, new_program_ui):
@@ -36,7 +36,7 @@ class TestProgramPage(base.Test):
     object id.
     """
     _, program_info_page = new_program_ui
-    assert (url.PROGRAMS + "/" + program_info_page.object_id in
+    assert (url.PROGRAMS + "/" + program_info_page.source_obj_id_from_url in
             program_info_page.url)
 
   @pytest.mark.smoke_tests

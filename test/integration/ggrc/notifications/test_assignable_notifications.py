@@ -39,6 +39,7 @@ class TestAssignableNotification(TestCase):
     self._fix_notification_init()
     self.api_helper = api_helper.Api()
     self.objgen = generator.ObjectGenerator()
+    factories.AuditFactory(slug="Audit")
 
   def _fix_notification_init(self):
     """Fix Notification object init function.

@@ -68,8 +68,8 @@
           });
 
           this.attr('dropdown_options', dropdownOptions);
-          this.attr('statusFilter',
-            GGRC.Utils.State.statusFilter(statuses, ''));
+          this.attr('statusFilter', GGRC.Utils.State
+            .statusFilter(statuses, '', this.attr('mapper.type')));
 
           this.attr('statuses', statuses);
         } else {
@@ -103,8 +103,8 @@
         });
         this.viewModel.attr('statuses', selectedStatuses);
 
-        this.viewModel.attr('statusFilter',
-          GGRC.Utils.State.statusFilter(selectedStatuses, ''));
+        this.viewModel.attr('statusFilter', GGRC.Utils.State.statusFilter(
+          selectedStatuses, '', this.viewModel.attr('mapper.type')));
         ev.stopPropagation();
       }
     }

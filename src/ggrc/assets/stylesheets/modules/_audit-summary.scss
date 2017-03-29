@@ -8,25 +8,42 @@
   .legend {
     position: relative;
     min-height: 300px;
-    ul {
+    table {
       position: absolute;
-      top: 25%;
+      top: 9%;
       list-style: none;
       text-align: left;
       min-width: 300px;
       font-size: 14px;
 
-      li {
-        padding-bottom: 5px;
+      th {
+        text-transform: uppercase;
       }
 
-      i {
-        padding-right: 5px;
+      td,
+      th {
+        padding-bottom: 16px;
+        padding-left: 30px;
+        text-align: right;
+
+        &:first-child {
+          text-align: left;
+          padding-left: 0;
+        }
+
+        i {
+          padding-right: 2px;
+          font-size: 9px;
+          vertical-align: 2px;
+        }
       }
 
-      span {
-        color: $grayLight;
-        float: right;
+      tfoot {
+        border-top: 1px solid $warmGray;
+        td {
+          padding-top: 16px;
+          font-weight: bold;
+        }
       }
     }
   }

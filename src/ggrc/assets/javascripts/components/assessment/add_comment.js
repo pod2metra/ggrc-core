@@ -62,7 +62,7 @@
       comment: {
         notification: false,
         value: '',
-        checked: false
+        checked: true
       },
       save: function () {
         this.attr('state.save', true);
@@ -122,7 +122,6 @@
         scope.attr('state', scope.attr('state') || defaultState);
         scope.attr('commentPlaceHolder',
           scope.attr('commentPlaceHolder') || defaultPlaceHolderText);
-        scope.attr('comment.checked', scope.attr('instance.send_by_default'));
       },
       '{scope.state} save': function (scope, ev, val) {
         if (val) {

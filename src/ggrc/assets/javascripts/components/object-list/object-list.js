@@ -12,12 +12,12 @@
   /**
    * Object List component
    */
-  can.Component.extend({
+  GGRC.Components('objectList', {
     tag: tag,
     template: tpl,
     viewModel: {
       define: {
-        objectListItemSelector: {
+        itemSelector: {
           type: 'string',
           value: ''
         },
@@ -29,31 +29,52 @@
           get: function () {
             return this.attr('isLoading');
           }
+        },
+        items: {
+          value: function () {
+            return [];
+          }
+        },
+        selectedItem: {
+          value: function () {
+            return {
+              el: null,
+              data: null
+            };
+          }
+        },
+        isInnerClick: {
+          type: 'boolean',
+          value: false
+        },
+        emptyMessage: {
+          type: 'string',
+          value: 'None'
         }
       },
-      emptyMessage: '@',
       spinnerCss: '@',
-      selectedItem: {},
-      items: [],
-      getEmptyMessage: function () {
-        return this.attr('emptyMessage') || 'None';
-      },
-      selectItem: function (el, selectedItem) {
-        var type = selectedItem.type;
-        var id = selectedItem.id;
+      /**
+       *
+       * @param {can.Map} ctx - current item context
+       * @param {jQuery.Event} ev - click event
+       * @param {jQuery} el - selected element
+       */
+      modifySelection: function (ctx, ev, el) {
+        var selectionFilter = this.attr('itemSelector');
+        var isSelected = selectionFilter ?
+          can.$(ev.target).closest(selectionFilter, el).length :
+          true;
         this.clearSelection();
-        this.attr('items').forEach(function (item) {
-          var isSelected =
-            item.attr('instance.type') === type &&
-            item.attr('instance.id') === id;
-
-          if (isSelected) {
-            this.attr('selectedItem.data', item.instance);
-            this.attr('selectedItem.el', el);
-          }
-          item.attr('isSelected', isSelected);
-        }.bind(this));
+        // Select Item only in case required HTML item was clicked
+        if (isSelected) {
+          this.attr('selectedItem.el', el);
+          this.attr('selectedItem.data', ctx.instance);
+          ctx.attr('isSelected', true);
+        }
       },
+      /**
+       * Deselect all items and clear selected item Object
+       */
       clearSelection: function () {
         this.attr('items').forEach(function (item) {
           item.attr('isSelected', false);
@@ -61,16 +82,23 @@
         this.attr('selectedItem.el', null);
         this.attr('selectedItem.data', null);
       },
-      onClickHandler: function (el, ev) {
-        var isInnerClick = GGRC.Utils.events.isInnerClick(el, ev.target);
+      /**
+       * Event Handler executed on each viewport click
+       */
+      onOuterClick: function () {
+        var isInnerClick = this.attr('isInnerClick');
         if (!isInnerClick) {
           this.clearSelection();
         }
+        this.attr('isInnerClick', false);
       }
     },
     events: {
-      '{window} click': function (el, ev) {
-        this.viewModel.onClickHandler(this.element, ev);
+      'object-list-item click': function () {
+        this.viewModel.attr('isInnerClick', true);
+      },
+      '{window} click': function () {
+        this.viewModel.onOuterClick();
       }
     }
   });

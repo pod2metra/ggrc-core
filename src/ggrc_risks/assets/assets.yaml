@@ -16,6 +16,3 @@ dashboard-js-template-files:
   - risks/info.mustache
   - threats/modal_content.mustache
   - risk_objects/tree_footer.mustache
-  - selectors/object_selector_base_modal.mustache
-  - selectors/object_selector_option_column.mustache
-  - selectors/object_selector_option_items.mustache

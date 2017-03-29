@@ -39,7 +39,7 @@ class RelationshipResource(ggrc.services.common.Resource):
     if src["source"]["type"] in snapshot_rules.Types.parents:
       parent, child = src["source"], src["destination"]
     elif src["destination"]["type"] in snapshot_rules.Types.parents:
-      parent, child = src["source"], src["destination"]
+      parent, child = src["destination"], src["source"]
 
     is_snapshot = bool(parent) and child["type"] in snapshot_rules.Types.all
     return parent, child, is_snapshot

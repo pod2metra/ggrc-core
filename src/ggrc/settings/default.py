@@ -35,7 +35,7 @@ try:
 except (ImportError):
   pass
 
-VERSION = "0.10.9-Raspberry" + BUILD_NUMBER
+VERSION = "0.10.10-Raspberry" + BUILD_NUMBER
 
 # Migration owner
 MIGRATOR = os.environ.get(
@@ -118,3 +118,6 @@ LOGGING_LOGGERS = {
 
 
 DEBUG_BENCHMARK = os.environ.get("GGRC_BENCHMARK")
+
+# GGRCQ integration
+GGRC_Q_INTEGRATION_URL = os.environ.get('GGRC_Q_INTEGRATION_URL', '')

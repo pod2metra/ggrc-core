@@ -14,10 +14,15 @@ from ggrc.models.mixins import Timeboxed
 from ggrc.models.mixins import Titled
 from ggrc.models.mixins import WithContact
 from ggrc_workflows.models.cycle import Cycle
+from ggrc.fulltext.mixin import Indexed, ReindexRule
+from ggrc.fulltext.attributes import (
+    MultipleSubpropertyFullTextAttr,
+    FullTextAttr
+)
 
 
-class CycleTaskGroup(WithContact, Stateful, Timeboxed, Described,
-                     Titled, Slugged, db.Model):
+class CycleTaskGroup(WithContact, Stateful, Slugged, Timeboxed, Described,
+                     Titled, Indexed, db.Model):
   """Cycle Task Group model.
   """
   __tablename__ = 'cycle_task_groups'
@@ -60,6 +65,47 @@ class CycleTaskGroup(WithContact, Stateful, Timeboxed, Described,
           "filter_by": "_filter_by_cycle",
       },
   }
+
+  PROPERTY_TEMPLATE = u"group {}"
+
+  _fulltext_attrs = [
+      MultipleSubpropertyFullTextAttr(
+          "task title", 'cycle_task_group_tasks', ["title"], False
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "task assignee",
+          lambda instance: [t.contact for t in
+                            instance.cycle_task_group_tasks],
+          ["name", "email"],
+          False
+      ),
+      MultipleSubpropertyFullTextAttr(
+          "task due date", "cycle_task_group_tasks", ["end_date"], False
+      ),
+      FullTextAttr("due date", 'next_due_date',),
+      FullTextAttr("assignee", "contact", ['name', 'email']),
+      FullTextAttr("cycle title", 'cycle', ['title'], False),
+      FullTextAttr("cycle assignee",
+                   lambda x: x.cycle.contact,
+                   ['email', 'name'], False),
+      FullTextAttr("cycle due date",
+                   lambda x: x.cycle.next_due_date,
+                   with_template=False),
+  ]
+
+  AUTO_REINDEX_RULES = [
+      ReindexRule("CycleTaskGroupObjectTask", lambda x: x.cycle_task_group),
+      ReindexRule(
+          "Person",
+          lambda x: CycleTaskGroup.query.filter(
+              CycleTaskGroup.contact_id == x.id)
+      ),
+      ReindexRule(
+          "Person",
+          lambda x: [i.cycle for i in CycleTaskGroup.query.filter(
+              CycleTaskGroup.contact_id == x.id)]
+      ),
+  ]
 
   @classmethod
   def _filter_by_cycle(cls, predicate):

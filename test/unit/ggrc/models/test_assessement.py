@@ -36,7 +36,7 @@ class TestAssessmentMixins(test_mixins_base.TestMixinsBase):
     ]
 
     self.attributes_introduced = [
-        ('audit', dict),
+        ('audit_id', attributes.InstrumentedAttribute),
         ('design', attributes.InstrumentedAttribute),
         ('operationally', attributes.InstrumentedAttribute),
         ('object', dict),

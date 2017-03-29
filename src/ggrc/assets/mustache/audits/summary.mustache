@@ -36,7 +36,7 @@
                     {{#instance}}
                         <div class="row-fluid">
                             <div class="span3 title">
-                                <h3>Assessments {{#if charts.Assessment.any}}({{charts.Assessment.total}}){{/if}}</h3>
+                                <h3>Assessments</h3>
                             </div>
                         </div>
                     {{/instance}}
@@ -49,13 +49,48 @@
                 <div class="span6 legend {{#if_helpers '\
                                             ^if' charts.Assessment.isLoaded '\
                                             or #if' charts.Assessment.none}}hidden{{/if_helpers}}">
-                  <ul id="piechart_audit_assessments_chart-legend">
-                  {{#each charts.Assessment.legend}}
-                    <li data-row-index="{{rowIndex}}">
-                      <i class="fa fa-circle" style="color: {{color}}"></i>{{title}} <span>{{count}} ({{percent}} %)</span>
-                    </li>
-                  {{/each}}
-                  </ul>
+                  <table id="piechart_audit_assessments_chart-legend" class="piechart-legend">
+                    <thead>
+                      <tr>
+                        <th>
+                          State
+                        </th>
+                        <th>
+                          Count
+                        </th>
+                        <th>
+                          Percent
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {{#each charts.Assessment.legend}}
+                        <tr data-row-index="{{rowIndex}}">
+                          <td style="color: {{color}}">
+                            <i class="fa fa-circle"></i> {{title}}
+                          </td>
+                          <td>
+                            {{count}}
+                          </td>
+                          <td>
+                            {{percent}} %
+                          </td>
+                        </tr>
+                      {{/each}}
+                    <tbody>
+                    <tfoot>
+                      <tr>
+                        <td>
+                          Total
+                        </td>
+                        <td>
+                          {{charts.Assessment.total}}
+                        </td>
+                        <td>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
                 {{#if charts.Assessment.isLoading}}
                     <div class="span12 centered">

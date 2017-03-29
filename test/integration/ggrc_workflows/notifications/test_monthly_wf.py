@@ -57,7 +57,7 @@ class TestMonthlyWorkflowNotification(TestCase):
       self.assertIn("cycle_starts_in", notif_data[person_1.email])
 
     with freeze_time("2015-04-02"):
-      self.api.tc.get("nightly_cron_endpoint")
+      self.api.client.get("nightly_cron_endpoint")
       _, notif_data = common.get_daily_notifications()
       self.assertNotIn(person_1.email, notif_data)
 

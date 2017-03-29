@@ -56,7 +56,7 @@
           attr_name: 'last_assessment_date',
           order: 45 // between State and Primary Contact
         },
-        {attr_title: 'URL', attr_name: 'url'},
+        {attr_title: 'Control URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'},
         {attr_title: 'Effective Date', attr_name: 'start_date'},
         {attr_title: 'Stop Date', attr_name: 'end_date'},
@@ -70,9 +70,9 @@
           attr_sort_field: 'frequency.title'},
         {attr_title: 'Assertions', attr_name: 'assertions'},
         {attr_title: 'Categories', attr_name: 'categories'},
-        {attr_title: 'Principal Assignee', attr_name: 'principal_assessor',
+        {attr_title: 'Principal Assessor', attr_name: 'principal_assessor',
           attr_sort_field: 'principal_assessor'},
-        {attr_title: 'Secondary Assignee', attr_name: 'secondary_assessor',
+        {attr_title: 'Secondary Assessor', attr_name: 'secondary_assessor',
           attr_sort_field: 'secondary_assessor'}
       ]),
       display_attr_names: ['title', 'owner', 'status', 'last_assessment_date'],

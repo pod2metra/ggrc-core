@@ -31,6 +31,10 @@ class Product(HasObjectState, CustomAttributable, Personable,
       'kind',
       'version',
   ]
+  _fulltext_attrs = [
+      'kind',
+      'version',
+  ]
   _sanitize_html = ['version', ]
   _aliases = {
       "url": "Product URL",

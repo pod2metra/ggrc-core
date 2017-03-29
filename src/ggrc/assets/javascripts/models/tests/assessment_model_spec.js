@@ -25,7 +25,6 @@ describe('CMS.Models.Assessment', function () {
       assessment.attr('audit', audit);
       assessment.before_create();
       expect(assessment.context.id).toEqual(context.id);
-      expect(assessment.program.id).toEqual(program.id);
     });
 
     it('throws an error if audit is not defined', function () {
@@ -39,7 +38,7 @@ describe('CMS.Models.Assessment', function () {
       expect(function () {
         assessment.before_create();
       }).toThrow(new Error(
-        'Cannot save assessment, audit context or program not set.'));
+        'Cannot save assessment, audit context not set.'));
     });
   });
 

@@ -157,7 +157,7 @@ class TransformationSetVisibleFields(CommonModalSetVisibleFields):
   OWNER = "Owner"
   VERIFIED = "Verified"
   STATUS = "Status"
-  AUDIT_LEAD = "Audit Lead"
+  AUDIT_LEAD = "Internal Audit Lead"
   MANAGER = "Manager"
   PRIMARY_CONTACT = roles.PRIMARY_CONTACT
 
@@ -186,8 +186,8 @@ class CommonAudit(Common):
   STATUS = "Status"
   PLANNED_START_DATE = "Planned Start Date"
   PLANNED_END_DATE = "Planned End Date"
-  PLANNED_REPORT_PERIOD = "Planned Report Period"
-  AUDIT_LEAD = "Audit Lead"
+  PLANNED_REPORT_PERIOD = "Report Period"
+  AUDIT_LEAD = "Internal Audit Lead"
   AUDIT_FIRM = " Audit Firm"
   AUDITORS = "Auditors"
   ADD_AUDITOR = "+ Add Auditor"

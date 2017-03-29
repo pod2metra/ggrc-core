@@ -31,6 +31,7 @@
         this.attr('relevant').push({
           value: false,
           filter: new can.Map(),
+          textValue: '',
           menu: menu,
           model_name: menu[0].model_singular
         });
@@ -75,6 +76,7 @@
             readOnly: item.readOnly,
             value: true,
             filter: model,
+            textValue: '',
             menu: this.scope.attr('menu'),
             model_name: model.constructor.shortName
           });
@@ -83,10 +85,20 @@
       '.ui-autocomplete-input autocomplete:select': function (el, ev, data) {
         var index = el.data('index');
         var panel = this.scope.attr('relevant')[index];
+        var textValue = el.data('ggrc-autocomplete').term;
 
-        panel.attr('filter', data.item);
+        panel.attr('filter', data.item.attr());
         panel.attr('value', true);
+        panel.attr('textValue', textValue);
       },
+      '.ui-autocomplete-input input': function (el, ev, data) {
+        var index = el.data('index');
+        var panel = this.scope.attr('relevant')[index];
+
+        panel.attr('value', false);
+        panel.attr('textValue', el.val());
+      },
+
       '.remove_filter click': function (el) {
         this.scope.attr('relevant').splice(el.data('index'), 1);
       },

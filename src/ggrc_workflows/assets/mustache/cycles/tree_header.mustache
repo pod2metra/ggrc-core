@@ -35,24 +35,24 @@
       </div>
     </div>
   </header>
+
+  {{^if_equals mapping 'previous_cycles'}}
+    {{#using workflow=parent_instance}}
+      {{#workflow.next_cycle_start_date}}
+        {{^if_equals workflow.frequency 'one_time'}}
+          {{#if_equals workflow.status 'Active'}}
+            <div class="filters">
+              <div class="alert" style="border-radius: 0px;">
+                <button type="button" class="close" data-dismiss="alert">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+                <strong>Note:</strong> Next cycle of this recurring workflow is scheduled to be activated on <strong>{{localize_date workflow.next_cycle_start_date}}</strong>.
+              </div>
+            </div>
+          {{/if_equals workflow.status 'Active'}}
+        {{/if_equals}}
+      {{/workflow.next_cycle_start_date}}
+    {{/using}}
+  {{/if_equals}}
 </div>
 <div class="clearfix"></div>
-
-{{^if_equals mapping 'previous_cycles'}}
-{{#using workflow=parent_instance}}
-{{#workflow.next_cycle_start_date}}
-{{^if_equals workflow.frequency 'one_time'}}
-{{#if_equals workflow.status 'Active'}}
-  <div class="filters">
-    <div class="alert" style="border-radius: 0px; margin-bottom: 0px;">
-      <button type="button" class="close" data-dismiss="alert">
-        <span aria-hidden="true">&times;</span>
-      </button>
-      <strong>Note:</strong> Next cycle of this recurring workflow is scheduled to be activated on <strong>{{localize_date workflow.next_cycle_start_date}}</strong>.
-    </div>
-  </div>
-{{/if_equals workflow.status 'Active'}}
-{{/if_equals}}
-{{/workflow.next_cycle_start_date}}
-{{/using}}
-{{/if_equals}}

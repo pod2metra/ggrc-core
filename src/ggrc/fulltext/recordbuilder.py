@@ -12,6 +12,8 @@ import ggrc.models.all_models
 from ggrc.models.reflection import AttributeInfo
 from ggrc.models.person import Person
 from ggrc.fulltext import Record
+from ggrc.fulltext.attributes import FullTextAttr
+from ggrc.fulltext.mixin import Indexed
 
 
 class RecordBuilder(object):
@@ -47,7 +49,22 @@ class RecordBuilder(object):
       attrs = AttributeInfo.gather_attrs(tgt_class, '_fulltext_attrs')
       return {attr: {"": obj.revision.content.get(attr)} for attr in attrs}
 
-    return {attr: {"": getattr(obj, attr)} for attr in self._fulltext_attrs}
+    if isinstance(obj, Indexed):
+      property_tmpl = obj.PROPERTY_TEMPLATE
+    else:
+      property_tmpl = u"{}"
+
+    properties = {}
+    for attr in self._fulltext_attrs:
+      if isinstance(attr, basestring):
+        properties[property_tmpl.format(attr)] = {"": getattr(obj, attr)}
+      elif isinstance(attr, FullTextAttr):
+        if attr.with_template:
+          property_name = property_tmpl.format(attr.alias)
+        else:
+          property_name = attr.alias
+        properties[property_name] = attr.get_property_for(obj)
+    return properties
 
   @staticmethod
   def get_person_id_name_email(person):

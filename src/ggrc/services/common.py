@@ -312,15 +312,27 @@ def get_modified_objects(session):
 
 def update_index(session, cache):
   """Update fulltext index records for cached objects."""
+  from ggrc.snapshotter.indexer import reindex_snapshots
+  reindex_snapshots_list = []
   if cache:
     indexer = get_indexer()
     for obj in cache.new:
-      indexer.create_record(fts_record_for(obj), commit=False)
+      if obj.type == "Snapshot":
+        reindex_snapshots_list.append(obj.id)
+      else:
+        indexer.create_record(fts_record_for(obj), commit=False)
     for obj in cache.dirty:
-      indexer.update_record(fts_record_for(obj), commit=False)
+      if obj.type == "Snapshot":
+        reindex_snapshots_list.append(obj.id)
+      else:
+        indexer.update_record(fts_record_for(obj), commit=False)
     for obj in cache.deleted:
       indexer.delete_record(obj.id, obj.__class__.__name__, commit=False)
     session.commit()
+  if reindex_snapshots_list:
+    for snapshot_id in reindex_snapshots_list:
+      indexer.delete_record(snapshot_id, "Snapshot", commit=False)
+    reindex_snapshots(reindex_snapshots_list)
 
 
 def _revision_generator(user_id, action, objects):

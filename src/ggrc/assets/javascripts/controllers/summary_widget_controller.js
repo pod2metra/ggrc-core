@@ -167,8 +167,9 @@
 
       chartOptions.attr('legend', legendData);
 
-      this.element.find('#piechart_audit_assessments_chart-legend')
-        .on('mouseenter', 'li', function () {
+      this.element.find('#piechart_audit_assessments_chart-legend tbody')
+        .off('mouseenter', 'tr')
+        .on('mouseenter', 'tr', function () {
           var $el = $(this);
           var rowIndex = $el.data('row-index');
 
@@ -176,7 +177,7 @@
             chart.setSelection([{row: rowIndex, column: null}]);
           }
         })
-        .on('mouseleave', 'li', function () {
+        .on('mouseleave', 'tr', function () {
           chart.setSelection(null);
         });
     },

@@ -120,11 +120,15 @@ class IssueFactory(TitledFactory):
   class Meta:
     model = models.Issue
 
+  audit = factory.LazyAttribute(lambda m: AuditFactory())
+
 
 class AssessmentFactory(TitledFactory):
 
   class Meta:
     model = models.Assessment
+
+  audit = factory.LazyAttribute(lambda m: AuditFactory())
 
 
 class ControlCategoryFactory(ModelFactory):

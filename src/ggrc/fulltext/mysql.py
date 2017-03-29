@@ -1,6 +1,8 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
+from collections import defaultdict, Iterable
+
 from sqlalchemy import and_
 from sqlalchemy import case
 from sqlalchemy import distinct
@@ -11,6 +13,7 @@ from sqlalchemy import union
 from sqlalchemy.sql import false
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import aliased
+from sqlalchemy import event
 from sqlalchemy.sql.expression import select
 from ggrc import db
 from ggrc.login import is_creator
@@ -18,6 +21,7 @@ from ggrc.models import all_models
 from ggrc.utils import query_helpers
 from ggrc.rbac import context_query_filter
 from ggrc.fulltext.sql import SqlIndexer
+from ggrc.fulltext.mixin import Indexed
 
 
 class MysqlRecordProperty(db.Model):
@@ -159,17 +163,16 @@ class MysqlIndexer(SqlIndexer):
 
     unions = [query]
     # Add extra_params and extra_colums:
-    for k, v in extra_params.iteritems():
-      if k not in model_names:
+    for key, value in extra_params.iteritems():
+      if key not in model_names:
         continue
-      # pylint: disable=invalid-name
-      q = db.session.query(*columns)
-      q = q.filter(
-          self.get_permissions_query([k], permission_type, permission_model))
-      q = q.filter(self._get_filter_query(terms))
-      q = self.search_get_owner_query(q, [k], contact_id)
-      q = self._add_extra_params_query(q, k, v)
-      unions.append(q)
+      extra_q = db.session.query(*columns)
+      extra_q = extra_q.filter(
+          self.get_permissions_query([key], permission_type, permission_model))
+      extra_q = extra_q.filter(self._get_filter_query(terms))
+      extra_q = self.search_get_owner_query(extra_q, [key], contact_id)
+      extra_q = self._add_extra_params_query(extra_q, key, value)
+      unions.append(extra_q)
     all_queries = union(*unions)
     all_queries = aliased(all_queries.order_by(
         all_queries.c.sort_key, all_queries.c.content))
@@ -194,18 +197,46 @@ class MysqlIndexer(SqlIndexer):
     if not all_extra_columns:
       return query.all()
 
-    # Add extra_params and extra_colums:
-    for k, v in all_extra_columns.iteritems():
-      # pylint: disable=invalid-name
-      q = db.session.query(
-          self.record_type.type, func.count(
-              distinct(self.record_type.key)), literal(k))
-      q = q.filter(self.get_permissions_query([v]))
-      q = q.filter(self._get_filter_query(terms))
-      q = self.search_get_owner_query(q, [v], contact_id)
-      q = self._add_extra_params_query(q, v, extra_params.get(k, None))
-      q = q.group_by(self.record_type.type)
-      query = query.union(q)
+    for key, value in all_extra_columns.iteritems():
+      extra_q = db.session.query(self.record_type.type,
+                                 func.count(distinct(self.record_type.key)),
+                                 literal(key))
+      extra_q = extra_q.filter(self.get_permissions_query([value]))
+      extra_q = extra_q.filter(self._get_filter_query(terms))
+      extra_q = self.search_get_owner_query(extra_q, [value], contact_id)
+      extra_q = self._add_extra_params_query(extra_q,
+                                             value,
+                                             extra_params.get(key, None))
+      extra_q = extra_q.group_by(self.record_type.type)
+      query = query.union(extra_q)
     return query.all()
 
 Indexer = MysqlIndexer
+
+
+INDEXER_RULES = defaultdict(list)
+
+for model in all_models.all_models:
+  if issubclass(model, Indexed):
+    for rule in model.AUTO_REINDEX_RULES:
+      INDEXER_RULES[rule.model].append(rule.rule)
+
+
+@event.listens_for(db.session.__class__, 'before_commit')
+def update_indexer(session):
+  """General function to update index
+
+  for all updated related instance before commit"""
+
+  reindex_dict = {}
+  for instance in session.dirty:
+    getters = INDEXER_RULES.get(instance.__class__.__name__) or []
+    for getter in getters:
+      to_index_list = getter(instance)
+      if not isinstance(to_index_list, Iterable):
+        to_index_list = [to_index_list]
+      for to_index in to_index_list:
+        key = "{}-{}".format(to_index.__class__.__name__, to_index.id)
+        reindex_dict[key] = to_index
+  for for_index in reindex_dict.values():
+    for_index.update_indexer()

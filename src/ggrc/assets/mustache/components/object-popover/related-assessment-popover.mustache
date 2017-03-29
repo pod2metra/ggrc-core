@@ -5,14 +5,23 @@
 
 <object-popover {item}="selectedAssessment" {popover-title}="selectedAssessmentTitle" {direction}="popoverDirection"
                 {popover-link}="selectedAssessmentLink" {popover-title-info}="popoverTitleInfo">
-    <h6>Comments</h6>
-      <related-comments {parent-instance}="item.data">
-          <mapped-objects
+    <tab-container class="related-assessments__tab-container">
+        <tab-panel {(panels)}="panels" title-text="Attributes">
+            <assessment-custom-attributes {instance}="item.data"
+                                          {items}="item.data.custom_attribute_values"
+                                          class="assessment-custom-attributes flex-box flex-box-multi"
+                                          is-locked="true"
+                                          has-limit="true">
+            </assessment-custom-attributes>
+        </tab-panel>
+        <tab-panel {(panels)}="panels" title-text="Comments">
+          <related-comments {parent-instance}="item.data">
+              <mapped-objects
                   {parent-instance}="parentInstance"
                   {related-types}="relatedTypes">
-              <comment-list-item {instance}="instance"></comment-list-item>
-          </mapped-objects>
-      </related-comments>
+                <comment-list-item {instance}="instance"></comment-list-item>
+              </mapped-objects>
+          </related-comments>
+        </tab-panel>
+    </tab-container>
 </object-popover>
-
-

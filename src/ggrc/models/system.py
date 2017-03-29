@@ -8,7 +8,6 @@ from ggrc.models.deferred import deferred
 from ggrc.models.mixins import BusinessObject, Timeboxed, CustomAttributable
 from ggrc.models.object_owner import Ownable
 from ggrc.models.object_person import Personable
-from ggrc.models.option import Option
 from ggrc.models.relationship import Relatable
 from ggrc.models.utils import validate_option
 from ggrc.models import track_object_state
@@ -42,6 +41,11 @@ class SystemOrProcess(track_object_state.HasObjectState, Timeboxed,
       'version',
       'network_zone',
   ]
+  _fulltext_attrs = [
+      'infrastructure',
+      'version',
+      'network_zone',
+  ]
   _update_attrs = [
       'infrastructure',
       'version',
@@ -51,7 +55,6 @@ class SystemOrProcess(track_object_state.HasObjectState, Timeboxed,
   _aliases = {
       "network_zone": {
           "display_name": "Network Zone",
-          "filter_by": "_filter_by_network_zone",
       },
   }
 
@@ -59,12 +62,6 @@ class SystemOrProcess(track_object_state.HasObjectState, Timeboxed,
   def validate_system_options(self, key, option):
     return validate_option(
         self.__class__.__name__, key, option, 'network_zone')
-
-  @classmethod
-  def _filter_by_network_zone(cls, predicate):
-    return Option.query.filter(
-        (Option.id == cls.network_zone_id) & predicate(Option.title)
-    ).exists()
 
   @classmethod
   def eager_query(cls):

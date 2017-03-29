@@ -51,6 +51,9 @@ class Audit(Snapshotable, clonable.Clonable,
   object_type = db.Column(
       db.String(length=250), nullable=False, default='Control')
 
+  assessments = db.relationship('Assessment', backref='audit')
+  issues = db.relationship('Issue', backref='audit')
+
   _publish_attrs = [
       'report_start_date',
       'report_end_date',

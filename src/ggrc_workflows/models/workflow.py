@@ -6,7 +6,6 @@
 This contains the basic Workflow object and a mixin for determining the state
 of the Objects that are mapped to any cycle tasks.
 """
-
 from datetime import date
 from sqlalchemy import and_
 from sqlalchemy import orm
@@ -262,13 +261,12 @@ class Workflow(mixins.CustomAttributable, HasOwnContext, mixins.Timeboxed,
                         end_date=None,
                         context=backlog_workflow
                         .get_or_create_object_context())
+
     db.session.add_all([backlog_workflow, backlog_cycle, backlog_ctg])
     db.session.flush()
 
     # add fulltext entries
     get_indexer().create_record(fts_record_for(backlog_workflow))
-    get_indexer().create_record(fts_record_for(backlog_cycle))
-    get_indexer().create_record(fts_record_for(backlog_ctg))
     return "Backlog workflow created"
 
 

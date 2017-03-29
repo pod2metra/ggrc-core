@@ -441,6 +441,12 @@ OP
         }
       };
     }
+  / _* op:'is' _*
+    {
+      return {
+        name: op,
+      };
+    }
 
 
 LEFT_P = '(' _*

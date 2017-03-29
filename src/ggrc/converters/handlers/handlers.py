@@ -298,7 +298,10 @@ class OwnerColumnHandler(UserColumnHandler):
       )
 
   def get_value(self):
-    emails = [owner.email for owner in self.row_converter.obj.owners]
+    """Get a list of object owner emails."""
+    cache = self.row_converter.block_converter.get_owners_cache()
+    emails = [cache[owner.person_id]
+              for owner in self.row_converter.obj.object_owners]
     return "\n".join(emails)
 
 
@@ -445,13 +448,15 @@ class MappingColumnHandler(ColumnHandler):
               object_type=class_._inflector.human_singular.title(),
               slug=slug,
           )
+      elif slug in self.new_slugs and not self.dry_run:
+        objects.append(self.new_slugs[slug])
       elif slug in self.new_slugs and self.dry_run:
         objects.append(slug)
       else:
         self.add_warning(errors.UNKNOWN_OBJECT,
                          object_type=class_._inflector.human_singular.title(),
                          slug=slug)
-    if self.mandatory and not objects:
+    if self.mandatory and not objects and self.row_converter.is_new:
       self.add_error(errors.MISSING_VALUE_ERROR, column_name=self.display_name)
     return objects
 
@@ -464,8 +469,10 @@ class MappingColumnHandler(ColumnHandler):
       return
     current_obj = self.row_converter.obj
     relationships = []
+    mapping = None
     for obj in self.value:
-      mapping = Relationship.find_related(current_obj, obj)
+      if current_obj.id:
+        mapping = Relationship.find_related(current_obj, obj)
       if not self.unmap and not mapping:
         mapping = Relationship(source=current_obj, destination=obj)
         relationships.append(mapping)
@@ -654,9 +661,17 @@ class AuditColumnHandler(MappingColumnHandler):
       # error, so there is no need to do anything here.
       return
 
-    context = getattr(self.value[0], "context_id", None)
-    if context:  # context is not available on dry_run
-      self.row_converter.obj.context_id = context
+    audit = self.value[0]
+
+    if isinstance(audit, Audit):
+      if not self.row_converter.is_new and \
+              audit.slug != self.row_converter.obj.audit.slug:
+        self.add_warning(errors.UNMODIFIABLE_COLUMN,
+                         column_name=self.display_name)
+        self.value = []
+      else:
+        self.row_converter.obj.context = audit.context
+        self.row_converter.obj.audit = audit
 
 
 class ObjectPersonColumnHandler(UserColumnHandler):
