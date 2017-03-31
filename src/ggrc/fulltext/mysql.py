@@ -251,5 +251,7 @@ def update_indexer(session):  # pylint:disable=unused-argument
 
   db.session.flush()
   for for_index in getattr(db.session, 'reindex_set', set()):
+    if for_index not in db.session:
+      continue
     for_index.update_indexer()
   db.session.reindex_set = set()
