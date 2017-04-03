@@ -115,6 +115,12 @@ class Commentable(object):
         viewonly=True,
     )
 
+  @classmethod
+  def eager_query(cls):
+    """Generates query with required relations"""
+    query = super(Commentable, cls).eager_query()
+    return query.options(orm.subqueryload("comments"))
+
 
 def reindex_by_relationship(relationship):
   """Reindex comment if relationship changed or created or deleted"""
