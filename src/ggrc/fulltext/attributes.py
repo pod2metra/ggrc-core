@@ -58,10 +58,12 @@ class FullTextAttr(object):
       results['__sort__'] = u':'.join(sorted(sorted_dict.values()))
     return results
 
-  # pylint: disable=unused-argument
   @staticmethod
   def get_filter_value(value, operation):
-    return value
+    """Returns list of values for sent operation and value"""
+    if operation in ['~', '!~']:
+      return [i for i in value.split() if i]
+    return [value]
 
 
 class MultipleSubpropertyFullTextAttr(FullTextAttr):

@@ -126,12 +126,29 @@ class TestExportTasks(TestCase):
   def test_filter_by_datetime_aliases(self, field, aliases):
     """Test filter by datetime field and it's aliases"""
     expected_results = defaultdict(list)
-    tasks = CycleTaskGroupObjectTask.query.filter(
-        CycleTaskGroupObjectTask.id.in_(self.generate_tasks_for_cycle(4))
-    ).all()
-    for task in tasks:
+    for task_id in self.generate_tasks_for_cycle(4):
+      task = CycleTaskGroupObjectTask.query.get(task_id)
       for value in self.generate_date_strings(getattr(task, field)):
         expected_results[value].append(task.slug)
     for value, slugs in expected_results.iteritems():
       for alias in aliases:
         self.assertSlugs(alias, value, slugs)
+
+  def test_export_by_like_title(self):
+    """Test export by like operation"""
+    single_name = "absde 123 new foo bar"
+    names_pool = [single_name] + single_name.split()
+    slugs = {}
+    for name in names_pool:
+      slugs[name] = factories.CycleTaskFactory(title=name).slug
+    for name in names_pool:
+      if name == single_name:
+        self.assertSlugs("task title", name, slugs.values(), "~")
+        self.assertSlugs("task title", name, [], "!~")
+      else:
+        same_slugs = [slugs[name], slugs[single_name]]
+        self.assertSlugs("task title", name, same_slugs, "~")
+        self.assertSlugs("task title",
+                         name,
+                         set(slugs.values()) - set(same_slugs),
+                         "!~")

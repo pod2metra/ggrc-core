@@ -125,5 +125,9 @@ def autocast(exp, target_class):
                           "<=" if operation == "=" else operation)
     extra_exp = build_exp(left_exp, right_exp, "AND") or left_exp or right_exp
   if any_parser:
-    current_exp = exp
+    for value in any_parser.get_filter_value(unicode(exp['right']), operation):
+      tmp_exp = build_exp(key, value, operation)
+      current_exp = build_exp(
+          current_exp, tmp_exp, 'OR' if operation == "~" else "AND"
+      ) or tmp_exp
   return build_exp(extra_exp, current_exp, "OR") or current_exp or extra_exp

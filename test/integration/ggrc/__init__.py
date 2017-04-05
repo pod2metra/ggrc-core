@@ -256,7 +256,7 @@ class TestCase(BaseTestCase, object):
     return results
 
   # pylint: disable=invalid-name
-  def assertSlugs(self, field, value, slugs):
+  def assertSlugs(self, field, value, slugs, operation="="):
     """Assert slugs for selected search"""
     assert self.model
     search_request = [{
@@ -264,7 +264,7 @@ class TestCase(BaseTestCase, object):
         "filters": {
             "expression": {
                 "left": field,
-                "op": {"name": "="},
+                "op": {"name": operation},
                 "right": value,
             },
         },
@@ -273,8 +273,13 @@ class TestCase(BaseTestCase, object):
     parsed_data = self.export_parsed_csv(
         search_request
     )[self.model._inflector.title_singular.title()]
-    self.assertEqual(sorted(slugs),
-                     sorted([i["Code*"] for i in parsed_data]))
+    expected = sorted(slugs)
+    received = sorted([i["Code*"] for i in parsed_data])
+    self.assertEqual(expected, received,
+                     "Slugs are not equal for alias `{}` "
+                     "and value `{}`"
+                     "\n expected {}"
+                     "\n received {}".format(field, value, expected, received))
 
   def generate_date_strings(self, datetime_value, formats=None):
     """Generator datestrings
