@@ -6,7 +6,6 @@
 import sqlalchemy.exc
 
 from ggrc import db
-from ggrc import views
 from ggrc.fulltext import mysql
 from integration.ggrc import TestCase
 from integration.ggrc.models import factories
@@ -28,9 +27,6 @@ class TestCAD(TestCase):
     factory = factories.MarketFactory()
     CAV(custom_attribute=cad1, attributable=factory, attribute_value="x")
     CAV(custom_attribute=cad2, attributable=factory, attribute_value="x")
-
-    views.do_reindex()
-
     title1_count = mysql.MysqlRecordProperty.query.filter(
         mysql.MysqlRecordProperty.property == title1
     ).count()
@@ -43,9 +39,6 @@ class TestCAD(TestCase):
     cad1 = CAD(title=title1, definition_type="market")
     factory = factories.MarketFactory()
     CAV(custom_attribute=cad1, attributable=factory, attribute_value="x")
-
-    views.do_reindex()
-
     title1_count = mysql.MysqlRecordProperty.query.filter(
         mysql.MysqlRecordProperty.property == title1
     ).count()

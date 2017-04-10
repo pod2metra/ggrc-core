@@ -195,11 +195,6 @@ class TestCustomAttributeImportExport(TestCase):
     filename = "custom_attribute_tests.csv"
     self.import_file(filename)
 
-    # TODO: there is a bug that imports do not index all custom attributes.
-    # After fixing this bug remove the following two lines.
-    from ggrc import views
-    views.do_reindex()
-
     data = [{
         "object_name": "Product",
         "filters": {
