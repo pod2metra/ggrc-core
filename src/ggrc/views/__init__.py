@@ -23,8 +23,7 @@ from ggrc.builder.json import publish
 from ggrc.builder.json import publish_representation
 from ggrc.converters import get_importables, get_exportables
 from ggrc.extensions import get_extension_modules
-from ggrc.fulltext import get_indexer, get_indexed_model_names
-from ggrc.fulltext.recordbuilder import fts_record_for
+from ggrc.fulltext import get_indexed_model_names
 from ggrc.login import get_current_user
 from ggrc.login import login_required
 from ggrc.models import all_models
@@ -73,10 +72,6 @@ def reindex(_):
 def do_reindex():
   """Update the full text search index."""
 
-  indexer = get_indexer()
-  with benchmark('Delete all records'):
-    indexer.delete_all_records(False)
-
   indexed_models = get_indexed_model_names()
 
   people = db.session.query(all_models.Person.id, all_models.Person.name,
@@ -94,7 +89,7 @@ def do_reindex():
       )
       for query_chunk in generate_query_chunks(query):
         for instance in query_chunk:
-          indexer.create_record(fts_record_for(instance), False)
+          instance.update_indexer()
         db.session.commit()
 
   reindex_snapshots()
