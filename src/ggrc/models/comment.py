@@ -92,6 +92,12 @@ class Commentable(object):
       MultipleSubpropertyFullTextAttr("comment", "comments", ["description"]),
   ]
 
+  @classmethod
+  def indexed_query(cls):
+    return super(Commentable, cls).indexed_query().options(
+        orm.Load(cls).subqueryload("comments").load_only("id", "description")
+    )
+
   @declared_attr
   def comments(self):
     """Comments related to self via Relationship table."""
