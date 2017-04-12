@@ -278,6 +278,11 @@ class CycleTaskGroupObjectTask(
             "description",
             "id"
         ),
+        orm.Load(cls).joinedload("contact").load_only(
+            "email",
+            "name",
+            "id"
+        ),
     )
 
 

@@ -163,5 +163,10 @@ class Cycle(WithContact, Stateful, Timeboxed, Described, Titled, Slugged,
             "email",
             "name",
             "id"
-        )
+        ),
+        orm.Load(cls).joinedload("contact").load_only(
+            "email",
+            "name",
+            "id"
+        ),
     )
