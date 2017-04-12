@@ -23,7 +23,7 @@ from ggrc.builder.json import publish
 from ggrc.builder.json import publish_representation
 from ggrc.converters import get_importables, get_exportables
 from ggrc.extensions import get_extension_modules
-from ggrc.fulltext import get_indexer, get_indexed_model_names
+from ggrc.fulltext import get_indexer, get_indexed_model_names, mixin
 from ggrc.fulltext.recordbuilder import fts_record_for
 from ggrc.login import get_current_user
 from ggrc.login import login_required
@@ -89,7 +89,11 @@ def do_reindex():
     with benchmark("Create records for %s" % model):
       model = get_model(model)
       mapper_class = model._sa_class_manager.mapper.base_mapper.class_
-      query = model.query.options(
+      if issubclass(model, mixin.Indexed):
+        query = model.indexed_query()
+      else:
+        query = model.query
+      query = query.options(
           db.undefer_group(mapper_class.__name__ + '_complete'),
       )
       for query_chunk in generate_query_chunks(query):
