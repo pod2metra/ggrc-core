@@ -273,7 +273,11 @@ class CycleTaskGroupObjectTask(
             "email",
             "name",
             "id"
-        )
+        ),
+        orm.Load(cls).subqueryload("cycle_task_entries").load_only(
+            "description",
+            "id"
+        ),
     )
 
 
