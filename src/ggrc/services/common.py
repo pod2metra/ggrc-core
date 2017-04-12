@@ -313,10 +313,13 @@ def get_modified_objects(session):
 def update_index(session, cache):
   """Update fulltext index records for cached objects."""
   from ggrc.snapshotter.indexer import reindex_snapshots
+  from ggrc.fulltext.mixin import Indexed
   reindex_snapshots_list = []
   if cache:
     indexer = get_indexer()
     for obj in cache.new:
+      if isinstance(obj, Indexed):
+        continue
       exists_query = session.query(indexer.record_type.query.filter(
           indexer.record_type.type == obj.__class__.__name__,
           indexer.record_type.key == obj.id).exists())
@@ -325,6 +328,8 @@ def update_index(session, cache):
       elif not exists_query.all()[0][0]:
         indexer.create_record(fts_record_for(obj), commit=False)
     for obj in cache.dirty:
+      if isinstance(obj, Indexed):
+        continue
       if obj.type == "Snapshot":
         reindex_snapshots_list.append(obj.id)
       else:

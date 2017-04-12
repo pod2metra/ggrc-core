@@ -1,6 +1,7 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 """Full text index engine for Mysql DB backend"""
+from collections import defaultdict
 
 from sqlalchemy import and_
 from sqlalchemy import case
@@ -250,8 +251,12 @@ def update_indexer(session):  # pylint:disable=unused-argument
   for all updated related instance before commit"""
 
   db.session.flush()
+  models_ids_to_reindex = defaultdict(set)
   for for_index in getattr(db.session, 'reindex_set', set()):
     if for_index not in db.session:
       continue
-    for_index.update_indexer()
+    models_ids_to_reindex[for_index.__class__].add(for_index.id)
   db.session.reindex_set = set()
+  for model, ids in models_ids_to_reindex.iteritems():
+    for instance in model.indexed_query().filter(model.id.in_(ids)).all():
+      instance.update_indexer()

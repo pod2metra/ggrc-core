@@ -247,6 +247,35 @@ class CycleTaskGroupObjectTask(
         orm.joinedload('cycle_task_entries'),
     )
 
+  @classmethod
+  def indexed_query(cls):
+    return super(CycleTaskGroupObjectTask, cls).indexed_query().options(
+        orm.Load(cls).joinedload("cycle_task_group").load_only(
+            "id",
+            "title",
+            "end_date"
+        ),
+        orm.Load(cls).joinedload("cycle").load_only(
+            "id",
+            "title",
+            "next_due_date"
+        ),
+        orm.Load(cls).joinedload("cycle_task_group").joinedload(
+            "contact"
+        ).load_only(
+            "email",
+            "name",
+            "id"
+        ),
+        orm.Load(cls).joinedload("cycle").joinedload(
+            "contact"
+        ).load_only(
+            "email",
+            "name",
+            "id"
+        )
+    )
+
 
 class CycleTaskable(object):
   """ Requires the Relatable mixin, otherwise cycle_task_group_object_tasks

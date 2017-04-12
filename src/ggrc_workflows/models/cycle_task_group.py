@@ -128,6 +128,35 @@ class CycleTaskGroup(WithContact, Stateful, Slugged, Timeboxed, Described,
     ).exists()
 
   @classmethod
+  def indexed_query(cls):
+    return super(CycleTaskGroup, cls).indexed_query().options(
+        orm.Load(cls).subqueryload("cycle_task_group_tasks").load_only(
+            "id",
+            "title",
+            "end_date"
+        ),
+        orm.Load(cls).joinedload("cycle").load_only(
+            "id",
+            "title",
+            "next_due_date"
+        ),
+        orm.Load(cls).subqueryload("cycle_task_group_tasks").joinedload(
+            "contact"
+        ).load_only(
+            "email",
+            "name",
+            "id"
+        ),
+        orm.Load(cls).joinedload("cycle").joinedload(
+            "contact"
+        ).load_only(
+            "email",
+            "name",
+            "id"
+        )
+    )
+
+  @classmethod
   def eager_query(cls):
     """Add cycle tasks and objects to cycle task group eager query.
 

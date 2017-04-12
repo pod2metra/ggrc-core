@@ -28,3 +28,7 @@ class Indexed(object):
     indexer = get_indexer()
     indexer.delete_record(self.id, self.__class__.__name__, False)
     indexer.create_record(fts_record_for(self), False)
+
+  @classmethod
+  def indexed_query(cls):
+    return cls.query
