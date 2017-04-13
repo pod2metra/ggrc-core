@@ -20,14 +20,19 @@ class Indexed(object):
 
   PROPERTY_TEMPLATE = u"{}"
 
+  def delere_record(self):
+    get_indexer().delete_record(self.id, self.__class__.__name__, False)
+
+  def create_record(self):
+    from .recordbuilder import fts_record_for
+    get_indexer().create_record(fts_record_for(self), False)
+
   def update_indexer(self):
     """Update indexer for current instance"""
-    from .recordbuilder import fts_record_for
     if self.__class__.__name__ not in get_indexed_model_names():
       return
-    indexer = get_indexer()
-    indexer.delete_record(self.id, self.__class__.__name__, False)
-    indexer.create_record(fts_record_for(self), False)
+    self.delere_record()
+    self.create_record()
 
   @classmethod
   def indexed_query(cls):
