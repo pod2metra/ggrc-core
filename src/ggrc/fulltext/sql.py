@@ -8,11 +8,11 @@ from ggrc.fulltext import Indexer
 
 
 class SqlIndexer(Indexer):
-  def create_record(self, record, commit=True):
+  def records_generator(self, record):
     for prop, value in record.properties.items():
       for subproperty, content in value.items():
         if content is not None:
-          db.session.add(self.record_type(
+          yield self.record_type(
               key=record.key,
               type=record.type,
               context_id=record.context_id,
@@ -20,7 +20,11 @@ class SqlIndexer(Indexer):
               property=prop,
               subproperty=unicode(subproperty),
               content=unicode(content),
-          ))
+          )
+
+  def create_record(self, record, commit=True):
+    for db_record in self.records_generator(record):
+      db.session.add(db_record)
     if commit:
       db.session.commit()
 

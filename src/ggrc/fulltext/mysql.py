@@ -258,5 +258,4 @@ def update_indexer(session):  # pylint:disable=unused-argument
     models_ids_to_reindex[for_index.__class__].add(for_index.id)
   db.session.reindex_set = set()
   for model, ids in models_ids_to_reindex.iteritems():
-    for instance in model.indexed_query().filter(model.id.in_(ids)).all():
-      instance.update_indexer()
+    model.bulk_record_update_for(ids)
