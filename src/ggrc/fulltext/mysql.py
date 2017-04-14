@@ -250,9 +250,8 @@ def update_indexer(session):  # pylint:disable=unused-argument
   """General function to update index
 
   for all updated related instance before commit"""
-
-  db.session.flush()
   models_ids_to_reindex = defaultdict(set)
+  db.session.flush()
   for for_index in getattr(db.session, 'reindex_set', set()):
     if for_index not in db.session:
       continue

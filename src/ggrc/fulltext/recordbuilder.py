@@ -3,25 +3,33 @@
 
 """Module for full text index record builder."""
 
-import flask
-
 from ggrc import db
 import ggrc.models.all_models
 from ggrc.models.reflection import AttributeInfo
 from ggrc.models.person import Person
 from ggrc.models.mixins import CustomAttributable
-from ggrc.fulltext import Record
 from ggrc.fulltext.attributes import FullTextAttr
 from ggrc.fulltext.mixin import Indexed
+
+
+class Record(object):
+
+  def __init__(self, key, rec_type, context_id, properties, tags=""):
+    self.key = key
+    self.type = rec_type
+    self.context_id = context_id
+    self.tags = tags
+    self.properties = properties
 
 
 class RecordBuilder(object):
   """Basic record builder for full text index table."""
   # pylint: disable=too-few-public-methods
 
-  def __init__(self, tgt_class):
+  def __init__(self, tgt_class, indexer):
     self._fulltext_attrs = AttributeInfo.gather_attrs(
         tgt_class, '_fulltext_attrs')
+    self.indexer = indexer
 
   def _get_properties(self, obj):
     """Get indexable properties and values.
@@ -65,40 +73,40 @@ class RecordBuilder(object):
         properties[property_name] = attr.get_property_for(obj)
     return properties
 
-  @staticmethod
-  def get_person_id_name_email(person):
+  def get_person_id_name_email(self, person):
     """Get id, name and email for person (either object or dict).
 
     If there is a global people map, get the data from it instead of the DB.
     """
-    if hasattr(flask.g, "people_map"):
-      if isinstance(person, dict):
-        person_id = person["id"]
-      else:
-        person_id = person.id
-      person_name, person_email = flask.g.people_map[person_id]
+    if isinstance(person, dict):
+      person_id = person["id"]
+    else:
+      person_id = person.id
+    if person_id in self.indexer.cache['people_map']:
+      person_name, person_email = self.indexer.cache['people_map'][person_id]
     else:
       if isinstance(person, dict):
         person = db.session.query(Person).filter_by(id=person["id"]).one()
       person_id = person.id
       person_name = person.name
       person_email = person.email
+      self.indexer.cache['people_map'][person_id] = (person_name, person_email)
     return person_id, person_name, person_email
 
-  @classmethod
-  def build_person_subprops(cls, person):
+  def build_person_subprops(self, person):
     """Get dict of Person properties for fulltext indexing
 
     If Person provided by Revision, need to go to DB to get Person data
     """
     subproperties = {}
-    person_id, person_name, person_email = cls.get_person_id_name_email(person)
+    person_id, person_name, person_email = self.get_person_id_name_email(
+        person
+    )
     subproperties["{}-name".format(person_id)] = person_name
     subproperties["{}-email".format(person_id)] = person_email
     return subproperties
 
-  @classmethod
-  def build_list_sort_subprop(cls, people):
+  def build_list_sort_subprop(self, people):
     """Get a special subproperty for sorting.
 
     Its content is :-separated sorted list of (name or email) of the people in
@@ -106,7 +114,7 @@ class RecordBuilder(object):
     """
     if not people:
       return {"__sort__": ""}
-    _, _, emails = zip(*(cls.get_person_id_name_email(p) for p in people))
+    _, _, emails = zip(*(self.get_person_id_name_email(p) for p in people))
     sort_values = (email.split("@")[0] for email in emails)
     content = ":".join(sorted(sort_values))
     return {"__sort__": content}
@@ -158,20 +166,3 @@ class RecordBuilder(object):
         obj.context_id,
         properties
     )
-
-
-def get_record_builder(obj, builders={}):
-  # pylint: disable=dangerous-default-value
-  # This default value is used for simple memoization and should be refactored
-  # with proper memoization in the future.
-  """Get a record builder for a given class."""
-  builder = builders.get(obj.__class__.__name__)
-  if builder is None:
-    builder = RecordBuilder(obj.__class__)
-    builders[obj.__class__.__name__] = builder
-  return builder
-
-
-def fts_record_for(obj):
-  builder = get_record_builder(obj)
-  return builder.as_record(obj)

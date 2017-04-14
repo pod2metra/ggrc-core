@@ -24,7 +24,6 @@ from ggrc.builder.json import publish_representation
 from ggrc.converters import get_importables, get_exportables
 from ggrc.extensions import get_extension_modules
 from ggrc.fulltext import get_indexer, get_indexed_model_names, mixin
-from ggrc.fulltext.recordbuilder import fts_record_for
 from ggrc.login import get_current_user
 from ggrc.login import login_required
 from ggrc.models import all_models
@@ -81,7 +80,7 @@ def do_reindex():
 
   people = db.session.query(all_models.Person.id, all_models.Person.name,
                             all_models.Person.email)
-  g.people_map = {p.id: (p.name, p.email) for p in people}
+  indexer.cache["people_map"] = {p.id: (p.name, p.email) for p in people}
 
   for model in sorted(indexed_models):
     # pylint: disable=protected-access
@@ -98,12 +97,11 @@ def do_reindex():
       )
       for query_chunk in generate_query_chunks(query):
         for instance in query_chunk:
-          indexer.create_record(fts_record_for(instance), False)
+          indexer.create_record(indexer.fts_record_for(instance), False)
         db.session.commit()
 
   reindex_snapshots()
-
-  delattr(g, "people_map")
+  indexer.invalidate_cache()
 
 
 def get_permissions_json():

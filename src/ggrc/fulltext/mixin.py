@@ -8,7 +8,8 @@ from collections import namedtuple
 from sqlalchemy import inspect
 
 from ggrc import db
-from . import get_indexed_model_names, get_indexer
+
+from . import get_indexer, get_indexed_model_names
 
 
 ReindexRule = namedtuple("ReindexRule", ["model", "rule"])
@@ -28,8 +29,8 @@ class Indexed(object):
     get_indexer().delete_record(self.id, self.__class__.__name__, False)
 
   def create_record(self):
-    from .recordbuilder import fts_record_for
-    get_indexer().create_record(fts_record_for(self), False)
+    indexer = get_indexer()
+    indexer.create_record(indexer.fts_record_for(self), False)
 
   def update_indexer(self):
     """Update indexer for current instance"""
@@ -48,12 +49,11 @@ class Indexed(object):
       return
     db.session.execute("SET unique_checks=0;")
     db.session.execute("SET foreign_key_checks=0;")
-    from .recordbuilder import fts_record_for
     records = []
     indexer = get_indexer()
     record_model = indexer.record_type
     for instance in cls.indexed_query().filter(cls.id.in_(ids)).all():
-      records.append(fts_record_for(instance))
+      records.append(indexer.fts_record_for(instance))
     db.session.execute(record_model.__table__.delete().where(
         record_model.type == cls.__name__
     ).where(

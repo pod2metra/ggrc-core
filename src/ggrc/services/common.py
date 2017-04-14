@@ -32,7 +32,6 @@ import ggrc.models
 from ggrc import db, utils
 from ggrc.utils import as_json, benchmark
 from ggrc.fulltext import get_indexer
-from ggrc.fulltext.recordbuilder import fts_record_for
 from ggrc.login import get_current_user_id, get_current_user
 from ggrc.models.cache import Cache
 from ggrc.models.event import Event
@@ -326,14 +325,14 @@ def update_index(session, cache):
       if obj.type == "Snapshot":
         reindex_snapshots_list.append(obj.id)
       elif not exists_query.all()[0][0]:
-        indexer.create_record(fts_record_for(obj), commit=False)
+        indexer.create_record(indexer.fts_record_for(obj), commit=False)
     for obj in cache.dirty:
       if isinstance(obj, Indexed):
         continue
       if obj.type == "Snapshot":
         reindex_snapshots_list.append(obj.id)
       else:
-        indexer.update_record(fts_record_for(obj), commit=False)
+        indexer.update_record(indexer.fts_record_for(obj), commit=False)
     for obj in cache.deleted:
       indexer.delete_record(obj.id, obj.__class__.__name__, commit=False)
     session.commit()

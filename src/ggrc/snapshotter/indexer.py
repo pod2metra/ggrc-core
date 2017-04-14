@@ -12,7 +12,7 @@ from ggrc import db
 from ggrc import models
 from ggrc.models import all_models
 from ggrc.fulltext.mysql import MysqlRecordProperty as Record
-from ggrc.fulltext.recordbuilder import RecordBuilder
+from ggrc.fulltext import get_indexer
 from ggrc.models.reflection import AttributeInfo
 from ggrc.utils import generate_query_chunks
 
@@ -201,7 +201,9 @@ def insert_records(payload):
 def get_person_data(rec, person):
   """Get list of Person properties for fulltext indexing
   """
-  subprops = RecordBuilder.build_person_subprops(person)
+  indexer = get_indexer()
+  builder = indexer.get_builder(models.Person)
+  subprops = builder.build_person_subprops(person)
   data = []
   for key, val in subprops.items():
     newrec = rec.copy()
@@ -213,7 +215,9 @@ def get_person_data(rec, person):
 def get_person_sort_subprop(rec, people):
   """Get a special subproperty for sorting
   """
-  subprops = RecordBuilder.build_list_sort_subprop(people)
+  indexer = get_indexer()
+  builder = indexer.get_builder(models.Person)
+  subprops = builder.build_list_sort_subprop(people)
   data = []
   for key, val in subprops.items():
     newrec = rec.copy()
