@@ -20,6 +20,7 @@ from sqlalchemy import event
 from ggrc import db
 from ggrc.login import is_creator
 from ggrc.models import all_models
+from ggrc.models.inflector import get_model
 from ggrc.utils import query_helpers
 from ggrc.rbac import context_query_filter
 from ggrc.fulltext.sql import SqlIndexer
@@ -255,7 +256,9 @@ def update_indexer(session):  # pylint:disable=unused-argument
   for for_index in getattr(db.session, 'reindex_set', set()):
     if for_index not in db.session:
       continue
-    models_ids_to_reindex[for_index.__class__].add(for_index.id)
+    type_name, id_value = for_index.get_reindex_pair()
+    if type_name:
+      models_ids_to_reindex[type_name].add(id_value)
   db.session.reindex_set = set()
-  for model, ids in models_ids_to_reindex.iteritems():
-    model.bulk_record_update_for(ids)
+  for model_name, ids in models_ids_to_reindex.iteritems():
+    get_model(model_name).bulk_record_update_for(ids)

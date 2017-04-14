@@ -105,6 +105,25 @@ class CustomAttributable(object):
   def custom_attribute_values(self):
     return self._custom_attribute_values
 
+  @classmethod
+  def indexed_query(cls):
+    return super(CustomAttributable, cls).indexed_query().options(
+        orm.Load(cls).subqueryload(
+            "custom_attribute_values"
+        ).joinedload(
+            "custom_attribute"
+        ).load_only(
+            "id",
+            "title",
+            "attribute_type",
+        ),
+        orm.Load(cls).subqueryload("custom_attribute_values").load_only(
+            "id",
+            "attribute_value",
+            "attribute_object_id",
+        ),
+    )
+
   @custom_attribute_values.setter
   def custom_attribute_values(self, values):
     """Setter function for custom attribute values.

@@ -9,6 +9,7 @@ from ggrc import db
 import ggrc.models.all_models
 from ggrc.models.reflection import AttributeInfo
 from ggrc.models.person import Person
+from ggrc.models.mixins import CustomAttributable
 from ggrc.fulltext import Record
 from ggrc.fulltext.attributes import FullTextAttr
 from ggrc.fulltext.mixin import Indexed
@@ -142,24 +143,18 @@ class RecordBuilder(object):
     If there is no subproperty - empty string is used as a key
     """
     # Defaults. These work when the record is not a custom attribute
-    record_id = obj.id
-    record_type = obj.__class__.__name__
 
-    # Override defaults to index custom attribute values as attributes of the
-    # parent object (the CustomAttributable).
-    if record_type == "CustomAttributeValue":
-      record_id = obj.attributable_id
-      record_type = obj.attributable_type
-      properties = self.get_custom_attribute_properties(obj)
-    else:
-      properties = self._get_properties(obj)
+    properties = self._get_properties(obj)
+    if isinstance(obj, CustomAttributable):
+      for custom_attr in obj.custom_attribute_values:
+        properties.update(self.get_custom_attribute_properties(custom_attr))
 
     return Record(
         # This logic saves custom attribute values as attributes of the object
         # that owns the attribute values. When obj is not a
         # CustomAttributeValue the values are saved directly.
-        record_id,
-        record_type,
+        obj.id,
+        obj.__class__.__name__,
         obj.context_id,
         properties
     )

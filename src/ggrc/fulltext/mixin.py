@@ -38,6 +38,9 @@ class Indexed(object):
     self.delete_record()
     self.create_record()
 
+  def get_reindex_pair(self):
+    return (self.__class__.__name__, self.id)
+
   @classmethod
   def bulk_record_update_for(cls, ids):
     """Bulky update index records for current class"""
