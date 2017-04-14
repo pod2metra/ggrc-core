@@ -1,12 +1,13 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
+"""Fulltext init indexer mudule"""
 from collections import defaultdict
 
 from ggrc.extensions import get_extension_instance
 
 
 class Indexer(object):
+  """General class for indexer"""
 
   def __init__(self, settings):
     self.indexer_rules = defaultdict(list)
@@ -14,6 +15,10 @@ class Indexer(object):
     self.builders = {}
 
   def get_builder(self, obj_class):
+    """return recordbuilder for sent class
+
+    save it in builders dict arguments and cache it here
+    """
     from .recordbuilder import RecordBuilder
     builder = self.builders.get(obj_class.__name__)
     if builder is not None:
@@ -42,12 +47,13 @@ class Indexer(object):
 
 
 def resolve_default_text_indexer():
+  """Get indexer for settings fulltest db"""
   from ggrc import settings
   db_scheme = settings.SQLALCHEMY_DATABASE_URI.split(':')[0].split('+')[0]
   return 'ggrc.fulltext.{db_scheme}.Indexer'.format(db_scheme=db_scheme)
 
 
-def get_indexer(indexer=[]):
+def get_indexer():
   return get_extension_instance(
       'FULLTEXT_INDEXER', resolve_default_text_indexer)
 

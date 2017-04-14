@@ -47,8 +47,6 @@ class Indexed(object):
     """Bulky update index records for current class"""
     if not ids:
       return
-    db.session.execute("SET unique_checks=0;")
-    db.session.execute("SET foreign_key_checks=0;")
     records = []
     indexer = get_indexer()
     record_model = indexer.record_type
@@ -68,8 +66,6 @@ class Indexed(object):
     if not values:
       return
     db.session.execute(record_model.__table__.insert().values(values))
-    db.session.execute("SET unique_checks=1;")
-    db.session.execute("SET foreign_key_checks=1;")
 
   @classmethod
   def indexed_query(cls):

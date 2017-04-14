@@ -117,6 +117,7 @@ def runner(mapper, content, target):  # pylint:disable=unused-argument
 
 
 def init_indexer():
+  """Indexing initialization procedure"""
   import ggrc.fulltext
   from ggrc.fulltext.mixin import Indexed
   from ggrc.models import all_models
