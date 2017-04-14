@@ -52,11 +52,6 @@ class Indexed(object):
     record_model = indexer.record_type
     for instance in cls.indexed_query().filter(cls.id.in_(ids)).all():
       records.append(indexer.fts_record_for(instance))
-    db.session.execute(record_model.__table__.delete().where(
-        record_model.type == cls.__name__
-    ).where(
-        record_model.key.in_(ids)
-    ))
     db_records = itertools.chain(
         *[indexer.records_generator(i) for i in records]
     )
@@ -65,7 +60,20 @@ class Indexed(object):
               for db_record in db_records]
     if not values:
       return
-    db.session.execute(record_model.__table__.insert().values(values))
+    db.session.execute("SET unique_checks=0;")
+    db.session.execute("SET foreign_key_checks=0;")
+    delete_qeury = record_model.__table__.delete().where(
+        record_model.type == cls.__name__
+    ).where(
+        record_model.key.in_(ids)
+    )
+    insert_query = record_model.__table__.insert().values(values)
+    try:
+      db.session.execute(delete_qeury)
+      db.session.execute(insert_query)
+    finally:
+      db.session.execute("SET unique_checks=1;")
+      db.session.execute("SET foreign_key_checks=1;")
 
   @classmethod
   def indexed_query(cls):
