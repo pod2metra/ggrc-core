@@ -9,7 +9,7 @@ from sqlalchemy import inspect
 
 from ggrc import db
 
-from . import get_indexer, get_indexed_model_names
+from ggrc import fulltext
 
 
 ReindexRule = namedtuple("ReindexRule", ["model", "rule"])
@@ -26,15 +26,19 @@ class Indexed(object):
   PROPERTY_TEMPLATE = u"{}"
 
   def delete_record(self):
-    get_indexer().delete_record(self.id, self.__class__.__name__, False)
+    fulltext.get_indexer().delete_record(
+        self.id,
+        self.__class__.__name__,
+        False
+    )
 
   def create_record(self):
-    indexer = get_indexer()
+    indexer = fulltext.get_indexer()
     indexer.create_record(indexer.fts_record_for(self), False)
 
   def update_indexer(self):
     """Update indexer for current instance"""
-    if self.__class__.__name__ not in get_indexed_model_names():
+    if self.__class__.__name__ not in fulltext.get_indexed_model_names():
       return
     self.delete_record()
     self.create_record()
@@ -43,37 +47,39 @@ class Indexed(object):
     return (self.__class__.__name__, self.id)
 
   @classmethod
-  def bulk_record_update_for(cls, ids):
-    """Bulky update index records for current class"""
+  def get_insert_query_for(cls, ids):
+    """Return insert class record query. It will return None, if it's empty."""
     if not ids:
       return
-    records = []
-    indexer = get_indexer()
-    record_model = indexer.record_type
-    for instance in cls.indexed_query().filter(cls.id.in_(ids)).all():
-      records.append(indexer.fts_record_for(instance))
-    db_records = itertools.chain(
-        *[indexer.records_generator(i) for i in records]
-    )
-    keys = inspect(record_model).c
-    values = [{c.name: getattr(db_record, a) for a, c in keys.items()}
-              for db_record in db_records]
-    if not values:
+    instances = cls.indexed_query().filter(cls.id.in_(ids))
+    indexer = fulltext.get_indexer()
+    keys = inspect(indexer.record_type).c
+    records = (indexer.fts_record_for(i) for i in instances)
+    rows = itertools.chain(*[indexer.records_generator(i) for i in records])
+    values = [{c.name: getattr(r, a) for a, c in keys.items()} for r in rows]
+    if values:
+      return indexer.record_type.__table__.insert().values(values)
+
+  @classmethod
+  def get_delete_query_for(cls, ids):
+    """Return delete class record query. If ids are empty, will return None."""
+    if not ids:
       return
-    db.session.execute("SET unique_checks=0;")
-    db.session.execute("SET foreign_key_checks=0;")
-    delete_qeury = record_model.__table__.delete().where(
-        record_model.type == cls.__name__
+    indexer = fulltext.get_indexer()
+    return indexer.record_type.__table__.delete().where(
+        indexer.record_type.type == cls.__name__
     ).where(
-        record_model.key.in_(ids)
+        indexer.record_type.key.in_(ids)
     )
-    insert_query = record_model.__table__.insert().values(values)
-    try:
-      db.session.execute(delete_qeury)
-      db.session.execute(insert_query)
-    finally:
-      db.session.execute("SET unique_checks=1;")
-      db.session.execute("SET foreign_key_checks=1;")
+
+  @classmethod
+  def bulk_record_update_for(cls, ids):
+    """Bulky update index records for current class"""
+    delete_query = cls.get_delete_query_for(ids)
+    insert_query = cls.get_insert_query_for(ids)
+    for query in [delete_query, insert_query]:
+      if query is not None:
+        db.session.execute(query)
 
   @classmethod
   def indexed_query(cls):

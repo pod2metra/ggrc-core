@@ -19,11 +19,11 @@ class Indexer(object):
 
     save it in builders dict arguments and cache it here
     """
-    from .recordbuilder import RecordBuilder
     builder = self.builders.get(obj_class.__name__)
     if builder is not None:
       return builder
-    builder = RecordBuilder(obj_class, self)
+    from ggrc.fulltext import recordbuilder
+    builder = recordbuilder.RecordBuilder(obj_class, self)
     self.builders[obj_class.__name__] = builder
     return builder
 
