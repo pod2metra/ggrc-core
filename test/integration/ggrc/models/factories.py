@@ -224,7 +224,7 @@ class AssessmentTemplateFactory(TitledFactory):
                     "verifiers": "Object Owners"}
 
 
-class ContractFactory(ModelFactory):
+class ContractFactory(TitledFactory):
 
   class Meta:
     model = models.Contract
