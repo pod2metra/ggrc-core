@@ -18,12 +18,12 @@ def _base_user_query():
       orm.undefer_group('Person_complete'))
 
 
-def find_user_by_id(id):
+def find_user_by_id(user_id):
   """Find Person object by some ``id``.
   Note that ``id`` need not be Person().id, but should match the value
   returned by ``Person().get_id()``.
   """
-  return _base_user_query().filter(Person.id == int(id)).first()
+  return _base_user_query().filter(Person.id == int(user_id)).first()
 
 
 def find_user_by_email(email):
@@ -31,6 +31,7 @@ def find_user_by_email(email):
 
 
 def add_creator_role(user):
+  """Add createor role for sent user."""
   user_creator_role = UserRole(
       person=user,
       role=basic_roles.creator(),
@@ -41,6 +42,11 @@ def add_creator_role(user):
 
 
 def create_user(email, **kwargs):
+  """Create User
+
+  attr:
+      email (string) required
+  """
   user = Person(email=email, **kwargs)
   db.session.add(user)
   db.session.flush()
@@ -57,6 +63,7 @@ def create_user(email, **kwargs):
 
 
 def find_or_create_user_by_email(email, **kwargs):
+  """Generates or find user for selected email."""
   user = find_user_by_email(email)
   if not user:
     user = create_user(email, **kwargs)
@@ -69,6 +76,7 @@ def find_or_create_user_by_email(email, **kwargs):
 
 
 def get_next_url(request, default_url):
+  """Returns next url from requres or default url if it's not found."""
   if 'next' in request.args:
     next_url = request.args['next']
     return next_url
