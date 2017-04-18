@@ -11,6 +11,7 @@ from .relationship import Relatable
 from .utils import validate_option
 
 from sqlalchemy.orm import validates
+from sqlalchemy import orm
 from .track_object_state import HasObjectState
 
 
@@ -72,6 +73,21 @@ class Directive(HasObjectState, Timeboxed, BusinessObject, db.Model):
       'version',
   ]
 
+  @classmethod
+  def indexed_query(cls):
+    return super(Directive, cls).indexed_query().options(
+        orm.Load(cls).joinedload('audit_frequency'),
+        orm.Load(cls).joinedload('audit_duration'),
+        orm.Load(cls).subqueryload('controls'),
+        orm.Load(cls).load_only(
+            'audit_start_date',
+            'kind',
+            'organization',
+            'scope',
+            'version',
+        ),
+    )
+
   _sanitize_html = [
       'organization',
       'scope',
@@ -98,8 +114,6 @@ class Directive(HasObjectState, Timeboxed, BusinessObject, db.Model):
 
   @classmethod
   def eager_query(cls):
-    from sqlalchemy import orm
-
     query = super(Directive, cls).eager_query()
     return cls.eager_inclusions(query, Directive._include_links).options(
         orm.joinedload('audit_frequency'),

@@ -108,6 +108,53 @@ class Assignable(object):
         sa.orm.subqueryload("_assignees").undefer_group("Person_complete"),
     )
 
+  @classmethod
+  def indexed_query(cls):
+    query = super(Assignable, cls).indexed_query()
+    return query.options(
+        sa.orm.subqueryload(
+            "_assignees"
+        ).load_only(
+            "id",
+            "name",
+            "email",
+        ),
+        sa.orm.subqueryload(
+            "related_sources"
+        ).load_only(
+            "id",
+            "source_type",
+            "source_id"
+        ),
+        sa.orm.subqueryload(
+            "related_sources"
+        ).joinedload(
+            "relationship_attrs"
+        ).load_only(
+            "attr_value",
+            "attr_name",
+            "id",
+            "relationship_id",
+        ),
+        sa.orm.subqueryload(
+            "related_destinations"
+        ).load_only(
+            "id",
+            "destination_type",
+            "destination_id",
+        ),
+        sa.orm.subqueryload(
+            "related_destinations"
+        ).joinedload(
+            "relationship_attrs"
+        ).load_only(
+            "attr_value",
+            "attr_name",
+            "id",
+            "relationship_id",
+        ),
+    )
+
   @sa.ext.declarative.declared_attr
   def _assignees(self):
     """Attribute that is used to load all assigned People eagerly."""

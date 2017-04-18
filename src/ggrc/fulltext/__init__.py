@@ -72,7 +72,6 @@ def get_indexed_model_names():
       "CycleTaskEntry",
       "CycleTaskGroup",
       "CycleTaskGroupObjectTask",
-      "CustomAttributeValue",  # needed because of indexing logic
       "DataAsset",
       "Facility",
       "Issue",

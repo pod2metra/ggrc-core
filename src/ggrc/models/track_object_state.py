@@ -5,9 +5,9 @@
 
 from sqlalchemy import event
 
-
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm.session import Session
+from sqlalchemy import orm
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.reflection import PublishOnly
@@ -50,6 +50,12 @@ class HasObjectState(object):
     self.os_state = 'Reviewed'  # Mark the object as dirty
     self._set_reviewed_state = True
 
+  @classmethod
+  def indexed_query(cls):
+    return super(HasObjectState, cls).indexed_query().options(
+        orm.Load(cls).load_only("os_state"),
+    )
+
 
 def before_flush_handler(session, flush_context, instances):
   """We listen to before_flush so that we can reset os_state on any object
@@ -57,5 +63,6 @@ def before_flush_handler(session, flush_context, instances):
   for obj in session.dirty:
     if isinstance(obj, HasObjectState):
       obj.validate_os_state()
+
 
 event.listen(Session, 'before_flush', before_flush_handler)

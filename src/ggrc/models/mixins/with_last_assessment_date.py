@@ -35,6 +35,17 @@ class WithLastAssessmentDate(object):
   ]
 
   @classmethod
+  def indexed_query(cls):
+    return super(WithLastAssessmentDate, cls).indexed_query().options(
+        sa.orm.Load(cls).subqueryload(
+            "_related_assessments"
+        ).load_only(
+            "id",
+            "finished_date",
+        ),
+    )
+
+  @classmethod
   def eager_query(cls):
     query = super(WithLastAssessmentDate, cls).eager_query()
     return query.options(

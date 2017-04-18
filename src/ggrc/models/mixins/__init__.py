@@ -176,6 +176,17 @@ class ChangeTracked(object):
       },
   }
 
+  @classmethod
+  def indexed_query(cls):
+    return super(ChangeTracked, cls).indexed_query().options(
+        orm.Load(cls).load_only("created_at", "updated_at"),
+        orm.Load(cls).joinedload(
+            "modified_by"
+        ).load_only(
+            "name", "email", "id"
+        ),
+    )
+
 
 class Titled(object):
   """Mixin that defines `title` field.
@@ -192,6 +203,12 @@ class Titled(object):
   @declared_attr
   def title(cls):
     return deferred(db.Column(db.String, nullable=False), cls.__name__)
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Titled, cls).indexed_query().options(
+        orm.Load(cls).load_only("title"),
+    )
 
   @staticmethod
   def _extra_table_args(model):
@@ -223,6 +240,12 @@ class Described(object):
   _sanitize_html = ['description']
   _aliases = {"description": "Description"}
 
+  @classmethod
+  def indexed_query(cls):
+    return super(Described, cls).indexed_query().options(
+        orm.Load(cls).load_only("description"),
+    )
+
 
 class Noted(object):
   """Mixin that defines `notes` field."""
@@ -236,6 +259,12 @@ class Noted(object):
   _fulltext_attrs = ['notes']
   _sanitize_html = ['notes']
   _aliases = {"notes": "Notes"}
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Noted, cls).indexed_query().options(
+        orm.Load(cls).load_only("notes"),
+    )
 
 
 class Hyperlinked(object):
@@ -260,6 +289,12 @@ class Hyperlinked(object):
       'url',
       'reference_url',
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Hyperlinked, cls).indexed_query().options(
+        orm.Load(cls).load_only("url", "reference_url"),
+    )
 
 
 class Hierarchical(object):
@@ -288,6 +323,13 @@ class Hierarchical(object):
       'children',
       'parent',
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Hierarchical, cls).indexed_query().options(
+        orm.Load(cls).subqueryload("children"),
+        orm.Load(cls).joinedload("parent"),
+    )
 
   @classmethod
   def eager_query(cls):
@@ -321,6 +363,12 @@ class Timeboxed(object):
       attributes.DateFullTextAttr('start_date', 'start_date'),
       attributes.DateFullTextAttr('end_date', 'end_date'),
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Timeboxed, cls).indexed_query().options(
+        orm.Load(cls).load_only("start_date", "end_date"),
+    )
 
 
 class Stateful(object):
@@ -365,6 +413,12 @@ class Stateful(object):
       message = u"Invalid state '{}'".format(value)
       raise ValueError(message)
     return value
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Stateful, cls).indexed_query().options(
+        orm.Load(cls).load_only("status"),
+    )
 
 
 class FinishedDate(object):
@@ -417,6 +471,12 @@ class FinishedDate(object):
       self.finished_date = None
     return value
 
+  @classmethod
+  def indexed_query(cls):
+    return super(FinishedDate, cls).indexed_query().options(
+        orm.Load(cls).load_only("finished_date"),
+    )
+
 
 class VerifiedDate(object):
   """Adds 'Verified Date' which is set when status is set to 'Verified'.
@@ -456,6 +516,12 @@ class VerifiedDate(object):
       "verified",
   ]
 
+  @classmethod
+  def indexed_query(cls):
+    return super(VerifiedDate, cls).indexed_query().options(
+        orm.Load(cls).load_only("verified_date"),
+    )
+
   @validates('status')
   def validate_status(self, key, value):
     """Update verified_date on status change, make verified status final."""
@@ -494,6 +560,12 @@ class ContextRBAC(object):
     )
 
   _publish_attrs = ['context']
+
+  @classmethod
+  def indexed_query(cls):
+    return super(ContextRBAC, cls).indexed_query().options(
+        orm.Load(cls).load_only("context_id"),
+    )
 
   # @classmethod
   # def eager_query(cls):
@@ -690,6 +762,12 @@ class Slugged(Base):
   }
 
   @classmethod
+  def indexed_query(cls):
+    return super(Slugged, cls).indexed_query().options(
+        orm.Load(cls).load_only("slug"),
+    )
+
+  @classmethod
   def generate_slug_for(cls, obj):
     _id = getattr(obj, 'id', uuid1())
     obj.slug = "{0}-{1}".format(cls.generate_slug_prefix_for(obj), _id)
@@ -784,6 +862,26 @@ class WithContact(object):
           'secondary_contact',
           ["name", "email"]),
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    return super(WithContact, cls).indexed_query().options(
+        orm.Load(cls).joinedload(
+            "contact"
+        ).load_only(
+            "name",
+            "email",
+            "id"
+        ),
+        orm.Load(cls).joinedload(
+            "secondary_contact"
+        ).load_only(
+            "name",
+            "email",
+            "id"
+        ),
+    )
+
   _aliases = {
       "contact": {
           "display_name": "Primary Contact",
@@ -848,6 +946,12 @@ class TestPlanned(object):
   _fulltext_attrs = ['test_plan']
   _sanitize_html = ['test_plan']
   _aliases = {"test_plan": "Test Plan"}
+
+  @classmethod
+  def indexed_query(cls):
+    return super(TestPlanned, cls).indexed_query().options(
+        orm.Load(cls).load_only("test_plan"),
+    )
 
 
 __all__ = [

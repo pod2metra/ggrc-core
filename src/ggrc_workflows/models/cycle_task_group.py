@@ -25,7 +25,7 @@ from ggrc.fulltext.attributes import (
 
 
 class CycleTaskGroup(WithContact, Stateful, Slugged, Timeboxed, Described,
-                     Titled, Indexed, Base, db.Model):
+                     Titled, Base, Indexed, db.Model):
   """Cycle Task Group model.
   """
   __tablename__ = 'cycle_task_groups'
@@ -130,6 +130,9 @@ class CycleTaskGroup(WithContact, Stateful, Slugged, Timeboxed, Described,
   @classmethod
   def indexed_query(cls):
     return super(CycleTaskGroup, cls).indexed_query().options(
+        orm.Load(cls).load_only(
+            "next_due_date",
+        ),
         orm.Load(cls).subqueryload("cycle_task_group_tasks").load_only(
             "id",
             "title",

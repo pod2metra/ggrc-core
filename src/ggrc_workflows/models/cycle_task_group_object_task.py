@@ -31,8 +31,8 @@ from ggrc.fulltext.mixin import Indexed, ReindexRule
 
 
 class CycleTaskGroupObjectTask(
-        WithContact, Stateful, Slugged, Timeboxed, Relatable, Notifiable,
-        Described, Titled, Indexed, Base, db.Model):
+        WithContact, Stateful, Timeboxed, Relatable, Notifiable,
+        Described, Titled, Slugged, Base, Indexed, db.Model):
   """Cycle task model
   """
   __tablename__ = 'cycle_task_group_object_tasks'
@@ -250,10 +250,17 @@ class CycleTaskGroupObjectTask(
   @classmethod
   def indexed_query(cls):
     return super(CycleTaskGroupObjectTask, cls).indexed_query().options(
+        orm.Load(cls).load_only(
+            "end_date",
+            "start_date",
+            "created_at",
+            "updated_at"
+        ),
         orm.Load(cls).joinedload("cycle_task_group").load_only(
             "id",
             "title",
-            "end_date"
+            "end_date",
+            "next_due_date",
         ),
         orm.Load(cls).joinedload("cycle").load_only(
             "id",

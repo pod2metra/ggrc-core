@@ -1,10 +1,9 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
-from sqlalchemy import orm
+from sqlalchemy import orm, case
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
-
 
 from ggrc import db
 from ggrc.models import reflection
@@ -139,6 +138,19 @@ class Documentable(object):
       ]
     return out_json
 
+  @classmethod
+  def indexed_query(cls):
+    query = super(Documentable, cls).indexed_query()
+    return query.options(
+        orm.subqueryload(
+            "object_documents"
+        ).load_only(
+            "id",
+            "documentable_id",
+            "documentable_type",
+        )
+    )
+
 
 class EvidenceURL(Documentable):
   """Documentable mixin for evidence and URL documents."""
@@ -158,22 +170,51 @@ class EvidenceURL(Documentable):
       },
   }
 
+  @declared_attr
+  def _assessment_documents(self):
+    """ """
+    document_id = case(
+        [(
+            Relationship.destination_type == "Document",
+            Relationship.destination_id,
+        )],
+        else_=Relationship.source_id
+    )
+    documentable_id = case(
+        [(Relationship.destination_type == "Document",
+          Relationship.source_id)],
+        else_=Relationship.destination_id,
+    )
+
+    return db.relationship(
+        Document,
+        primaryjoin=lambda: self.id == documentable_id,
+        secondary=Relationship.__table__,
+        secondaryjoin=lambda: Document.id == document_id,
+        viewonly=True,
+    )
+
+  @property
+  def assessment_documents(self):
+    return self._assessment_documents
+
   def documents_by_type(self, doc_type):
     """Returns a list of document objects of requested type"""
     if doc_type == "document_evidence":
       # pylint: disable=not-an-iterable
       return [instance.document for instance in self.object_documents]
     if doc_type == "document_url":
-      documents = db.session.query(Document).filter(
-          Document.id == Relationship.destination_id,
-          Relationship.source_type == "Assessment",
-          Relationship.source_id == self.id,
-          Relationship.destination_type == "Document"
-      ).all()
-      documents += db.session.query(Document).filter(
-          Document.id == Relationship.source_id,
-          Relationship.destination_type == "Assessment",
-          Relationship.destination_id == self.id,
-          Relationship.source_type == "Document"
-      ).all()
-      return documents
+      return self.assessment_documents
+
+  @classmethod
+  def indexed_query(cls):
+    query = super(EvidenceURL, cls).indexed_query()
+    return query.options(
+        orm.subqueryload(
+            "_assessment_documents"
+        ).load_only(
+            "id",
+            "title",
+            "link"
+        )
+    )

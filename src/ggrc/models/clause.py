@@ -2,6 +2,7 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Module for Clause model."""
+from sqlalchemy import orm
 
 from ggrc import db
 from ggrc.models.mixins import CustomAttributable
@@ -40,5 +41,16 @@ class Clause(HasObjectState, Hierarchical, CustomAttributable, Personable,
       'na',
       'notes',
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    query = super(Clause, cls).indexed_query()
+    return query.options(
+        orm.Load(cls).load_only(
+            "na",
+            "notes",
+        )
+    )
+
   _sanitize_html = ['notes']
   _include_links = []

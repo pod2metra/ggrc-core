@@ -242,7 +242,7 @@ def generate_query_chunks(query, chunk_size=1000):
   """Make a generator splitting `query` into chunks of size `chunk_size`."""
   count = query.count()
   for offset in range(0, count, chunk_size):
-    yield query.order_by('id').limit(chunk_size).offset(offset).all()
+    yield query.order_by("id").limit(chunk_size).offset(offset)
 
 
 def create_stub(object_, context_id=None):

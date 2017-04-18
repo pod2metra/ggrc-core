@@ -203,6 +203,51 @@ class Control(WithLastAssessmentDate, HasObjectState, Relatable,
       'version',
   ]
 
+  @classmethod
+  def indexed_query(cls):
+    return super(Control, cls).indexed_query().options(
+        orm.Load(cls).joinedload(
+            "principal_assessor"
+        ).load_only(
+            "id",
+            "email",
+            "name",
+        ),
+        orm.Load(cls).joinedload(
+            "secondary_assessor"
+        ).load_only(
+            "id",
+            "email",
+            "name",
+        ),
+        orm.Load(cls).load_only(
+            'active',
+            'company_control',
+            'documentation_description',
+            'fraud_related',
+            'key_control',
+            'version',
+        ),
+        orm.Load(cls).joinedload(
+            'kind',
+        ).load_only(
+            "id",
+            "title"
+        ),
+        orm.Load(cls).joinedload(
+            'means',
+        ).load_only(
+            "id",
+            "title"
+        ),
+        orm.Load(cls).joinedload(
+            'verify_frequency',
+        ).load_only(
+            "id",
+            "title"
+        ),
+    )
+
   _include_links = []
 
   _aliases = {

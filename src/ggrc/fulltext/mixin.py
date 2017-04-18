@@ -5,7 +5,7 @@
 import itertools
 from collections import namedtuple
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, orm
 
 from ggrc import db
 
@@ -83,4 +83,6 @@ class Indexed(object):
 
   @classmethod
   def indexed_query(cls):
-    return cls.query
+    return cls.query.options(
+        orm.Load(cls).load_only("id"),
+    )

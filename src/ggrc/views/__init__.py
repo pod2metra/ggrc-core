@@ -73,15 +73,11 @@ def do_reindex():
   """Update the full text search index."""
 
   indexer = get_indexer()
-  with benchmark('Delete all records'):
-    indexer.delete_all_records(False)
-
   indexed_models = get_indexed_model_names()
 
   people = db.session.query(all_models.Person.id, all_models.Person.name,
                             all_models.Person.email)
   indexer.cache["people_map"] = {p.id: (p.name, p.email) for p in people}
-
   for model in sorted(indexed_models):
     # pylint: disable=protected-access
     logger.info("Updating index for: %s", model)
@@ -89,16 +85,19 @@ def do_reindex():
       model = get_model(model)
       mapper_class = model._sa_class_manager.mapper.base_mapper.class_
       if issubclass(model, mixin.Indexed):
-        query = model.indexed_query()
+        for query_chunk in generate_query_chunks(db.session.query(model.id)):
+          model.bulk_record_update_for([i.id for i in query_chunk])
+          db.session.commit()
       else:
-        query = model.query
-      query = query.options(
-          db.undefer_group(mapper_class.__name__ + '_complete'),
-      )
-      for query_chunk in generate_query_chunks(query):
-        for instance in query_chunk:
-          indexer.create_record(indexer.fts_record_for(instance), False)
-        db.session.commit()
+        logger.warning("Try to index non indexed model: %s", model.__name__)
+        indexer.delete_records_by_type(model.__name__)
+        query = model.query.options(
+            db.undefer_group(mapper_class.__name__ + '_complete'),
+        )
+        for query_chunk in generate_query_chunks(query):
+          for instance in query_chunk:
+            indexer.create_record(indexer.fts_record_for(instance), False)
+          db.session.commit()
 
   reindex_snapshots()
   indexer.invalidate_cache()

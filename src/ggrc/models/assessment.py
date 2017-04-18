@@ -7,6 +7,7 @@ from sqlalchemy import and_
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import remote
 from sqlalchemy.orm import validates
+from sqlalchemy import orm
 
 from ggrc import db
 from ggrc.models import reflection
@@ -73,9 +74,10 @@ def reindex_by_relationship(relationship):
 
 
 class Assessment(statusable.Statusable, AuditRelationship,
-                 AutoStatusChangeable, Assignable, HasObjectState, TestPlanned,
-                 CustomAttributable, EvidenceURL, Commentable, Personable,
-                 reminderable.Reminderable, Timeboxed, Relatable,
+                 AutoStatusChangeable,
+                 Assignable, HasObjectState, TestPlanned,
+                 CustomAttributable, EvidenceURL, Commentable,
+                 Personable, reminderable.Reminderable, Timeboxed, Relatable,
                  WithSimilarityScore, FinishedDate, VerifiedDate,
                  ValidateOnComplete, Notifiable, BusinessObject, Indexed,
                  db.Model):
@@ -160,6 +162,16 @@ class Assessment(statusable.Statusable, AuditRelationship,
       MultipleSubpropertyFullTextAttr('document_url', 'document_url',
                                       ['link']),
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    query = super(Assessment, cls).indexed_query()
+    return query.options(
+        orm.Load(cls).load_only(
+            "design",
+            "operationally",
+        )
+    )
 
   _tracked_attrs = {
       'contact_id',

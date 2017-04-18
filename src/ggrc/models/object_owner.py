@@ -3,6 +3,7 @@
 
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy import orm
 
 from ggrc import db
 from ggrc.models.mixins import Base
@@ -100,6 +101,14 @@ class Ownable(object):
           "mandatory": True,
       }
   }
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Ownable, cls).indexed_query().options(
+        orm.Load(cls).joinedload(
+            "object_owners"
+        )
+    )
 
   @classmethod
   def eager_query(cls):

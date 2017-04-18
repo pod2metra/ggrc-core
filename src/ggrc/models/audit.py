@@ -3,6 +3,8 @@
 
 """Audit model."""
 
+from sqlalchemy import orm
+
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import (
@@ -73,6 +75,18 @@ class Audit(Snapshotable, clonable.Clonable,
       'status',
       'gdrive_evidence_folder',
   ]
+
+  @classmethod
+  def indexed_query(cls):
+    return super(Audit, cls).indexed_query().options(
+        orm.Load(cls).joinedload("audit_firm"),
+        orm.Load(cls).load_only(
+            'report_start_date',
+            'report_end_date',
+            'status',
+            'gdrive_evidence_folder',
+        ),
+    )
 
   _sanitize_html = [
       'gdrive_evidence_folder',
@@ -201,8 +215,6 @@ class Audit(Snapshotable, clonable.Clonable,
 
   @classmethod
   def eager_query(cls):
-    from sqlalchemy import orm
-
     query = super(Audit, cls).eager_query()
     return query.options(
         orm.joinedload('program'),
