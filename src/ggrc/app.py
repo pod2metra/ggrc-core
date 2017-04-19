@@ -104,16 +104,15 @@ def runner(mapper, content, target):  # pylint:disable=unused-argument
   import ggrc.fulltext
   from ggrc.fulltext.mixin import Indexed
   ggrc.indexer = ggrc.fulltext.get_indexer()
-  db.session.reindex_set = getattr(db.session, "reindex_set", set())
   getters = ggrc.indexer.indexer_rules.get(target.__class__.__name__) or []
   for getter in getters:
     to_index_list = getter(target)
     if not isinstance(to_index_list, Iterable):
       to_index_list = [to_index_list]
     for to_index in to_index_list:
-      db.session.reindex_set.add(to_index)
+      ggrc.indexer.reindex_set.add(to_index)
   if isinstance(target, Indexed):
-    db.session.reindex_set.add(target)
+    ggrc.indexer.reindex_set.add(target)
 
 
 def init_indexer():

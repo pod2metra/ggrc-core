@@ -105,7 +105,6 @@ class TestCase(BaseTestCase, object):
     db.engine.execute(contexts.delete(contexts.c.id > 1))
     people = db.metadata.tables["people"]
     db.engine.execute(people.delete(people.c.email != "user@example.com"))
-    db.session.reindex_set = set()
     db.session.commit()
 
   def setUp(self):
