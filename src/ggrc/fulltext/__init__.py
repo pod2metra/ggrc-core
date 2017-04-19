@@ -13,6 +13,7 @@ class Indexer(object):
     self.indexer_rules = defaultdict(list)
     self.cache = defaultdict(dict)
     self.builders = {}
+    self.reindex_set = set([])
 
   def get_builder(self, obj_class):
     """return recordbuilder for sent class
@@ -32,6 +33,9 @@ class Indexer(object):
 
   def invalidate_cache(self):
     self.cache = defaultdict(dict)
+
+  def invalidate_reindex_set(self):
+    self.reindex_set = set([])
 
   def create_record(self, record):
     raise NotImplementedError()
