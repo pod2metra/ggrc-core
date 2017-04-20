@@ -506,6 +506,59 @@ class TestSnapshotIndexing(BaseQueryAPITestCase):
                     "id": person_id}},
     )
 
+  # pylint: disable=invalid-name
+  def assertFoundNumber(self, field, value, expected_num):
+    """Assert expected_num of rows found by that value search"""
+    control_user1_result = self._get_first_result_set(
+        self._make_snapshot_query_dict(
+            "Control", expression=[field, "=", value]
+        ),
+        "Snapshot",
+    )
+    self.assertEqual(control_user1_result["count"], expected_num)
+
+  @data("contact", "PRIMARY CONTACT", "primary contact")
+  def test_control_primary_contact(self, field):
+    """Control Snapshots are filtered by contact and aliases."""
+    person_name = "name"
+    person_email = "email@addr.com"
+    program = factories.ProgramFactory()
+    program_id = program.id
+    control = factories.ControlFactory(
+        contact=factories.PersonFactory(
+            name=person_name, email=person_email
+        )
+    )
+    factories.RelationshipFactory(source=program, destination=control)
+    program = models.Program.query.filter_by(id=program_id).one()
+    self._create_audit(program=program, title="some title")
+
+    self.assertFoundNumber(field, person_name, 1)
+    self.assertFoundNumber(field, person_email, 1)
+    self.assertFoundNumber(field, "negative_" + person_name, 0)
+    self.assertFoundNumber(field, "negative_" + person_email, 0)
+
+  @data("secondary_contact", "SECONDARY CONTACT", "secondary contact")
+  def test_control_secondary_contact(self, field):
+    """Control Snapshots are filtered by secondary_contact and aliases."""
+    person_name = "name"
+    person_email = "email@addr.com"
+    program = factories.ProgramFactory()
+    program_id = program.id
+    control = factories.ControlFactory(
+        secondary_contact=factories.PersonFactory(
+            name=person_name, email=person_email
+        )
+    )
+    factories.RelationshipFactory(source=program, destination=control)
+    program = models.Program.query.filter_by(id=program_id).one()
+    self._create_audit(program=program, title="some title")
+
+    self.assertFoundNumber(field, person_name, 1)
+    self.assertFoundNumber(field, person_email, 1)
+    self.assertFoundNumber(field, "negative_" + person_name, 0)
+    self.assertFoundNumber(field, "negative_" + person_email, 0)
+
   def test_control_owners(self):
     """Control Snapshots are filtered and sorted by Owners."""
     program = factories.ProgramFactory()

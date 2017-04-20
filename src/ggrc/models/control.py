@@ -226,6 +226,8 @@ class Control(WithLastAssessmentDate, HasObjectState, Relatable,
       "secondary_assessor": {
           "display_name": "Secondary Assignee",
       },
+      "contact": "Primary Contact",
+      "secondary_contact": "Secondary Contact",
       "key_control": {
           "display_name": "Significance",
           "description": "Allowed values are:\nkey\nnon-key\n---",
