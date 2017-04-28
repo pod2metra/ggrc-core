@@ -8,6 +8,8 @@
 import unittest
 
 from ggrc.notifications.notification_handlers import _align_by_ids, IdValPair
+from ggrc import extensions
+from ggrc.notifications import notification_handlers
 
 
 class TestAlignByIds(unittest.TestCase):
@@ -58,3 +60,13 @@ class TestAlignByIds(unittest.TestCase):
     ]
 
     self.assertItemsEqual(result, expected)
+
+
+class TestGGRCHandlers(unittest.TestCase):
+  """Test if handlers setup for ggrc app """
+
+  def test_if_ggrc_handler_exists(self):
+    self.assertIn(
+        notification_handlers.register_handlers,
+        extensions.get_module_contributions("NOTIFICATION_LISTENERS")
+    )

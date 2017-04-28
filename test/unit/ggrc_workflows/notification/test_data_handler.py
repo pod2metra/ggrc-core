@@ -7,7 +7,9 @@ import unittest
 
 from mock import MagicMock, patch
 
+from ggrc import extensions
 from ggrc_workflows.notification.data_handler import get_cycle_task_url
+from ggrc_workflows import notification
 
 
 class GetCycleTaskUrlTestCase(unittest.TestCase):
@@ -60,3 +62,13 @@ class GetCycleTaskUrlTestCase(unittest.TestCase):
         u"/cycle_task_group_object_task/15"
     )
     self.assertEqual(result, expected_url)
+
+
+class TestHandlers(unittest.TestCase):
+  """Test if handlers setup for ggrc_workflows app """
+
+  def test_if_handler_exists(self):
+    self.assertIn(
+        notification.register_listeners,
+        extensions.get_module_contributions("NOTIFICATION_LISTENERS")
+    )
