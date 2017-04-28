@@ -216,6 +216,9 @@ class RowConverter(object):
     Note: signals are only sent for the row objects. Secondary objects such as
     Relationships do not get any signals triggered.
     """
+    src = {}
+    if self.object_class.__name__ == "Assessment":
+      src["remainderType"] = "statusToPerson"
     if self.ignore:
       return
     service_class = getattr(ggrc.services, self.object_class.__name__)
@@ -225,10 +228,10 @@ class RowConverter(object):
           self.object_class, obj=self.obj, service=service_class)
     elif self.is_new:
       signals.Restful.model_posted.send(
-          self.object_class, obj=self.obj, src={}, service=service_class)
+          self.object_class, obj=self.obj, src=src, service=service_class)
     else:
       signals.Restful.model_put.send(
-          self.object_class, obj=self.obj, src={}, service=service_class)
+          self.object_class, obj=self.obj, src=src, service=service_class)
 
   def insert_object(self):
     """Add the row object to the current database session."""
