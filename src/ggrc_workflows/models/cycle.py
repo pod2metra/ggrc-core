@@ -40,6 +40,10 @@ class Cycle(WithContact, Stateful, Timeboxed, Described, Titled, Slugged,
   __tablename__ = 'cycles'
   _title_uniqueness = False
 
+  def __init__(self, *args, **kwargs):
+    super(Cycle, self).__init__(*args, **kwargs)
+    self.manually_created = kwargs.get("manually_created", True)
+
   VALID_STATES = (u'Assigned', u'InProgress', u'Finished', u'Verified')
 
   workflow_id = db.Column(

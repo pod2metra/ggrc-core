@@ -280,6 +280,7 @@ def build_cycle(cycle, current_user=None, base_date=None):
   cycle.title = workflow.title
   cycle.description = workflow.description
   cycle.status = 'Assigned'
+  cycle.manualy_created = False
 
   # Populate CycleTaskGroups based on Workflow's TaskGroups
   for task_group in workflow.task_groups:
@@ -312,13 +313,6 @@ def build_cycle(cycle, current_user=None, base_date=None):
                                       destination=object_))
 
   update_cycle_dates(cycle)
-
-  Signals.workflow_cycle_start.send(
-      cycle.__class__,
-      obj=cycle,
-      new_status=cycle.status,
-      old_status=None
-  )
 
 
 # 'Finished' and 'Verified' states are determined via these links
@@ -602,7 +596,6 @@ def update_workflow_state(workflow):
           cycle,
           None,
           base_date=workflow.non_adjusted_next_cycle_start_date)
-      notification.handle_cycle_created(None, obj=cycle)
 
     adjust_next_cycle_start_date(calculator, workflow)
 
@@ -870,9 +863,6 @@ def start_recurring_cycles():
     adjust_next_cycle_start_date(cycle.calculator, workflow, move_forward=True)
 
     db.session.add(workflow)
-
-    notification.handle_workflow_modify(None, workflow)
-    notification.handle_cycle_created(None, obj=cycle)
 
   log_event(db.session)
   db.session.commit()

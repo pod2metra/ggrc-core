@@ -6,6 +6,7 @@
 """Test request import and updates."""
 
 import csv
+import datetime
 
 from collections import OrderedDict
 from cStringIO import StringIO
@@ -533,3 +534,99 @@ class TestAssessmentExport(TestCase):
 
     response = self.export_csv(data)
     self.assertIn(u"No template Assessment 2", response.data)
+
+
+class TestAssessmentNotificationOnImport(TestCase):
+
+  default_datetime = datetime.datetime(2017, 1, 1, 12, 20, 31)
+  default_person_role = [
+      ("creator@example.com", "Creator"),
+      ("assessor_1@example.com", "Assessor"),
+      ("assessor_2@example.com", "Assessor"),
+      ("verifier_1@example.com", "Verifier"),
+      ("verifier_2@example.com", "Verifier"),
+  ]
+
+  def setUp(self):
+    """Set up for Assessment test cases."""
+    super(TestAssessmentNotificationOnImport, self).setUp()
+    self.client.get("/login")
+    self._fix_notification_init()
+    self.assessment = self.create_assessment_with_assignees()
+    models.Notification.query.delete()
+
+  def _fix_notification_init(self):
+    """Fix Notification object init function.
+
+    This is a fix needed for correct created_at field when using freezgun. By
+    default the created_at field is left empty and filed by database, which
+    uses system time and not the fake date set by freezugun plugin. This fix
+    makes sure that object created in freeze_time block has all dates set with
+    the correct date and time.
+    """
+    default_datetime = self.default_datetime
+
+    def init_decorator(init):
+      """Wrapper for Notification init function."""
+
+      def new_init(self, *args, **kwargs):
+        init(self, *args, **kwargs)
+        if hasattr(self, "created_at"):
+            self.created_at = default_datetime
+      return new_init
+
+    models.Notification.__init__ = init_decorator(models.Notification.__init__)
+
+  @classmethod
+  def create_assessment_with_assignees(cls, person_role=None):
+    """Create assessment with assignees """
+    assessment = factories.AssessmentFactory(
+        status=models.Assessment.PROGRESS_STATE
+    )
+    with factories.single_commit():
+      for person, role in person_role or cls.default_person_role:
+        person = factories.PersonFactory(email=person)
+
+        object_person_rel = factories.RelationshipFactory(
+            source=assessment,
+            destination=person
+        )
+
+        factories.RelationshipAttrFactory(
+            relationship_id=object_person_rel.id,
+            attr_name="AssigneeType",
+            attr_value=role
+        )
+    return assessment
+
+  def test_create_noification_on_state_changed(self):
+    self.assertEqual(0, len(models.Notification.query.all()))
+    self.import_data(OrderedDict([
+        ("object_type", "Assessment"),
+        ("Code*", self.assessment.slug),
+        ("State", self.assessment.FINAL_STATE),
+    ]))
+    self.assessment = models.Assessment.query.get(self.assessment.id)
+    self.assertEqual(self.assessment.FINAL_STATE, self.assessment.status)
+    self.assertEqual(1, len(models.Notification.query.all()))
+
+  def test_notification_on_cad_change(self):
+    cad = factories.CustomAttributeDefinitionFactory(
+        title="test_def",
+        definition_type="assessment",
+        attribute_type="Text"
+    )
+    cav_id = factories.CustomAttributeValueFactory(
+        custom_attribute=cad,
+        attributable=self.assessment,
+        attribute_value="test value default"
+    ).id
+    self.assertEqual(0, len(models.Notification.query.all()))
+    self.import_data(OrderedDict([
+        ("object_type", "Assessment"),
+        ("Code*", self.assessment.slug),
+        ("test_def", "new test value"),
+    ]))
+    cav = models.CustomAttributeValue.query.get(cav_id)
+    self.assertEqual("new test value", cav.attribute_value)
+    self.assertEqual(1, len(models.Notification.query.all()))

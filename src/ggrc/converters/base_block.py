@@ -513,7 +513,6 @@ class BlockConverter(object):
       for row_converter in self.row_converters:
         try:
           row_converter.insert_object()
-          db.session.flush()
         except exc.SQLAlchemyError as err:
           db.session.rollback()
           logger.exception("Import failed with: %s", err.message)
@@ -521,8 +520,9 @@ class BlockConverter(object):
         else:
           if row_converter.is_new and not row_converter.ignore:
             new_objects.append(row_converter.obj)
-      self.send_collection_post_signals(new_objects)
+
       import_event = self.save_import()
+      self.send_collection_post_signals(new_objects)
       for row_converter in self.row_converters:
         row_converter.send_post_commit_signals(event=import_event)
 

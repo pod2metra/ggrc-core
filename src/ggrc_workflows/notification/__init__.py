@@ -1,13 +1,8 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
-from ggrc.services import signals
-from ggrc_workflows.models import (
-    Workflow,
-    Cycle,
-    CycleTaskGroupObjectTask,
-)
-from ggrc_workflows.services.common import Signals
+from ggrc import db
+from ggrc_workflows import models
 from ggrc_workflows.notification.data_handler import (
     get_cycle_data,
     get_workflow_data,
@@ -20,6 +15,7 @@ from ggrc_workflows.notification.notification_handler import (
     handle_cycle_modify,
     handle_cycle_task_status_change,
 )
+from sqlalchemy import event
 
 
 def empty_notification(*agrs):
@@ -38,29 +34,35 @@ def contributed_notifications():
   }
 
 
+def handle_cycle_task_update(obj):
+  handle_cycle_task_group_object_task_put(obj)
+  handle_cycle_task_status_change(obj)
+
+
 def register_listeners():
+  new_handlers = {
+      models.Cycle: handle_cycle_created,
+  }
+  delete_handlers = {
+  }
+  update_handlers = {
+      models.Workflow: handle_workflow_modify,
+      models.CycleTaskGroupObjectTask: handle_cycle_task_update,
+      models.Cycle: handle_cycle_modify,
+  }
 
-  @signals.Restful.model_put.connect_via(Workflow)
-  def workflow_put_listener(sender, obj=None, src=None, service=None):
-    handle_workflow_modify(sender, obj, src, service)
+  @event.listens_for(db.session.__class__, 'after_flush')
+  def after_flush_handler(session, flush_context):
+    for instance in session.new:
+      if instance.__class__ in new_handlers:
+        new_handlers[instance.__class__](instance)
+    for instance in session.deleted:
+      if instance.__class__ in delete_handlers:
+        delete_handlers[instance.__class__](instance)
+    for instance in session.dirty:
+      if instance.__class__ in update_handlers:
+        update_handlers[instance.__class__](instance)
 
-  @signals.Restful.model_put.connect_via(CycleTaskGroupObjectTask)
-  def cycle_task_group_object_task_put_listener(
-          sender, obj=None, src=None, service=None):
-    handle_cycle_task_group_object_task_put(obj)
-
-  @signals.Restful.model_put.connect_via(Cycle)
-  def cycle_put_listener(sender, obj=None, src=None, service=None):
-    handle_cycle_modify(sender, obj, src, service)
-
-  @signals.Restful.model_posted.connect_via(Cycle)
-  def cycle_post_listener(sender, obj=None, src=None, service=None):
-    handle_cycle_created(sender, obj, src, service, True)
-
-  @Signals.status_change.connect_via(CycleTaskGroupObjectTask)
-  def cycle_task_status_change_listener(
-          sender, obj=None, new_status=None, old_status=None):
-    handle_cycle_task_status_change(obj, new_status, old_status)
 
 """
 All notifications handle the following structure:

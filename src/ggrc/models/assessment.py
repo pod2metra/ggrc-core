@@ -93,6 +93,12 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
 
   ASSIGNEE_TYPES = (u"Creator", u"Assessor", u"Verifier")
 
+  reminderType = lambda x, d: d.get("reminderType")
+
+  def __init__(self, *args, **kwargs):
+    super(Assessment, self).__init__(*args, **kwargs)
+    self.reminderType = kwargs.get("reminderType")
+
   REMINDERABLE_HANDLERS = {
       "statusToPerson": {
           "handler":
@@ -146,6 +152,13 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
       'operationally',
       'audit',
       PublishOnly('object')
+  ]
+
+  _update_attrs = [
+      'design',
+      'operationally',
+      'audit',
+      "reminderType",
   ]
 
   _fulltext_attrs = [

@@ -11,21 +11,21 @@ needed by ggrc notifications.
 
 # pylint: disable=too-few-public-methods
 
+from itertools import chain
 from collections import namedtuple
 from datetime import date
 from functools import partial
-from itertools import chain, izip
 from numbers import Number
 from operator import attrgetter
 
 from enum import Enum
 
 from sqlalchemy import inspect
+from sqlalchemy import event
 from sqlalchemy import and_
 from sqlalchemy.sql.expression import true
 
 from ggrc import db
-from ggrc.services import signals
 from ggrc import models
 from ggrc.models.mixins.statusable import Statusable
 
@@ -110,7 +110,6 @@ def _add_assessment_updated_notif(obj):
   """
   notif_type = models.NotificationType.query.filter_by(
       name="assessment_updated").first()
-
   if not _has_unsent_notifications(notif_type, obj):
     _add_notification(obj, notif_type)
 
@@ -138,6 +137,7 @@ def handle_assignable_modified(obj):
   Args:
     obj (models.mixins.Assignable): an object that has been modified
   """
+  handle_reminder(obj)
   attrs = inspect(obj).attrs
 
   status_history = attrs["status"].history
@@ -171,7 +171,6 @@ def handle_assignable_modified(obj):
   state_change = transitions_map.get((old_state, new_state))
   if state_change:
     _add_state_change_notif(obj, state_change)
-
   # no interest in modifications when an assignable object is not ative yet
   if obj.status == Statusable.START_STATE:
     return
@@ -202,7 +201,6 @@ def handle_assignable_modified(obj):
         continue
       is_changed = True
       break
-
   is_changed = is_changed or _ca_values_changed(obj)  # CA check only if needed
 
   if not is_changed:
@@ -240,7 +238,6 @@ def _ca_values_changed(obj):
                   .filter_by(resource_id=obj.id, resource_type=obj.type) \
                   .order_by(models.Revision.id.desc()) \
                   .first()
-
   old_cavs = rev.content.get("custom_attribute_values", []) if rev else []
   new_cavs = getattr(obj, "custom_attribute_values", [])
 
@@ -337,28 +334,27 @@ def handle_assignable_deleted(obj):
   ).delete()
 
 
-def handle_reminder(obj, reminder_type):
+def handle_reminder(obj):
   """Handles reminders for an object
 
   Args:
     obj: Object to process
     reminder_type: Reminder handler to use for processing event
     """
-  if reminder_type in obj.REMINDERABLE_HANDLERS:
-    reminder_settings = obj.REMINDERABLE_HANDLERS[reminder_type]
+  if obj.reminderType in obj.REMINDERABLE_HANDLERS:
+    reminder_settings = obj.REMINDERABLE_HANDLERS[obj.reminderType]
     handler = reminder_settings['handler']
     data = reminder_settings['data']
     handler(obj, data)
 
 
-def handle_comment_created(obj, src):
+def handle_comment_created(obj):
   """Add notification entries for new comments.
 
   Args:
     obj (Comment): New comment.
-    src (dict): Dictionary containing the comment post request data.
   """
-  if src.get("send_notification"):
+  if obj.send_notification:
     notif_type = models.NotificationType.query.filter_by(
         name="comment_created").first()
     _add_notification(obj, notif_type)
@@ -375,14 +371,15 @@ def handle_relationship_altered(rel):
   Args:
     rel (Relationship): Created (or deleted) relationship instance.
   """
-  if rel.source.type != u"Assessment" != rel.destination.type:
+  if rel.source_type != u"Assessment" != rel.destination_type:
     return
-
-  asmt, other = rel.source, rel.destination
-  if asmt.type != u"Assessment":
-    asmt, other = other, asmt
-
-  if other.type not in (u"Document", u"Person"):
+  if rel.source_type == "Assessment":
+    asmt = db.session.query(models.Assessment).get(rel.source_id)
+    other_type = rel.destination_type
+  else:
+    asmt = db.session.query(models.Assessment).get(rel.destination_id)
+    other_type = rel.source_type
+  if other_type not in (u"Document", u"Person"):
     return
 
   if asmt.status != Statusable.START_STATE:
@@ -402,10 +399,10 @@ def handle_attachment_altered(rel):
   Args:
     rel (ObjectDocument): an object describing the attachment relationship
   """
-  if rel.documentable.type != u"Assessment":
+  if rel.documentable_type != u"Assessment":
     return
 
-  asmt = rel.documentable
+  asmt = db.session.query(models.Assessment).get(rel.documentable_id)
   if asmt.status != Statusable.START_STATE:
     _add_assessment_updated_notif(asmt)
 
@@ -417,51 +414,33 @@ def handle_attachment_altered(rel):
 def register_handlers():  # noqa: C901
   """Register listeners for notification handlers."""
 
-  # Variables are used as listeners, and arguments are needed for callback
-  # functions.
-  #
-  # pylint: disable=unused-argument,unused-variable
+  new_handlers = {
+      models.Assessment: handle_assignable_created,
+      models.Comment: handle_comment_created,
+      models.Relationship: handle_relationship_altered,
+      models.ObjectDocument: handle_attachment_altered,
+  }
+  delete_handlers = {
+      models.Assessment: handle_assignable_deleted,
+      models.Relationship: handle_relationship_altered,
+      models.ObjectDocument: handle_attachment_altered,
+  }
+  update_handlers = {
+      models.Assessment: handle_assignable_modified,
+      models.Relationship: handle_relationship_altered,
+      models.ObjectDocument: handle_attachment_altered,
+  }
 
-  @signals.Restful.model_deleted.connect_via(models.Assessment)
-  def assignable_deleted_listener(sender, obj=None, src=None, service=None):
-    handle_assignable_deleted(obj)
-
-  @signals.Restful.model_put.connect_via(models.Assessment)
-  def assignable_modified_listener(sender, obj=None, src=None, service=None):
-    handle_assignable_modified(obj)
-
-  @signals.Restful.collection_posted.connect_via(models.Assessment)
-  def assignable_created_listener(sender, objects=None, **kwargs):
-    for obj in objects:
-      handle_assignable_created(obj)
-
-  @signals.Restful.model_put.connect_via(models.Assessment)
-  def assessment_send_reminder(sender, obj=None, src=None, service=None):
-    reminder_type = src.get("reminderType", False)
-    if reminder_type:
-      handle_reminder(obj, reminder_type)
-
-  @signals.Restful.collection_posted.connect_via(models.Comment)
-  def comment_created_listener(sender, objects=None, sources=None, **kwargs):
-    for obj, src in izip(objects, sources):
-      handle_comment_created(obj, src)
-
-  @signals.Restful.model_posted.connect_via(models.Relationship)
-  def relationship_created_listener(sender, obj=None, src=None, service=None):
-    handle_relationship_altered(obj)
-
-  @signals.Restful.model_put.connect_via(models.Relationship)
-  def relationship_updated_listener(sender, obj=None, src=None, service=None):
-    handle_relationship_altered(obj)
-
-  @signals.Restful.model_deleted.connect_via(models.Relationship)
-  def relationship_deleted_listener(sender, obj=None, src=None, service=None):
-    handle_relationship_altered(obj)
-
-  @signals.Restful.model_posted.connect_via(models.ObjectDocument)
-  def document_attached_listener(sender, obj=None, src=None, service=None):
-    handle_attachment_altered(obj)
-
-  @signals.Restful.model_deleted.connect_via(models.ObjectDocument)
-  def document_detached_listener(sender, obj=None, src=None, service=None):
-    handle_attachment_altered(obj)
+  @event.listens_for(db.session.__class__, 'after_flush')
+  def after_flush_handler(session, flush_context):
+    for instance in session.new:
+      if instance.__class__ in new_handlers:
+        new_handlers[instance.__class__](instance)
+    for instance in session.deleted:
+      if instance.__class__ in delete_handlers:
+        delete_handlers[instance.__class__](instance)
+    for instance in session.dirty:
+      if isinstance(instance, models.CustomAttributeValue):
+        instance = instance.attributable
+      if instance.__class__ in update_handlers:
+        update_handlers[instance.__class__](instance)

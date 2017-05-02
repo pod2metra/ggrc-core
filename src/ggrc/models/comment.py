@@ -139,6 +139,12 @@ class Comment(Relatable, Described, Ownable, Notifiable,
   """Basic comment model."""
   __tablename__ = "comments"
 
+  send_notification = lambda x, d: d.get("send_notification", False)
+
+  def __init__(self, *args, **kwargs):
+    super(Comment, self).__init__(*args, **kwargs)
+    self.send_notification = kwargs.get("send_notification") or False
+
   assignee_type = db.Column(db.String)
   revision_id = deferred(db.Column(
       db.Integer,
@@ -168,6 +174,12 @@ class Comment(Relatable, Described, Ownable, Notifiable,
   _update_attrs = [
       "assignee_type",
       "custom_attribute_revision_upd",
+  ]
+
+  _create_attrs = [
+      "assignee_type",
+      "custom_attribute_revision_upd",
+      "send_notification",
   ]
 
   _sanitize_html = [

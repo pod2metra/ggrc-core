@@ -49,7 +49,7 @@ def handle_task_group_task(obj, notif_type=None):
     add_notif(obj, notif_type, send_on)
 
 
-def handle_workflow_modify(sender, obj=None, src=None, service=None):
+def handle_workflow_modify(obj):
   """Update or add notifications on a workflow update."""
   if obj.status != "Active" or obj.frequency == "one_time":
     return
@@ -217,7 +217,7 @@ def check_all_cycle_tasks_finished(cycle):
   return statuses.issubset(acceptable_statuses)
 
 
-def handle_cycle_task_status_change(obj, new_status, old_status):
+def handle_cycle_task_status_change(obj):
   if obj.status == "Declined":
     notif_type = get_notification_type("cycle_task_declined")
     add_notif(obj, notif_type)
@@ -230,7 +230,6 @@ def handle_cycle_task_status_change(obj, new_status, old_status):
     if check_all_cycle_tasks_finished(cycle):
       notif_type = get_notification_type("all_cycle_tasks_completed")
       add_notif(cycle, notif_type)
-    db.session.flush()
 
   # NOTE: The only inactive state is "Verified", which is sufficiently handled
   # by the code above, thus we only need to handle active states
@@ -277,20 +276,18 @@ def remove_all_cycle_task_notifications(obj):
       db.session.delete(notif)
 
 
-def handle_cycle_modify(sender, obj=None, src=None, service=None):
+def handle_cycle_modify(obj):
   if not obj.is_current:
     remove_all_cycle_task_notifications(obj)
 
 
-def handle_cycle_created(sender, obj=None, src=None, service=None,
-                         manually=False):
+def handle_cycle_created(obj):
 
   notification = get_notification(obj)
 
   if not notification:
-    db.session.flush()
     notification_type = get_notification_type(
-        "manual_cycle_created" if manually else "cycle_created"
+        "manual_cycle_created" if obj.manually_created else "cycle_created"
     )
     add_notif(obj, notification_type)
 
