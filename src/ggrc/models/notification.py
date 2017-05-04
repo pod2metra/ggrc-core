@@ -3,6 +3,7 @@
 
 """GGRC notification SQLAlchemy layer data model extensions."""
 
+import collections
 from sqlalchemy.orm import backref
 
 from ggrc import db
@@ -60,3 +61,22 @@ class Notification(Base, db.Model):
 
   object = utils.PolymorphicRelationship("object_id", "object_type",
                                          "{}_notifiable")
+
+
+def get_notification_type(name):
+  from flask import g
+  if not hasattr(g, "notification_type_cache"):
+    cached_type = collections.namedtuple(
+        "CachedType",
+        ["id", "name", "description", "advance_notice", "template", "instant"])
+    g.notification_type_cache = {}
+    for notification in db.session.query(NotificationType):
+      g.notification_type_cache[notification.name] = cached_type(
+          id=notification.id,
+          name=notification.name,
+          description=notification.description,
+          advance_notice=notification.advance_notice,
+          template=notification.template,
+          instant=notification.instant
+      )
+  return g.notification_type_cache[name]

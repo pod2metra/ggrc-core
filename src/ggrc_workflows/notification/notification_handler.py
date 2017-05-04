@@ -14,7 +14,6 @@ exposed functions
     handle_cycle_modify,
     handle_cycle_task_status_change,
 """
-
 from datetime import timedelta
 from datetime import datetime
 from datetime import date
@@ -27,6 +26,7 @@ from sqlalchemy.sql.expression import true
 from ggrc import db
 from ggrc.models.notification import Notification
 from ggrc.models.notification import NotificationType
+from ggrc.models.notification import get_notification_type
 
 from ggrc_workflows.models.cycle_task_group_object_task import \
     CycleTaskGroupObjectTask
@@ -43,7 +43,7 @@ def handle_task_group_task(obj, notif_type=None):
     return
 
   notification = get_notification(obj)
-  if not notification:
+  if not db.session.query(notification.exists()).first()[0]:
     start_date = obj.task_group.workflow.next_cycle_start_date
     send_on = start_date - timedelta(notif_type.advance_notice)
     add_notif(obj, notif_type, send_on)
@@ -60,8 +60,7 @@ def handle_workflow_modify(obj):
   notification = get_notification(obj)
   notif_type = get_notification_type(
       "{}_workflow_starts_in".format(obj.frequency))
-
-  if not notification:
+  if not db.session.query(notification.exists()).first()[0]:
     send_on = obj.next_cycle_start_date - timedelta(notif_type.advance_notice)
     add_notif(obj, notif_type, send_on)
 
@@ -223,8 +222,7 @@ def handle_cycle_task_status_change(obj):
     add_notif(obj, notif_type)
 
   elif obj.status == "Verified":
-    for notif in get_notification(obj):
-      db.session.delete(notif)
+    get_notification(obj).delete()
 
     cycle = obj.cycle_task_group.cycle
     if check_all_cycle_tasks_finished(cycle):
@@ -233,7 +231,7 @@ def handle_cycle_task_status_change(obj):
 
   # NOTE: The only inactive state is "Verified", which is sufficiently handled
   # by the code above, thus we only need to handle active states
-  if new_status in CycleTaskGroupObjectTask.ACTIVE_STATES:
+  if obj.status in CycleTaskGroupObjectTask.ACTIVE_STATES:
     modify_cycle_task_overdue_notification(obj)
 
 
@@ -272,8 +270,7 @@ def handle_cycle_task_group_object_task_put(obj):
 
 def remove_all_cycle_task_notifications(obj):
   for cycle_task in obj.cycle_task_group_object_tasks:
-    for notif in get_notification(cycle_task):
-      db.session.delete(notif)
+    get_notification(cycle_task).delete()
 
 
 def handle_cycle_modify(obj):
@@ -284,8 +281,7 @@ def handle_cycle_modify(obj):
 def handle_cycle_created(obj):
 
   notification = get_notification(obj)
-
-  if not notification:
+  if not db.session.query(notification.exists()).first()[0]:
     notification_type = get_notification_type(
         "manual_cycle_created" if obj.manually_created else "cycle_created"
     )
@@ -298,20 +294,14 @@ def handle_cycle_created(obj):
 
 def get_notification(obj):
   # maybe we shouldn't return different thigs here.
-  result = Notification.query.filter(
-      and_(Notification.object_id == obj.id,
-           Notification.object_type == obj.type,
-           or_(
-               Notification.sent_at.is_(None),
-               Notification.repeating == true())
-           )
+  return db.session.query(Notification).filter(
+      Notification.object_id == obj.id,
+      Notification.object_type == obj.type,
+      or_(
+          Notification.sent_at.is_(None),
+          Notification.repeating == true(),
+      ),
   )
-  return result.all()
-
-
-def get_notification_type(name):
-  return db.session.query(NotificationType).filter(
-      NotificationType.name == name).first()
 
 
 def add_notif(obj, notif_type, send_on=None, repeating=False):
@@ -320,7 +310,7 @@ def add_notif(obj, notif_type, send_on=None, repeating=False):
   notif = Notification(
       object_id=obj.id,
       object_type=obj.type,
-      notification_type=notif_type,
+      notification_type_id=notif_type.id,
       send_on=send_on,
       repeating=repeating,
   )

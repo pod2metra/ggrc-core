@@ -27,6 +27,7 @@ from sqlalchemy.sql.expression import true
 
 from ggrc import db
 from ggrc import models
+from ggrc.models.notification import get_notification_type
 from ggrc.models.mixins.statusable import Statusable
 
 
@@ -57,7 +58,7 @@ def _add_notification(obj, notif_type, when=None):
   db.session.add(models.Notification(
       object=obj,
       send_on=when,
-      notification_type=notif_type,
+      notification_type_id=notif_type.id,
   ))
 
 
@@ -93,7 +94,7 @@ def _add_assignable_declined_notif(obj):
   """
   # pylint: disable=protected-access
   name = "{}_declined".format(obj._inflector.table_singular)
-  notif_type = models.NotificationType.query.filter_by(name=name).first()
+  notif_type = get_notification_type(name)
 
   if not _has_unsent_notifications(notif_type, obj):
     _add_notification(obj, notif_type)
@@ -108,8 +109,7 @@ def _add_assessment_updated_notif(obj):
   Args:
     obj (models.mixins.Assignable): an object for which to add a notification
   """
-  notif_type = models.NotificationType.query.filter_by(
-      name="assessment_updated").first()
+  notif_type = get_notification_type("assessment_updated")
   if not _has_unsent_notifications(notif_type, obj):
     _add_notification(obj, notif_type)
 
@@ -124,8 +124,7 @@ def _add_state_change_notif(obj, state_change):
     obj (models.mixins.Assignable): an object for which to add a notification
     state_change (Transitions): the state transition that has happened
   """
-  notif_type = models.NotificationType.query.filter_by(
-      name=state_change.value).first()
+  notif_type = get_notification_type(state_change.value)
 
   if not _has_unsent_notifications(notif_type, obj):
     _add_notification(obj, notif_type)
@@ -323,7 +322,7 @@ def _recipients_changed(history):
 
 def handle_assignable_created(obj):
   name = "{}_open".format(obj._inflector.table_singular)
-  notif_type = models.NotificationType.query.filter_by(name=name).first()
+  notif_type = get_notification_type(name=name)
   _add_notification(obj, notif_type)
 
 
@@ -355,8 +354,7 @@ def handle_comment_created(obj):
     obj (Comment): New comment.
   """
   if obj.send_notification:
-    notif_type = models.NotificationType.query.filter_by(
-        name="comment_created").first()
+    notif_type = get_notification_type("comment_created")
     _add_notification(obj, notif_type)
 
 
