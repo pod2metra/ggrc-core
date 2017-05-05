@@ -4,7 +4,9 @@
 """GGRC notification SQLAlchemy layer data model extensions."""
 
 import collections
+import sqlalchemy as sa
 from sqlalchemy.orm import backref
+from sqlalchemy.sql import expression
 
 from ggrc import db
 from ggrc.models.mixins import Base
@@ -80,3 +82,40 @@ def get_notification_type(name):
           instant=notification.instant
       )
   return g.notification_type_cache[name]
+
+
+def has_unsent_notifications(obj, notif_type=None):
+  """Helper for searching unsent notifications.
+
+  Args:
+    notify_type (NotificationType): type of the notifications we're looking
+      for.
+    obj (sqlalchemy model): Object for which we're looking for notifications.
+
+  Returns:
+    True if there are any unsent notifications of notif_type for the given
+    object, and False otherwise.
+  """
+  # check if this notifications exists in db
+  query = Notification.query.filter(
+      Notification.object_id == obj.id,
+      Notification.object_type == obj.type,
+      sa.or_(Notification.sent_at.is_(None),
+             Notification.repeating == expression.true()),
+  )
+  if notif_type is not None:
+    query = query.filter(Notification.notification_type_id == notif_type.id)
+  exists_query = query.exists()
+  if db.session.query(exists_query).first()[0]:
+    return True
+  # check if this notifications created in this session
+  for instance in db.session.new:
+    if not isinstance(instance, Notification):
+      continue
+    if notif_type and instance.notification_type_id != notif_type.id:
+      continue
+    if instance.sent_at is not None:
+      continue
+    if instance.object_type == obj.type and instance.object_id == obj.id:
+      return True
+  return False

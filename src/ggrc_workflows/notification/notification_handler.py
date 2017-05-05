@@ -26,7 +26,10 @@ from sqlalchemy.sql.expression import true
 from ggrc import db
 from ggrc.models.notification import Notification
 from ggrc.models.notification import NotificationType
-from ggrc.models.notification import get_notification_type
+from ggrc.models.notification import (
+    get_notification_type,
+    has_unsent_notifications,
+)
 
 from ggrc_workflows.models.cycle_task_group_object_task import \
     CycleTaskGroupObjectTask
@@ -42,8 +45,7 @@ def handle_task_group_task(obj, notif_type=None):
   if not notif_type:
     return
 
-  notification = get_notification(obj)
-  if not db.session.query(notification.exists()).first()[0]:
+  if not has_unsent_notifications(obj, notif_type):
     start_date = obj.task_group.workflow.next_cycle_start_date
     send_on = start_date - timedelta(notif_type.advance_notice)
     add_notif(obj, notif_type, send_on)
@@ -57,10 +59,9 @@ def handle_workflow_modify(obj):
   if not obj.next_cycle_start_date:
     obj.next_cycle_start_date = date.today()
 
-  notification = get_notification(obj)
   notif_type = get_notification_type(
       "{}_workflow_starts_in".format(obj.frequency))
-  if not db.session.query(notification.exists()).first()[0]:
+  if not has_unsent_notifications(obj):
     send_on = obj.next_cycle_start_date - timedelta(notif_type.advance_notice)
     add_notif(obj, notif_type, send_on)
 
@@ -140,13 +141,12 @@ def modify_cycle_task_notification(obj, notification_name):
   notif_type = get_notification_type(notification_name)
   send_on = datetime.combine(obj.end_date, datetime.min.time()) - timedelta(
       notif_type.advance_notice)
-
   today = datetime.combine(date.today(), datetime.min.time())
   if send_on >= today:
-      # when cycle date is moved in the future, we update the current
-      # notification or add a new one.
-    if notif.count() == 1:
-      notif = notif.one()
+    # when cycle date is moved in the future, we update the current
+    # notification or add a new one.
+    notif = notif.first()
+    if notif:
       notif.send_on = (datetime.combine(obj.end_date, datetime.min.time()) -
                        timedelta(notif.notification_type.advance_notice))
       db.session.add(notif)
@@ -280,8 +280,7 @@ def handle_cycle_modify(obj):
 
 def handle_cycle_created(obj):
 
-  notification = get_notification(obj)
-  if not db.session.query(notification.exists()).first()[0]:
+  if not has_unsent_notifications(obj):
     notification_type = get_notification_type(
         "manual_cycle_created" if obj.manually_created else "cycle_created"
     )

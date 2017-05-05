@@ -167,11 +167,10 @@ def get_daily_notifications():
     list of Notifications, data: a tuple of notifications that were handled
       and corresponding data for those notifications.
   """
-  notifications = db.session.query(Notification).filter(
-      (Notification.send_on <= datetime.today()) &
-      ((Notification.sent_at.is_(None)) | (Notification.repeating == true()))
+  notifications = Notification.query.filter(
+      Notification.send_on <= datetime.today(),
+      ((Notification.sent_at.is_(None)) | (Notification.repeating == true())),
   ).all()
-
   return notifications, get_notification_data(notifications)
 
 

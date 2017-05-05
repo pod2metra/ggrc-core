@@ -360,8 +360,10 @@ class TestAssignableNotificationUsingImports(TestAssignableNotification):
     asmt = Assessment.query.get(asmt_id)
     asmt.status = Assessment.VERIFIED_STATE
     db.session.commit()
-
-    self.assertEqual(self._get_notifications().count(), 0)
+    # on commit will be created notification to assessment status changed
+    query = self._get_notifications(notif_type="assessment_completed")
+    self.assertEqual(query.count(), 1)
+    Notification.query.delete()
 
     self.import_data(OrderedDict([
         (u"object_type", u"Assessment"),
@@ -369,8 +371,8 @@ class TestAssignableNotificationUsingImports(TestAssignableNotification):
         (u"State*", Assessment.DONE_STATE),
     ]))
 
-    query = self._get_notifications()
-    self.assertEqual(query.count(), 0)  # there should be no notification!
+    query = self._get_notifications(notif_type="assessment_completed")
+    self.assertEqual(query.count(), 1)
 
     # test declining an assessment
     asmt = Assessment.query.get(asmt_id)
@@ -678,7 +680,6 @@ class TestAssignableNotificationUsingAPI(TestAssignableNotification):
 
       self.api_helper.delete(asmts["A 1"])
       self.api_helper.delete(asmts["A 6"])
-
       self.assertEqual(self._get_notifications().count(), 4)
 
       self.client.get("/_notifications/send_daily_digest")
@@ -1018,6 +1019,7 @@ class TestAssignableNotificationUsingAPI(TestAssignableNotification):
     Adding (removing) a URL to (from) Assessment should be detected and
     considered an Assessment change.
     """
+
     self.import_file("assessment_with_templates.csv")
     asmts = {asmt.slug: asmt for asmt in Assessment.query}
 
@@ -1026,14 +1028,16 @@ class TestAssignableNotificationUsingAPI(TestAssignableNotification):
 
     asmt = Assessment.query.get(asmts["A 5"].id)
 
-    # add a URL, there should be no notifications because the Assessment
-    # has not been started yet
+    # add a URL, there should be notifications because the Assessment
+    # has not been moved to in progress state and notificate about it
     url = factories.DocumentFactory(link="www.foo.com")
     response, relationship = self.objgen.generate_relationship(url, asmt)
     self.assertEqual(response.status_code, 201)
 
+    asmt = Assessment.query.get(asmts["A 5"].id)
+    self.assertEqual(asmt.status, asmt.PROGRESS_STATE)
     change_notifs = self._get_notifications(notif_type="assessment_updated")
-    self.assertEqual(change_notifs.count(), 0)
+    self.assertEqual(change_notifs.count(), 1)
     asmt = Assessment.query.get(asmts["A 5"].id)
 
     # move Assessment to to "In Progress" state and clear notifications
@@ -1092,8 +1096,8 @@ class TestAssignableNotificationUsingAPI(TestAssignableNotification):
 
     asmt = Assessment.query.get(asmts["A 5"].id)
 
-    # add an attachment, there should be no notifications because the
-    # Assessment has not been started yet
+    # add an attachment, there should be notifications because the
+    # Assessment moved to started state
     pdf_doc = factories.DocumentFactory(title="foo.pdf")
     data = {
         "document": {"type": pdf_doc.type, "id": pdf_doc.id},
@@ -1102,8 +1106,10 @@ class TestAssignableNotificationUsingAPI(TestAssignableNotification):
     response, obj_doc = self.objgen.generate_object(ObjectDocument, data=data)
     self.assertEqual(response.status_code, 201)
 
+    asmt = Assessment.query.get(asmts["A 5"].id)
+    self.assertEqual(asmt.status, asmt.PROGRESS_STATE)
     change_notifs = self._get_notifications(notif_type="assessment_updated")
-    self.assertEqual(change_notifs.count(), 0)
+    self.assertEqual(change_notifs.count(), 1)
     asmt = Assessment.query.get(asmts["A 5"].id)
 
     # move Assessment to to "In Progress" state and clear notifications

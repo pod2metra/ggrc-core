@@ -22,12 +22,13 @@ from enum import Enum
 
 from sqlalchemy import inspect
 from sqlalchemy import event
-from sqlalchemy import and_
-from sqlalchemy.sql.expression import true
 
 from ggrc import db
 from ggrc import models
-from ggrc.models.notification import get_notification_type
+from ggrc.models.notification import (
+    get_notification_type,
+    has_unsent_notifications,
+)
 from ggrc.models.mixins.statusable import Statusable
 
 
@@ -62,29 +63,6 @@ def _add_notification(obj, notif_type, when=None):
   ))
 
 
-def _has_unsent_notifications(notif_type, obj):
-  """Helper for searching unsent notifications.
-
-  Args:
-    notify_type (NotificationType): type of the notifications we're looking
-      for.
-    obj (sqlalchemy model): Object for which we're looking for notifications.
-
-  Returns:
-    True if there are any unsent notifications of notif_type for the given
-    object, and False otherwise.
-  """
-  Notification = models.Notification  # pylint: disable=invalid-name
-
-  return db.session.query(models.Notification).join(
-      models.NotificationType).filter(and_(
-          models.NotificationType.id == notif_type.id,
-          Notification.object_id == obj.id,
-          Notification.object_type == obj.type,
-          (Notification.sent_at.is_(None) | (Notification.repeating == true()))
-      )).count() > 0
-
-
 def _add_assignable_declined_notif(obj):
   """Add entries for assignable declined notifications.
 
@@ -96,7 +74,7 @@ def _add_assignable_declined_notif(obj):
   name = "{}_declined".format(obj._inflector.table_singular)
   notif_type = get_notification_type(name)
 
-  if not _has_unsent_notifications(notif_type, obj):
+  if not has_unsent_notifications(obj, notif_type):
     _add_notification(obj, notif_type)
 
 
@@ -110,7 +88,7 @@ def _add_assessment_updated_notif(obj):
     obj (models.mixins.Assignable): an object for which to add a notification
   """
   notif_type = get_notification_type("assessment_updated")
-  if not _has_unsent_notifications(notif_type, obj):
+  if not has_unsent_notifications(obj, notif_type):
     _add_notification(obj, notif_type)
 
 
@@ -126,7 +104,7 @@ def _add_state_change_notif(obj, state_change):
   """
   notif_type = get_notification_type(state_change.value)
 
-  if not _has_unsent_notifications(notif_type, obj):
+  if not has_unsent_notifications(obj, notif_type):
     _add_notification(obj, notif_type)
 
 
@@ -166,7 +144,6 @@ def handle_assignable_modified(obj):
       (Statusable.DONE_STATE, Statusable.PROGRESS_STATE):
           Transitions.TO_REOPENED,
   }
-
   state_change = transitions_map.get((old_state, new_state))
   if state_change:
     _add_state_change_notif(obj, state_change)
@@ -327,9 +304,14 @@ def handle_assignable_created(obj):
 
 
 def handle_assignable_deleted(obj):
-  models.Notification.query.filter_by(
-      object_id=obj.id,
-      object_type=obj.type,
+  models.Notification.query.filter(
+      models.Notification.object_id == obj.id,
+      models.Notification.object_type == obj.type,
+  ).delete()
+
+  models.Notification.query.filter(
+      models.Notification.object_id == 0,
+      models.Notification.object_type == obj.type,
   ).delete()
 
 
@@ -379,7 +361,6 @@ def handle_relationship_altered(rel):
     other_type = rel.source_type
   if other_type not in (u"Document", u"Person"):
     return
-
   if asmt.status != Statusable.START_STATE:
     _add_assessment_updated_notif(asmt)
 
