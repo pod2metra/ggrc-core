@@ -20,6 +20,7 @@ import factory
 
 from ggrc import db
 from ggrc import models
+from ggrc.models import all_models
 from ggrc.login import noop
 from ggrc.fulltext import get_indexer
 
@@ -348,3 +349,9 @@ class AccessControlRoleFactory(ModelFactory):
   name = factory.LazyAttribute(
       lambda _: random_str(prefix="Access Control Role - ")
   )
+
+
+class FolderFactory(ModelFactory):
+
+  class Meta:
+    model = all_models.ObjectFolder

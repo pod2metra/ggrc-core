@@ -127,12 +127,26 @@ def objects_via_assignable_query(user_id):
       all_models.ObjectDocument.documentable_id ==
       assignable_relations.c.id
   )
+  audit_ids = db.session.query(
+      all_models.Assessment.audit_id
+  ).filter(
+      all_models.Assessment.id == assignable_relations.c.id,
+      assignable_relations.c.type == "Assessment"
+  ).subquery("audit_ids")
+  object_folders = db.session.query(
+      literal("Audit").label("access_model"),
+      all_models.ObjectFolder.id,
+      literal("ObjectFolder").label("type"),
+      literal("R").label("context_id"),
+  ).filter(
+      all_models.ObjectFolder.folderable_id == audit_ids.c.audit_id,
+      all_models.ObjectFolder.folderable_type == "Audit",
+  )
   return source_query.union(
-      destination_query
-  ).union(
-      db.session.query(assignable_relations)
-  ).union(
-      documents
+      destination_query,
+      db.session.query(assignable_relations),
+      documents,
+      object_folders,
   )
 
 
@@ -647,7 +661,7 @@ def load_assignee_relationships(user, permissions):
       None
   """
   query = objects_via_assignable_query(user.id)
-  for access_model, id_, type_, role_name in set(query.all()):
+  for access_model, id_, type_, role_name in query:
     if type_ in RUD_MAP.get(access_model, []):
       role_name = "RUD"
     actions = ["read", "view_object_page"]
