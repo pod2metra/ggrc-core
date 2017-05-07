@@ -83,7 +83,7 @@ def objects_via_assignable_query(user_id):
   assignee_type_sub = all_models.RelationshipAttr.query.filter(
       all_models.RelationshipAttr.attr_name == "AssigneeType"
   ).subquery("assignee_type_sub")
-  assignable_relations = db.session.query(
+  assignable_relations_query = db.session.query(
       literal("RelationshipAttr").label("access_model"),
       case([(all_models.Relationship.destination_type == "Person",
              all_models.Relationship.source_id)],
@@ -97,28 +97,31 @@ def objects_via_assignable_query(user_id):
       case([(all_models.Relationship.destination_type == "Person",
              all_models.Relationship.destination_id)],
            else_=all_models.Relationship.source_id) == user_id
-  ).subquery("assignable_relations")
+  )
+  assignable_relations = assignable_relations_query.subquery(
+      "assignable_relations"
+  )
   destination_query = db.session.query(
-      all_models.Relationship.source_type,
-      all_models.Relationship.destination_id,
-      all_models.Relationship.destination_type,
+      all_models.Relationship.source_type.label("access_model"),
+      all_models.Relationship.destination_id.label("id"),
+      all_models.Relationship.destination_type.label("type"),
       literal("R").label("context_id")
   ).filter(
       all_models.Relationship.source_type == assignable_relations.c.type,
       all_models.Relationship.source_id == assignable_relations.c.id
   )
   source_query = db.session.query(
-      all_models.Relationship.destination_type,
-      all_models.Relationship.source_id,
-      all_models.Relationship.source_type,
+      all_models.Relationship.destination_type.label("access_model"),
+      all_models.Relationship.source_id.label("id"),
+      all_models.Relationship.source_type.label("type"),
       literal("R").label("context_id")
   ).filter(
       all_models.Relationship.destination_type == assignable_relations.c.type,
       all_models.Relationship.destination_id == assignable_relations.c.id
   )
   documents = db.session.query(
-      all_models.ObjectDocument.documentable_type,
-      all_models.ObjectDocument.document_id,
+      all_models.ObjectDocument.documentable_type.label("access_model"),
+      all_models.ObjectDocument.document_id.label("id"),
       literal("Document").label("type"),
       literal("R").label("context_id"),
   ).filter(
@@ -127,12 +130,10 @@ def objects_via_assignable_query(user_id):
       all_models.ObjectDocument.documentable_id ==
       assignable_relations.c.id
   )
-  return source_query.union(
-      destination_query
-  ).union(
-      db.session.query(assignable_relations)
-  ).union(
-      documents
+  return assignable_relations_query.union(
+      destination_query,
+      source_query,
+      documents,
   )
 
 
@@ -647,7 +648,7 @@ def load_assignee_relationships(user, permissions):
       None
   """
   query = objects_via_assignable_query(user.id)
-  for access_model, id_, type_, role_name in set(query.all()):
+  for access_model, id_, type_, role_name in query:
     if type_ in RUD_MAP.get(access_model, []):
       role_name = "RUD"
     actions = ["read", "view_object_page"]
