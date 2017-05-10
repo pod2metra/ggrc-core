@@ -87,15 +87,18 @@ class Api(object):
   def put(self, obj, data):
     name = obj._inflector.table_singular
     response = self.get(obj, obj.id)
-    headers = {
-        "If-Match": response.headers.get("Etag"),
-        "If-Unmodified-Since": response.headers.get("Last-Modified")
-    }
-    api_link = response.json[name]["selfLink"]
-    if name not in data:
-      response.json[name].update(data)
-      data = response.json
-
+    headers = {}
+    if "Etag" in response.headers:
+      headers["If-Match"] = response.headers["Etag"]
+    if "Last-Modified" in response.headers:
+      headers["If-Unmodified-Since"] = response.headers["Last-Modified"]
+    if response.json:
+      api_link = response.json[name]["selfLink"]
+      if name not in data:
+        response.json[name].update(data)
+        data = response.json
+    else:
+      api_link = data[name]["selfLink"]
     return self.send_request(
         self.client.put, obj, data, headers=headers, api_link=api_link)
 

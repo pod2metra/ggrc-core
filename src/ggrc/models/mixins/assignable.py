@@ -22,6 +22,8 @@ class Assignable(object):
   _publish_attrs = ["assignees"]
   _update_attrs = []
 
+  MAPPED_WITH_RUD_PERMISSIONS = []
+
   _custom_publish = {
       "assignees": lambda obj: obj.publish_assignees(),
   }

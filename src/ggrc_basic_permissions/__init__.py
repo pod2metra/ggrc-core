@@ -20,6 +20,7 @@ from ggrc import settings
 from ggrc.app import app
 from ggrc.login import get_current_user
 from ggrc.models import all_models
+from ggrc.models import mixins
 from ggrc.models.audit import Audit
 from ggrc.models.program import Program
 from ggrc.models.object_owner import ObjectOwner
@@ -51,6 +52,11 @@ blueprint = Blueprint(
 PERMISSION_CACHE_TIMEOUT = 3600  # 60 minutes
 
 
+RUD_MAP = {m.__name__: m.MAPPED_WITH_RUD_PERMISSIONS
+           for m in all_models.all_models
+           if issubclass(m, mixins.assignable.Assignable)}
+
+
 def get_public_config(_):
   """Expose additional permissions-dependent config to client.
     Specifically here, expose GGRC_BOOTSTRAP_ADMIN values to ADMIN users.
@@ -62,7 +68,7 @@ def get_public_config(_):
   return public_config
 
 
-def objects_via_assignable_query(user_id, context_not_role=True):
+def objects_via_assignable_query(user_id):
   """Creates a query that returns objects a user can access because she is
      assigned via the assignable mixin.
 
@@ -71,83 +77,63 @@ def objects_via_assignable_query(user_id, context_not_role=True):
 
     Returns:
         db.session.query object that selects the following columns:
-            | id | type | context_id |
+            access_model | id | type | context_id |
   """
 
-  rel1 = aliased(all_models.Relationship, name="rel1")
-  rel2 = aliased(all_models.Relationship, name="rel2")
-  _attrs = aliased(all_models.RelationshipAttr, name="attrs")
-
-  def assignable_join(query):
-    """Joins relationship_attrs to the query. This filters out only the
-       relationship objects where the user is mapped with an AssigneeType.
-    """
-    return query.join(
-        _attrs, and_(
-            _attrs.relationship_id == rel1.id,
-            _attrs.attr_name == "AssigneeType",
-            case([
-                (rel1.destination_type == "Person",
-                 rel1.destination_id)
-            ], else_=rel1.source_id) == user_id))
-
-  def related_assignables():
-    """Header for the mapped_objects join"""
-    return db.session.query(
-        case([
-            (rel2.destination_type == rel1.destination_type,
-             rel2.source_id)
-        ], else_=rel2.destination_id).label('id'),
-        case([
-            (rel2.destination_type == rel1.destination_type,
-             rel2.source_type)
-        ], else_=rel2.destination_type).label('type'),
-        rel1.context_id if context_not_role else literal('R')
-    ).select_from(rel1)
-
-  # First we fetch objects where a user is mapped as an assignee
-  assigned_objects = assignable_join(db.session.query(
-      case([
-          (rel1.destination_type == "Person",
-           rel1.source_id)
-      ], else_=rel1.destination_id),
-      case([
-          (rel1.destination_type == "Person",
-           rel1.source_type)
-      ], else_=rel1.destination_type),
-      rel1.context_id if context_not_role else literal('RUD')))
-
-  # The user should also have access to objects mapped to the assigned_objects
-  # We accomplish this by filtering out relationships where the user is
-  # assigned and then joining the relationship table for the second time,
-  # retrieving the mapped objects.
-  #
-  # We have a union here because using or_ to join both by destination and
-  # source was not performing well (8s+ query times)
-  mapped_objects = assignable_join(
-      # Join by destination:
-      related_assignables()).join(rel2, and_(
-          case([
-              (rel1.destination_type == "Person",
-               rel1.source_id)
-          ], else_=rel1.destination_id) == rel2.destination_id,
-          case([
-              (rel1.destination_type == "Person",
-               rel1.source_type)
-          ], else_=rel1.destination_type) == rel2.destination_type)
-  ).union(assignable_join(
-      # Join by source:
-      related_assignables()).join(rel2, and_(
-          case([
-              (rel1.destination_type == "Person",
-               rel1.source_id)
-          ], else_=rel1.destination_id) == rel2.source_id,
-          case([
-              (rel1.destination_type == "Person",
-               rel1.source_type)
-          ], else_=rel1.destination_type) == rel2.source_type))
+  assignee_type_sub = all_models.RelationshipAttr.query.filter(
+      all_models.RelationshipAttr.attr_name == "AssigneeType"
+  ).subquery("assignee_type_sub")
+  assignable_relations = db.session.query(
+      literal("RelationshipAttr").label("access_model"),
+      case([(all_models.Relationship.destination_type == "Person",
+             all_models.Relationship.source_id)],
+           else_=all_models.Relationship.destination_id).label("id"),
+      case([(all_models.Relationship.destination_type == "Person",
+             all_models.Relationship.source_type)],
+           else_=all_models.Relationship.destination_type).label("type"),
+      literal("RUD").label("context_id"),
+  ).filter(
+      all_models.Relationship.id == assignee_type_sub.c.relationship_id,
+      case([(all_models.Relationship.destination_type == "Person",
+             all_models.Relationship.destination_id)],
+           else_=all_models.Relationship.source_id) == user_id
+  ).subquery("assignable_relations")
+  destination_query = db.session.query(
+      all_models.Relationship.source_type,
+      all_models.Relationship.destination_id,
+      all_models.Relationship.destination_type,
+      literal("R").label("context_id")
+  ).filter(
+      all_models.Relationship.source_type == assignable_relations.c.type,
+      all_models.Relationship.source_id == assignable_relations.c.id
   )
-  return mapped_objects.union(assigned_objects)
+  source_query = db.session.query(
+      all_models.Relationship.destination_type,
+      all_models.Relationship.source_id,
+      all_models.Relationship.source_type,
+      literal("R").label("context_id")
+  ).filter(
+      all_models.Relationship.destination_type == assignable_relations.c.type,
+      all_models.Relationship.destination_id == assignable_relations.c.id
+  )
+  documents = db.session.query(
+      all_models.ObjectDocument.documentable_type,
+      all_models.ObjectDocument.document_id,
+      literal("Document").label("type"),
+      literal("R").label("context_id"),
+  ).filter(
+      all_models.ObjectDocument.documentable_type ==
+      assignable_relations.c.type,
+      all_models.ObjectDocument.documentable_id ==
+      assignable_relations.c.id
+  )
+  return source_query.union(
+      destination_query
+  ).union(
+      db.session.query(assignable_relations)
+  ).union(
+      documents
+  )
 
 
 def objects_via_relationships_query(model, roles, user_id, context_not_role):
@@ -660,15 +646,22 @@ def load_assignee_relationships(user, permissions):
   Returns:
       None
   """
-  for id_, type_, role_name in objects_via_assignable_query(user.id, False):
+  query = objects_via_assignable_query(user.id)
+  for access_model, id_, type_, role_name in set(query.all()):
+    if type_ in RUD_MAP.get(access_model, []):
+      role_name = "RUD"
     actions = ["read", "view_object_page"]
     if role_name == "RUD":
       actions += ["update", "delete"]
     for action in actions:
-      permissions.setdefault(action, {})\
-          .setdefault(type_, {})\
-          .setdefault('resources', list())\
-          .append(id_)
+      if action not in permissions:
+        permissions[action] = {}
+      if type_ not in permissions[action]:
+        permissions[action][type_] = {}
+      if 'resources' not in permissions[action][type_]:
+        permissions[action][type_]['resources'] = []
+      if id_ not in permissions[action][type_]['resources']:
+        permissions[action][type_]['resources'].append(id_)
 
 
 def load_personal_context(user, permissions):
@@ -806,7 +799,6 @@ def load_permissions_for(user):
 
   with benchmark("load_permissions > load assignee relationships"):
     load_assignee_relationships(user, permissions)
-
   with benchmark("load_permissions > load personal context"):
     load_personal_context(user, permissions)
 
