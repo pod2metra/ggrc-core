@@ -4,6 +4,7 @@
 import functools
 import inspect
 
+import sqlalchemy as sa
 from sqlalchemy import or_, and_
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
@@ -97,9 +98,15 @@ class Relationship(Base, db.Model):
     def predicate(src, dst):
       return and_(
           Relationship.source_type == src.type,
-          or_(Relationship.source_id == src.id, src.id == None),  # noqa
+          sa.or_(
+              Relationship.source_id == src.id,
+              src.id == None  # noqa
+          ),
           Relationship.destination_type == dst.type,
-          or_(Relationship.destination_id == dst.id, dst.id == None),  # noqa
+          sa.or_(
+              Relationship.destination_id == dst.id,
+              dst.id == None  # noqa
+          ),
       )
     return Relationship.query.filter(
         or_(predicate(object1, object2), predicate(object2, object1))
@@ -252,3 +259,62 @@ class RelationshipAttr(Identifiable, db.Model):
                      for cls in inspect.getmro(target_class))
     validators.discard(None)
     return [functools.partial(v, target_class) for v in validators]
+
+
+def objects_via_assignable_query(user_id):
+  """Creates a query that returns objects a user can access because she is
+     assigned via the assignable mixin.
+
+    Args:
+        user_id (int): id of the user
+
+    Returns:
+        db.session.query object that selects the following columns:
+          | access_model | id | type | permissions |
+  """
+  assignable_relations_destinations = db.session.query(
+      sa.literal("RelationshipAttr").label("access_model"),
+      Relationship.source_id.label("id"),
+      Relationship.source_type.label("type"),
+      sa.literal("RUD").label("permissions"),
+  ).filter(
+      RelationshipAttr.attr_name == "AssigneeType",
+      RelationshipAttr.relationship_id == Relationship.id,
+      Relationship.destination_type == "Person",
+      Relationship.destination_id == user_id,
+  )
+  assignable_relations_source = db.session.query(
+      sa.literal("RelationshipAttr").label("access_model"),
+      Relationship.destination_id.label("id"),
+      Relationship.destination_type.label("type"),
+      sa.literal("RUD").label("permissions"),
+  ).filter(
+      RelationshipAttr.attr_name == "AssigneeType",
+      RelationshipAttr.relationship_id == Relationship.id,
+      Relationship.source_type == "Person",
+      Relationship.source_id == user_id,
+  )
+  assignable_relations = assignable_relations_source.union(
+      assignable_relations_destinations
+  )
+  sub = assignable_relations.subquery("assignable_relations")
+  source_relation_query = db.session.query(
+      Relationship.source_type.label("access_model"),
+      Relationship.destination_id.label("id"),
+      Relationship.destination_type.label("type"),
+      sa.literal("R").label("permissions"),
+  ).filter(
+      Relationship.source_type == sub.c.type,
+      Relationship.source_id == sub.c.id,
+  )
+  destination_relation_query = db.session.query(
+      Relationship.destination_type.label("access_model"),
+      Relationship.source_id.label("id"),
+      Relationship.source_type.label("type"),
+      sa.literal("R").label("permissions"),
+  ).filter(
+      Relationship.destination_type == sub.c.type,
+      Relationship.destination_id == sub.c.id
+  )
+  relations = source_relation_query.union(destination_relation_query)
+  return assignable_relations.union_all(relations)

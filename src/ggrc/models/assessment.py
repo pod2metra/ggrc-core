@@ -76,6 +76,8 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
 
   ASSIGNEE_TYPES = (u"Creator", u"Assessor", u"Verifier")
 
+  MAPPED_WITH_RUD_PERMISSIONS = ["Document"]
+
   REMINDERABLE_HANDLERS = {
       "statusToPerson": {
           "handler":

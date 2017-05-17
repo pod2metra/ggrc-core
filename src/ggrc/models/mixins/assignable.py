@@ -24,6 +24,8 @@ class Assignable(object):
       reflection.Attribute("assignees", create=False, update=False),
   )
 
+  MAPPED_WITH_RUD_PERMISSIONS = []
+
   _custom_publish = {
       "assignees": lambda obj: obj.publish_assignees(),
   }
