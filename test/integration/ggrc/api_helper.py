@@ -98,16 +98,23 @@ class Api(object):
   def put(self, obj, data=None, not_send_fields=None):
     """Simple put request."""
     name = obj._inflector.table_singular
-    response = self.get(obj, obj.id)
     data = data or {}
     not_send_fields = not_send_fields or []
+    response = self.get(obj, obj.id)
     if response.status_code == 403:
       return response
-    headers = {
-        "If-Match": response.headers.get("Etag"),
-        "If-Unmodified-Since": response.headers.get("Last-Modified")
-    }
-    api_link = response.json[name]["selfLink"]
+    headers = {}
+    if "Etag" in response.headers:
+      headers["If-Match"] = response.headers["Etag"]
+    if "Last-Modified" in response.headers:
+      headers["If-Unmodified-Since"] = response.headers["Last-Modified"]
+    if response.json:
+      api_link = response.json[name]["selfLink"]
+      if name not in data:
+        response.json[name].update(data)
+        data = response.json
+    else:
+      api_link = data[name]["selfLink"]
     if name not in data:
       response.json[name].update(data)
       data = response.json
