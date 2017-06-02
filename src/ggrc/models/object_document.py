@@ -98,10 +98,8 @@ class Documentable(object):
   def log_json(self):
     """Serialize to JSON"""
     out_json = super(Documentable, self).log_json()
-    if hasattr(self, "urls"):
-      out_json["urls"] = self._log_docs(self.urls)
-    if hasattr(self, "attachments"):
-      out_json["attachments"] = self._log_docs(self.urls)
+    out_json["urls"] = self._log_docs(self.document_url)
+    out_json["attachments"] = self._log_docs(self.document_evidence)
     return out_json
 
   @classmethod
