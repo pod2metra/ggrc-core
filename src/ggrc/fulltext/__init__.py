@@ -72,6 +72,7 @@ def get_indexed_model_names():
       "CycleTaskEntry",
       "CycleTaskGroup",
       "CycleTaskGroupObjectTask",
+      "Document",
       "DataAsset",
       "Facility",
       "Issue",
