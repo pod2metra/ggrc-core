@@ -31,7 +31,7 @@ class CustomAttributeMock(object):
     """Generate a custom attribute definition."""
     definition = factories.CustomAttributeDefinitionFactory(
         attribute_type=self.attribute_type,
-        definition_type=self.attributable.__class__.__name__,
+        definition_type=self.attributable._inflector.table_singular,
         definition_id=None if self.global_ else self.attributable.id,
         mandatory=self.mandatory,
         multi_choice_options=(self.dropdown_parameters[0]
@@ -160,6 +160,7 @@ class TestPreconditionsFailed(TestCase):
         dropdown_parameters=("foo,comment_required", "0,1"),
         value=None,  # the value is made with generator to store revision too
     )
+
     _, ca.value = GENERATOR.generate_custom_attribute_value(
         custom_attribute_id=ca.definition.id,
         attributable=self.assessment,
@@ -252,17 +253,17 @@ class TestPreconditionsFailed(TestCase):
     )
 
     # new CA value not requiring comment
-    self.assessment.custom_attribute_values = [{
-        "attribute_value": "foo",
-        "custom_attribute_id": ca.definition.id,
+    self.assessment.local_attributes = [{
+        "id": ca.definition.id,
+        "values": [{"value": "foo"}]
     }]
     GENERATOR.api.modify_object(self.assessment, {})
 
     # new CA value requiring comment; the old comment should be considered
     # invalid
-    self.assessment.custom_attribute_values = [{
-        "attribute_value": "comment_required",
-        "custom_attribute_id": ca.definition.id,
+    self.assessment.local_attributes = [{
+        "id": ca.definition.id,
+        "values": [{"value": "comment_required"}]
     }]
     GENERATOR.api.modify_object(self.assessment, {})
 
