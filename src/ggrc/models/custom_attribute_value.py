@@ -248,6 +248,8 @@ class CustomAttributeValue(Base, Indexed, db.Model):
     if self.attribute_value and ":" in self.attribute_value:
       value, id_ = self.attribute_value.split(":")
       self.attribute_value = value
+      if id_.isdigit():
+        id_ = int(id_)
       self.attribute_object_id = id_
 
   def _validate_dropdown(self):
