@@ -13,7 +13,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import foreign
 from sqlalchemy.orm import relationship
-from werkzeug.exceptions import BadRequest
 
 from ggrc import builder
 from ggrc import db
@@ -30,13 +29,18 @@ class CustomAttributable(object):
   """Custom Attributable mixin."""
 
   _publish_attrs = [
-      'custom_attribute_values',
-      'custom_attribute_definitions',
+      'global_attributes',
+      'local_attributes',
       'preconditions_failed',
   ]
-  _update_attrs = ['custom_attribute_values', 'custom_attributes']
-  _include_links = ['custom_attribute_values', 'custom_attribute_definitions']
-  _update_raw = ['custom_attribute_values']
+  _update_attrs = [
+      'custom_attributes',
+      'local_attributes',
+      'global_attributes',
+  ]
+  _include_links = []
+  _update_raw = ['local_attributes',
+                 'global_attributes']
 
   _evidence_found = None
 
@@ -89,6 +93,14 @@ class CustomAttributable(object):
         order_by="CustomAttributeDefinition.id"
     )
 
+  @property
+  def local_cads(self):
+    return [d for d in self.custom_attribute_definitions if d.is_local]
+
+  @property
+  def global_cads(self):
+    return [d for d in self.custom_attribute_definitions if not d.is_local]
+
   @declared_attr
   def _custom_attribute_values(cls):  # pylint: disable=no-self-argument
     """Load custom attribute values"""
@@ -105,69 +117,85 @@ class CustomAttributable(object):
         cascade='all, delete-orphan',
     )
 
+  def _api_custom_attributes(self, definitions):
+    """Api like getter for CAVs instances."""
+    vals = collections.defaultdict(list)
+    defs = {d.id for d in definitions}
+    for value in self.custom_attribute_values:
+      if value.custom_attribute_id in defs:
+        vals[value.custom_attribute_id].append(value)
+    results = []
+    for definition in definitions:
+      if definition.attribute_type.startswith("Map:"):
+        values_getter = "attribute_object_id"
+      else:
+        values_getter = "attribute_value"
+      d_json = definition.log_json()
+      d_json.update({
+          "values": [
+              {"id": v.id, "value": getattr(v, values_getter)}
+              for v in vals[definition.id]
+          ]
+      })
+      results.append(d_json)
+    return results
+
+  def _api_custom_attributes_setter(self, value, definitions):
+    """Api like setter for CAVs instances."""
+    from ggrc.models.custom_attribute_value import CustomAttributeValue
+    value = value or []
+    defs = {d.id: d for d in definitions}
+    vals = {v.id: v for v in self.custom_attribute_values
+            if v.custom_attribute_id in defs}
+    for data in value:
+      definition = defs[data["id"]]
+      mapping_type = None
+      if definition.attribute_type.startswith("Map:"):
+        mapping_type = definition.attribute_type.lstrip("Map:")
+      for val in data['values']:
+        attr_val = val['value']
+        if mapping_type:
+          attr_val = "{}:{}".format(mapping_type, attr_val)
+        if val.get("id"):
+          vals[int(val['id'])].attribute_value = attr_val
+        else:
+          # if value doesn't exists then create new value
+          CustomAttributeValue(
+              custom_attribute=definition,
+              attributable=self,
+              attribute_value=attr_val,
+              context=self.context,
+          )
+
+  @builder.simple_property
+  def local_attributes(self):
+    return self._api_custom_attributes(self.local_cads)
+
+  @local_attributes.setter
+  def local_attributes(self, value):
+    return self._api_custom_attributes_setter(value, self.local_cads)
+
+  @builder.simple_property
+  def global_attributes(self):
+    return self._api_custom_attributes(self.global_cads)
+
+  @global_attributes.setter
+  def global_attributes(self, value):
+    return self._api_custom_attributes_setter(value, self.global_cads)
+
   @hybrid_property
   def custom_attribute_values(self):
     return self._custom_attribute_values
 
-  @classmethod
-  def indexed_query(cls):
-    return super(CustomAttributable, cls).indexed_query().options(
-        orm.Load(cls).subqueryload(
-            "custom_attribute_values"
-        ).joinedload(
-            "custom_attribute"
-        ).load_only(
-            "id",
-            "title",
-            "attribute_type",
-        ),
-        orm.Load(cls).subqueryload("custom_attribute_values").load_only(
-            "id",
-            "attribute_value",
-            "attribute_object_id",
-        ),
-    )
-
   @custom_attribute_values.setter
   def custom_attribute_values(self, values):
-    """Setter function for custom attribute values.
-
-    This setter function accepts 2 kinds of values:
-      - list of custom attributes. This is used on the back-end by developers.
-      - list of dictionaries containing custom attribute values. This is to
-        have a clean API where the front-end can put the custom attribute
-        values into the custom_attribute_values property and the json builder
-        can then handle the attributes just by setting them.
-
-    Args:
-      value: List of custom attribute values or dicts containing json
-        representation of custom attribute values.
-    """
     if not values:
       return
-
-    self._values_map = {
-        value.custom_attribute_id or value.custom_attribute.id: value
-        for value in self.custom_attribute_values
-    }
-    self._definitions_map = {
-        definition.id: definition
-        for definition in self.custom_attribute_definitions
-    }
-
-    if isinstance(values[0], dict):
-      self._add_ca_value_dicts(values)
-    else:
-      self._add_ca_values(values)
-
-  def _add_ca_values(self, values):
-    """Add CA value objects to _custom_attributes_values property.
-
-    Args:
-      values: list of CustomAttributeValue models
-    """
+    values_map = {v.custom_attribute_id or v.custom_attribute.id: v
+                  for v in self.custom_attribute_values}
     for new_value in values:
-      existing_value = self._values_map.get(new_value.custom_attribute.id)
+      cad_id = new_value.custom_attribute_id or new_value.custom_attribute.id
+      existing_value = values_map.get(cad_id)
       if existing_value:
         existing_value.attribute_value = new_value.attribute_value
         existing_value.attribute_object_id = new_value.attribute_object_id
@@ -176,45 +204,22 @@ class CustomAttributable(object):
         # new_value is automatically appended to self._custom_attribute_values
         # on new_value.attributable = self
 
-  def _add_ca_value_dicts(self, values):
-    """Add CA dict representations to _custom_attributes_values property.
-
-    This adds or updates the _custom_attribute_values with the values in the
-    custom attribute values serialized dictionary.
-
-    Args:
-      values: List of dictionaries that represent custom attribute values.
-    """
-    from ggrc.models.custom_attribute_value import CustomAttributeValue
-
-    for value in values:
-      if not value.get("attribute_object_id"):
-        # value.get("attribute_object", {}).get("id") won't help because
-        # value["attribute_object"] can be None
-        value["attribute_object_id"] = (value["attribute_object"].get("id") if
-                                        value.get("attribute_object") else
-                                        None)
-
-      attr = self._values_map.get(value.get("custom_attribute_id"))
-      if attr:
-        attr.attributable = self
-        attr.attribute_value = value.get("attribute_value")
-        attr.attribute_object_id = value.get("attribute_object_id")
-      elif "custom_attribute_id" in value:
-        # this is automatically appended to self._custom_attribute_values
-        # on attributable=self
-        CustomAttributeValue(
-            attributable=self,
-            custom_attribute_id=value.get("custom_attribute_id"),
-            attribute_value=value.get("attribute_value"),
-            attribute_object_id=value.get("attribute_object_id"),
-        )
-      elif "href" in value:
-        # Ignore setting of custom attribute stubs. Getting here means that the
-        # front-end is not using the API correctly and needs to be updated.
-        logger.info("Ignoring post/put of custom attribute stubs.")
-      else:
-        raise BadRequest("Bad custom attribute value inserted")
+  @classmethod
+  def indexed_query(cls):
+    return super(CustomAttributable, cls).indexed_query().options(
+        orm.Load(cls).subqueryload(
+            "custom_attribute_values"
+        ).joinedload(
+            "custom_attribute"
+        ).undefer_group(
+            "CustomAttributeDefinition_complete",
+        ),
+        orm.Load(cls).subqueryload(
+            "custom_attribute_values"
+        ).undefer_group(
+            "CustomAttributeValue_complete",
+        ),
+    )
 
   def insert_definition(self, definition):
     """Insert a new custom attribute definition into database
@@ -300,8 +305,7 @@ class CustomAttributable(object):
     from ggrc.models.custom_attribute_value import CustomAttributeValue
     from ggrc.services import signals
 
-    ca_values = src.get("custom_attribute_values")
-    if ca_values and "attribute_value" in ca_values[0]:
+    if any(f in src for f in ["local_attributes", 'global_attributes']):
       # This indicates that the new CA API is being used and the legacy API
       # should be ignored. If we need to use the legacy API the
       # custom_attribute_values property should contain stubs instead of entire
@@ -415,52 +419,33 @@ class CustomAttributable(object):
   @classmethod
   def eager_query(cls):
     """Define fields to be loaded eagerly to lower the count of DB queries."""
-    query = super(CustomAttributable, cls).eager_query()
-    query = query.options(
-        orm.subqueryload('custom_attribute_definitions')
-           .undefer_group('CustomAttributeDefinition_complete'),
-        orm.subqueryload('_custom_attribute_values')
-           .undefer_group('CustomAttributeValue_complete')
-           .subqueryload('{0}_custom_attributable'.format(cls.__name__)),
-        orm.subqueryload('_custom_attribute_values')
-           .subqueryload('_related_revisions'),
+    return super(CustomAttributable, cls).eager_query().options(
+        orm.subqueryload(
+            'custom_attribute_definitions'
+        ).undefer_group(
+            'CustomAttributeDefinition_complete'
+        ),
+        orm.subqueryload(
+            '_custom_attribute_values'
+        ).undefer_group(
+            'CustomAttributeValue_complete'
+        ).subqueryload(
+            '{0}_custom_attributable'.format(cls.__name__)
+        ),
+        orm.subqueryload(
+            '_custom_attribute_values'
+        ).subqueryload(
+            '_related_revisions'
+        ),
     )
-    if hasattr(cls, 'comments'):
-      # only for Commentable classess
-      query = query.options(
-          orm.subqueryload('comments')
-             .undefer_group('Comment_complete'),
-      )
-    return query
 
   def log_json(self):
     """Log custom attribute values."""
-    # pylint: disable=not-an-iterable
-    from ggrc.models.custom_attribute_definition import \
-        CustomAttributeDefinition
-
     res = super(CustomAttributable, self).log_json()
-
-    if self.custom_attribute_values:
-      res["custom_attribute_values"] = [
-          value.log_json() for value in self.custom_attribute_values]
-      # fetch definitions form database because `self.custom_attribute`
-      # may not be populated
-      defs = CustomAttributeDefinition.query.filter(
-          CustomAttributeDefinition.definition_type == self._inflector.table_singular,  # noqa # pylint: disable=protected-access
-          CustomAttributeDefinition.id.in_([
-              value.custom_attribute_id
-              for value in self.custom_attribute_values
-          ])
-      )
-      # also log definitions to freeze field names in time
-      res["custom_attribute_definitions"] = [
-          definition.log_json() for definition in defs]
-    else:
-      res["custom_attribute_definitions"] = []
-      res["custom_attribute_values"] = []
-
-    res["custom_attributes"] = res["custom_attribute_values"]
+    res["custom_attributes"] = [v.log_json()
+                                for v in self.custom_attribute_values]
+    res["local_attributes"] = self.local_attributes
+    res["global_attributes"] = self.global_attributes
     return res
 
   def validate_custom_attributes(self):
