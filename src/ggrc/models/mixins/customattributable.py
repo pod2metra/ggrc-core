@@ -34,13 +34,15 @@ class CustomAttributable(object):
       'global_attributes',
       'local_attributes',
       'preconditions_failed',
+      'custom_attribute_values',
+      'custom_attribute_definitions',
   ]
   _update_attrs = [
       'custom_attributes',
       'local_attributes',
       'global_attributes',
   ]
-  _include_links = []
+  _include_links = ['custom_attribute_values', 'custom_attribute_definitions']
   _update_raw = ['local_attributes',
                  'global_attributes']
 
@@ -127,15 +129,15 @@ class CustomAttributable(object):
     results = []
     for definition in definitions:
       if definition.attribute_type.startswith("Map:"):
-        values_getter = "attribute_object_id"
+        attribute_name = "attribute_object_id"
       else:
-        values_getter = "attribute_value"
+        attribute_name = "attribute_value"
       is_preconditions_failed = False
       values = []
       for val in vals[definition.id]:
         val_preconditions_failed = val.preconditions_failed
         values.append({"id": val.id,
-                       "value": getattr(val, values_getter),
+                       "value": getattr(val, attribute_name),
                        "preconditions_failed": val_preconditions_failed})
         if not is_preconditions_failed:
           is_preconditions_failed = any(val_preconditions_failed.values())
@@ -163,7 +165,7 @@ class CustomAttributable(object):
       definition = defs[data["id"]]
       mapping_type = None
       if definition.attribute_type.startswith("Map:"):
-        mapping_type = definition.attribute_type.lstrip("Map:")
+        mapping_type = definition.attribute_type[4:]
       for val in data['values']:
         attr_val = val['value']
         if mapping_type:
@@ -454,7 +456,30 @@ class CustomAttributable(object):
 
   def log_json(self):
     """Log custom attribute values."""
+    # pylint: disable=not-an-iterable
+    from ggrc.models.custom_attribute_definition import \
+        CustomAttributeDefinition
+    # pylint: disable=not-an-iterable
     res = super(CustomAttributable, self).log_json()
+
+    if self.custom_attribute_values:
+      res["custom_attribute_values"] = [
+          value.log_json() for value in self.custom_attribute_values]
+      # fetch definitions form database because `self.custom_attribute`
+      # may not be populated
+      defs = CustomAttributeDefinition.query.filter(
+          CustomAttributeDefinition.definition_type == self._inflector.table_singular,  # noqa # pylint: disable=protected-access
+          CustomAttributeDefinition.id.in_([
+              value.custom_attribute_id
+              for value in self.custom_attribute_values
+          ])
+      )
+      # also log definitions to freeze field names in time
+      res["custom_attribute_definitions"] = [
+          definition.log_json() for definition in defs]
+    else:
+      res["custom_attribute_definitions"] = []
+      res["custom_attribute_values"] = []
     res["custom_attributes"] = [v.log_json()
                                 for v in self.custom_attribute_values]
     res["local_attributes"] = self.local_attributes

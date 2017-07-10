@@ -8,7 +8,7 @@ class TestTrackObjectState(unittest.TestCase):
   """Test Track Object State"""
 
   def setUp(self):
-    self.obj = Control(id=123)
+    self.obj = Control()
 
   def test_validate_os_state(self):
     """Test validate_os_state prevents setting os_state"""

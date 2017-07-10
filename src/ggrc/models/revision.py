@@ -171,26 +171,29 @@ class Revision(Base, db.Model):
             "modified_by": None,
             "id": None,
         })
-    populated_content = self._content.copy()
-    populated_content["access_control_list"] = access_control_list
+    return {"access_control_list": access_control_list}
 
-    if 'url' in self._content:
-      reference_url_list = []
-      for key in ('url', 'reference_url'):
-        link = self._content[key]
-        reference_url_list.append({
-            "display_name": link,
-            "document_type": "REFERENCE_URL",
-            "link": link,
-            "title": link,
-            "id": None
-        })
-      populated_content['reference_url'] = reference_url_list
-
-    return populated_content
+  def _populate_url(self):
+    """Append reference urls for older revisions."""
+    if 'url' not in self._content:
+      return {}
+    reference_url_list = []
+    for key in ('url', 'reference_url'):
+      link = self._content[key]
+      reference_url_list.append({
+          "display_name": link,
+          "document_type": "REFERENCE_URL",
+          "link": link,
+          "title": link,
+          "id": None
+      })
+    return {'reference_url': reference_url_list}
 
   def _populate_cads(self):
     """Append cads in content list if it's needed."""
+    from ggrc.models import custom_attribute_definition as CAD
+    if "local_attributes" in self._content:
+      return {}
     cads = {}
     local_cads = set()
     global_cads = set()
@@ -212,13 +215,14 @@ class Revision(Base, db.Model):
         key = "attribute_value"
       vals[cad["id"]].append({"id": val["id"], "value": val.get(key)})
 
-    result = {
-        "local_attributes": content.get("local_attributes") or [],
-        "global_attributes": content.get("global_attributes") or [],
-    }
+    result = {"local_attributes": [], "global_attributes": []}
     for key in sorted(cads.keys()):
       cad = cads[key]
       cad["values"] = vals[key]
+      cad["options"] = CAD.CustomAttributeDefinition(
+          multi_choice_options=cad["multi_choice_options"],
+          multi_choice_mandatory=cad["multi_choice_mandatory"],
+      ).options
       marker = "local_attributes" if key in local_cads else "global_attributes"
       result[marker].append(cad)
     return result
@@ -231,6 +235,7 @@ class Revision(Base, db.Model):
     content = self._content.copy()
     content.update(self._populate_acl())
     content.update(self._populate_cads())
+    content.update(self._populate_url())
     return content
 
   @content.setter

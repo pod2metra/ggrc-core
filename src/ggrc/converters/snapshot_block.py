@@ -144,7 +144,6 @@ class SnapshotBlockConverter(object):
       for cad in itertools.chain(snap.content.get("global_attributes", []),
                                  snap.content.get("local_attributes", [])):
         cad_map[cad["id"]] = cad["title"]
-    print cad_map
     return OrderedDict(
         sorted(cad_map.iteritems(), key=lambda x: x[1])
     )
