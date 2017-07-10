@@ -4,7 +4,9 @@
 """Custom attribute definition module"""
 
 from cached_property import cached_property
+
 import flask
+from sqlalchemy import event
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
 from sqlalchemy.sql.schema import UniqueConstraint
@@ -13,6 +15,7 @@ from ggrc import db
 from ggrc.models.mixins import attributevalidator
 from ggrc.models import mixins
 from ggrc.models.custom_attribute_value import CustomAttributeValue
+from ggrc.models.mixins import customattributable
 from ggrc.access_control import role as acr
 from ggrc.models.exceptions import ValidationError
 
@@ -42,10 +45,9 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
                                      cascade='all, delete-orphan')
 
   @cached_property
-  def inflector_model_name_dict(self):  # pylint: disable=no-self-use
+  def inflector_model_dict(self):  # pylint: disable=no-self-use
     from ggrc.models import all_models
-    return {m._inflector.table_singular: m.__name__
-            for m in all_models.all_models}
+    return {m._inflector.table_singular: m for m in all_models.all_models}
 
   @property
   def definition_attr(self):
@@ -171,6 +173,10 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
 
     return value
 
+  @property
+  def is_local(self):
+    return bool(self.definition_id)
+
   def validate_assessment_title(self, name):
     """Check assessment title uniqueness.
 
@@ -252,7 +258,7 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
       raise ValueError(u"Global custom attribute '{}' "
                        u"already exists for this object type"
                        .format(name))
-    model_name = self.inflector_model_name_dict[definition_type]
+    model_name = self.inflector_model_dict[definition_type].__name__
     acrs = {i.lower() for i in acr.get_custom_roles_for(model_name).values()}
     if name in acrs:
       raise ValueError(u"Custom Role with a name of '{}' "
@@ -286,3 +292,38 @@ class CustomAttributeMapable(object):
         foreign_keys="CustomAttributeValue.attribute_object_id",
         backref='attribute_{0}'.format(cls.__name__),
         viewonly=True)
+
+
+def _get_cadable_objs(target):
+  """Return list of custom attributable objects.
+
+  That objcts may have the wrong declared attr."""
+  cad_modes = {k: v for k, v in target.inflector_model_dict.iteritems()
+               if issubclass(v, customattributable.CustomAttributable)}
+  definition_model = cad_modes.get(target.definition_type)
+  if not definition_model:
+    return
+  for obj in db.session:
+    if not isinstance(obj, definition_model):
+      continue
+    if obj.id != (target.definition_id or obj.id):
+      continue
+    yield obj
+
+
+# pylint:disable=unused-argument
+@event.listens_for(CustomAttributeDefinition, "after_insert")
+@event.listens_for(CustomAttributeDefinition, "after_update")
+def append_cads_to_instances(mapper, connection, target):
+  """Insert CAD to CustomAttributable instance in session."""
+  for obj in _get_cadable_objs(target):
+    if target not in obj.custom_attribute_definitions:
+      obj.custom_attribute_definitions.append(target)
+
+
+@event.listens_for(CustomAttributeDefinition, "after_delete")
+def remove_cads_from_instances(mapper, connection, target):
+  """Insert CAD to CustomAttributable instance in session."""
+  for obj in _get_cadable_objs(target):
+    if target in obj.custom_attribute_definitions:
+      obj.custom_attribute_definitions.remove(target)
