@@ -212,7 +212,10 @@ class Revision(Base, db.Model):
         key = "attribute_value"
       vals[cad["id"]].append({"id": val["id"], "value": val.get(key)})
 
-    result = {"local_attributes": [], "global_attributes": []}
+    result = {
+        "local_attributes": content.get("local_attributes") or [],
+        "global_attributes": content.get("global_attributes") or [],
+    }
     for key in sorted(cads.keys()):
       cad = cads[key]
       cad["values"] = vals[key]
