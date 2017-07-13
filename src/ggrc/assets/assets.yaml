@@ -193,6 +193,7 @@ dashboard-js-files:
   - components/object-state-toolbar/object-state-toolbar.js
   - components/object-list/object-list.js
   - components/ca-object/ca-object.js
+  - components/form/form-required-check.js
   - components/form/form-validation-icon.js
   - components/ca-object/ca-object-value-mapper.js
   - components/ca-object/ca-object-modal-content.js
