@@ -75,7 +75,8 @@
           })
           .each(function (item) {
             var isCommentRequired;
-            if ((item.attr('validationConfig')[item.attr('value')] === 2 ||
+            if (item.attr('validationConfig') &&
+              (item.attr('validationConfig')[item.attr('value')] === 2 ||
                 item.attr('validationConfig')[item.attr('value')] === 3)) {
               isCommentRequired = item.attr('errorsMap.comment');
               item.attr('errorsMap.evidence', isEvidenceRequired);
@@ -88,6 +89,7 @@
         var optionsWithEvidence = this.attr('fields')
               .filter(function (item) {
                 return item.attr('type') === 'dropdown' &&
+                  item.attr('validationConfig') &&
                   (item.attr('validationConfig')[item.attr('value')] === 2 ||
                 item.attr('validationConfig')[item.attr('value')] === 3);
               }).length;
@@ -97,7 +99,8 @@
         var isEvidenceRequired = this.attr('isEvidenceRequired');
         this.updateEvidenceValidation();
         field.attr('validation.empty', !(value));
-        if (field.attr('type') === 'dropdown') {
+        if (field.attr('type') === 'dropdown' &&
+          field.attr('validationConfig')) {
           if (!field.attr('validationConfig')[value]) {
             field.attr('errorsMap.evidence', false);
             field.attr('errorsMap.comment', false);

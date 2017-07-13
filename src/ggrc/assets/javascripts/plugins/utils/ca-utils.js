@@ -233,6 +233,101 @@
       };
     }
 
+    function prepareLocalAttribute(attr) {
+      var options;
+      var optionsRequirements;
+      var value;
+      var validation;
+      var validationConfig;
+      var type;
+
+      if (!attr) {
+        console.warn('Attribute is mandatory argument');
+        return {};
+      }
+
+      options = (attr.multi_choice_options || '').split(',');
+      optionsRequirements = (attr.multi_choice_mandatory || '').split(',');
+      type = getCustomAttributeType(attr.attribute_type);
+      value = attr.values[0] || new can.Map({});
+      validation = {
+        empty: true,
+        mandatory: attr.mandatory,
+        valid: true
+      };
+      if (type === 'dropdown') {
+        validationConfig = {};
+        options.forEach(function (item, index) {
+          validationConfig[item] =
+            Number(optionsRequirements[index]);
+        });
+      }
+      return {
+        type: type,
+        id: attr.id,
+        value: value.value,
+        title: attr.title,
+        placeholder: attr.placeholder,
+        options: options,
+        helptext: attr.helptext,
+        validation: validation,
+        validationConfig: validationConfig,
+        errorsMap: {
+          value: false,
+          comment: false,
+          evidence: false
+        },
+        valueId: can.compute(function () {
+          return value.attr('id');
+        })
+      };
+    }
+
+    function prepareGlobalAttribute(attr) {
+      var options;
+      var value;
+      var type;
+
+      if (!attr) {
+        console.warn('Attribute is mandatory argument');
+        return {};
+      }
+
+      options = (attr.multi_choice_options || '').split(',');
+      type = getCustomAttributeType(attr.attribute_type);
+      value = attr.values[0] || new can.Map({});
+
+      return {
+        type: type,
+        id: attr.id,
+        value: value.value,
+        title: attr.title,
+        placeholder: attr.placeholder,
+        options: options,
+        helptext: attr.helptext,
+        valueId: can.compute(function () {
+          return value.attr('id');
+        })
+      };
+    }
+
+    /**
+     * Simple function to update Custom Attributes
+     * Temporary as Custom Attributes doesn't support multiple values value parameter is single object
+     * @param {can.Map} attr - attribute to update
+     * @param {Object} value - updated value object
+     */
+    function updateAttribute(attr, value) {
+      if (!attr || !attr.values) {
+        console.warn('Attribute is mandatory argument');
+        return;
+      }
+      // Start Temporary: Till Custom Attributes support only single Value we transform passed "value" object to Array
+      value = can.makeArray(value);
+      // End of Temporary
+      attr.values.replace(value);
+    }
+
     return {
       convertFromCaValue: convertFromCaValue,
       convertToCaValue: convertToCaValue,
@@ -240,7 +335,10 @@
       prepareCustomAttributes: prepareCustomAttributes,
       isEmptyCustomAttribute: isEmptyCustomAttribute,
       getCustomAttributeType: getCustomAttributeType,
-      convertToFormViewField: convertToFormViewField
+      convertToFormViewField: convertToFormViewField,
+      prepareLocalAttribute: prepareLocalAttribute,
+      prepareGlobalAttribute: prepareGlobalAttribute,
+      updateAttribute: updateAttribute
     };
   })();
 })(window.GGRC, window.can, window._);
