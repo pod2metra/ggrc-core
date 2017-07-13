@@ -3,13 +3,15 @@
 
 """Custom attribute definition module"""
 
-from cached_property import cached_property
+import itertools
+from collections import namedtuple
 
-import flask
+from cached_property import cached_property
 from sqlalchemy import event
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
 from sqlalchemy.sql.schema import UniqueConstraint
+import flask
 
 from ggrc import db
 from ggrc.models.mixins import attributevalidator
@@ -269,6 +271,31 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
       self.validate_assessment_title(name)
 
     return value
+
+  @property
+  def multi_choice_options_to_flags(self):
+    """Parse mandatory comment and evidence flags from dropdown CA definition.
+
+    Args:
+      cad - a CA definition object
+
+    Returns:
+      {option_value: Flags} - a dict from dropdown options values to Flags
+                              objects where Flags.comment_required and
+                              Flags.evidence_required correspond to the values
+                              from multi_choice_mandatory bitmasks
+    """
+    if not self.multi_choice_options or not self.multi_choice_mandatory:
+      return {}
+
+    flag_cls = namedtuple("Flags", ["comment_required", "evidence_required"])
+    comment_required_flag = self.MultiChoiceMandatoryFlags.COMMENT_REQUIRED
+    evidence_required_flag = self.MultiChoiceMandatoryFlags.EVIDENCE_REQUIRED
+    masks = (int(m) for m in self.multi_choice_mandatory.split(","))
+    flags = (flag_cls(comment_required=(m & comment_required_flag),
+                      evidence_required=(m & evidence_required_flag))
+             for m in masks)
+    return dict(itertools.izip(self.multi_choice_options.split(","), flags))
 
 
 class CustomAttributeMapable(object):

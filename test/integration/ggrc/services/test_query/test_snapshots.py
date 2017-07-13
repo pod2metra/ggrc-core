@@ -827,7 +827,6 @@ class TestSnapshotIndexing(BaseQueryAPITestCase):
           all_models.Revision.resource_id == control_id
       ).order_by(all_models.Revision.updated_at.desc()).first()
       revision.content = control.log_json()
-
     program = models.Program.query.filter_by(id=program_id).one()
     self._create_audit(program=program, title="some title")
     category = models.ControlCategory.query.get(category_id)

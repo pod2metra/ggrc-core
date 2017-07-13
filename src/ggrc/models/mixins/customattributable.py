@@ -6,6 +6,8 @@
 import collections
 from logging import getLogger
 
+import cached_property
+
 from sqlalchemy import and_
 from sqlalchemy import orm
 from sqlalchemy import or_
@@ -41,8 +43,6 @@ class CustomAttributable(object):
   _include_links = []
   _update_raw = ['local_attributes',
                  'global_attributes']
-
-  _evidence_found = None
 
   @declared_attr
   def custom_attribute_definitions(cls):  # pylint: disable=no-self-argument
@@ -131,12 +131,15 @@ class CustomAttributable(object):
       else:
         values_getter = "attribute_value"
       d_json = definition.log_json()
-      d_json.update({
-          "values": [
-              {"id": v.id, "value": getattr(v, values_getter)}
-              for v in vals[definition.id]
-          ]
-      })
+      values = []
+      for val in vals[definition.id]:
+        values.append({
+            "id": val.id,
+            "value": getattr(val, values_getter),
+            "preconditions_failed": val.preconditions_failed,
+        })
+
+      d_json.update({"values": values})
       results.append(d_json)
     return results
 
@@ -355,6 +358,7 @@ class CustomAttributable(object):
       obj_type = self.__class__.__name__
       obj_id = self.id
       new_value = CustomAttributeValue(
+          custom_attribute=definitions[int(ad_id)],
           custom_attribute_id=int(ad_id),
           attributable=self,
           attribute_value=attributes[ad_id],
@@ -474,38 +478,30 @@ class CustomAttributable(object):
         cav = values_map.get(cad.id)
         if not cav or not cav.attribute_value:
           return True
+    return any((any(cav.preconditions_failed.values())
+                for cav in self.custom_attribute_values))
 
-    return any(c.preconditions_failed
-               for c in self.custom_attribute_values)
-
-  def check_mandatory_evidence(self):
+  @cached_property.cached_property
+  def cav_evideced_count(self):
     """Check presence of mandatory evidence.
 
     Note:  mandatory evidence precondition is checked only once.
     Any additional changes to evidences after the first checking
     of the precondition will cause incorrect result of the function.
     """
-    from ggrc.models.object_document import Documentable
-    if isinstance(self, Documentable):
-      # Note: this is a suboptimal implementation of mandatory evidence check;
-      # it should be refactored once Evicence-CA mapping is introduced
-      def evidence_required(cav):
-        """Return True if an evidence is required for this `cav`."""
-        flags = (cav._multi_choice_options_to_flags(cav.custom_attribute)
-                 .get(cav.attribute_value))
-        return flags and flags.evidence_required
 
-      if self._evidence_found is None:
-        self._evidence_found = (len(self.document_evidence) >=
-                                len([cav
-                                     for cav in self.custom_attribute_values
-                                     if evidence_required(cav)]))
-
-      if not self._evidence_found:
-        return ["evidence"]
-
-      return []
+    # Note: this is a suboptimal implementation of mandatory evidence check;
+    # it should be refactored once Evicence-CA mapping is introduced
+    count = 0
+    for cav in self.custom_attribute_values:
+      cav_flags = cav.custom_attribute.multi_choice_options_to_flags.get(
+          cav.attribute_value
+      )
+      if cav_flags and cav_flags.evidence_required:
+        count += 1
+    return count
 
   def invalidate_evidence_found(self):
     """Invalidate the cached value"""
-    self._evidence_found = None
+    if "cav_evideced_count" in self.__dict__:
+      del self.__dict__["cav_evideced_count"]
