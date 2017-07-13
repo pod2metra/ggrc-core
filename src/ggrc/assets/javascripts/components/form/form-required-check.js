@@ -38,6 +38,7 @@
           }
         }
       },
+      fields: [],
       updateEvidenceValidation: function () {
         var isEvidenceRequired = this.attr('isEvidenceRequired');
         this.attr('fields')
@@ -66,7 +67,9 @@
               }).length;
         return optionsWithEvidence > this.attr('evidenceAmount');
       },
-      performValidation: function (field, value) {
+      performValidation: function (event) {
+        var field = event.field;
+        var value = event.value;
         var isEvidenceRequired = this.attr('isEvidenceRequired');
         this.updateEvidenceValidation();
         field.attr('validation.empty', !(value));
