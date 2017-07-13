@@ -254,14 +254,16 @@ def get_category_sort_subprop(rec, category_list):
   yield newrec
 
 
-def get_category_data(rec, category_item):
+def get_category_data(rec, category_list):
   """Get category's name for fulltext indexing
   """
-  newrec = rec.copy()
-  newrec.update({
-      "content": category_item.get("display_name"),
-      "subproperty": "{}-category".format(category_item.get("id"))})
-  yield newrec
+
+  for category_item in category_list:
+    newrec = rec.copy()
+    newrec.update({
+        "content": category_item.get("display_name"),
+        "subproperty": "{}-category".format(category_item.get("id"))})
+    yield newrec
 
 
 def get_properties(snapshot):
