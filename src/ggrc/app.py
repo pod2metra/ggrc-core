@@ -150,6 +150,23 @@ def init_indexer():
         ggrc.indexer.indexer_rules[rule.model].append(rule.rule)
 
 
+def init_protocol():
+  """Init protocol action"""
+  from ggrc import models
+
+  PROTOCOL_ACTIONS = ['after_insert', 'after_update', 'after_delete']
+
+  protocol_models = (m for m in models.all_models.all_models
+                     if issubclass(m, models.protocol.Protacolable))
+  for model in protocol_models:
+    for action in PROTOCOL_ACTIONS:
+      event.listen(model, action, lambda m, c, t: t.protocol_to_pool())
+
+  event.listen(db.session.__class__,
+               'before_commit',
+               lambda s: models.protocol.ProtocolPool().protocol_to_db())
+
+
 def init_permissions_provider():
   from ggrc.rbac import permissions
   permissions.get_permissions_provider()
@@ -250,6 +267,7 @@ init_services(app)
 init_views(app)
 init_extension_blueprints(app)
 init_indexer()
+init_protocol()
 init_permissions_provider()
 init_extra_listeners()
 notifications.register_notification_listeners()

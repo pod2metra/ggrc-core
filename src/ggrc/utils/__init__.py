@@ -276,3 +276,13 @@ def create_stub(object_, context_id=None):
         'href': u"/api/{}/{}".format(model._inflector.table_plural, id_),
     }
   return None
+
+
+class Singleton(type):
+  """Metaclass. Required for creating only one instance of the class."""
+  _instances = {}
+
+  def __call__(cls, *args, **kwargs):
+    if cls not in cls._instances:
+      cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+    return cls._instances[cls]

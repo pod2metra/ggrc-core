@@ -58,6 +58,7 @@ from ggrc.models.system import Process
 from ggrc.models.system import System
 from ggrc.models.system import SystemOrProcess
 from ggrc.models.vendor import Vendor
+from ggrc.models.protocol import Protocol
 
 all_models = [
     AccessControlRole,
@@ -112,6 +113,7 @@ all_models = [
     Notification,
     Issue,
     Snapshot,
+    Protocol,
 ]
 
 __all__ = [model.__name__ for model in all_models]

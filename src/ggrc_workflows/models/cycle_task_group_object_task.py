@@ -18,6 +18,7 @@ from ggrc.models import mixins
 from ggrc.models import reflection
 from ggrc.models import relationship
 from ggrc.models import types
+from ggrc.models import protocol
 from ggrc_workflows.models.cycle import Cycle
 from ggrc_workflows.models.cycle_task_group import CycleTaskGroup
 from ggrc_workflows.models import mixins as wf_mixins
@@ -26,6 +27,7 @@ from ggrc_workflows.models import mixins as wf_mixins
 class CycleTaskGroupObjectTask(mixins.WithContact,
                                wf_mixins.CycleTaskStatusValidatedMixin,
                                mixins.Stateful,
+                               protocol.StatusProtocolable,
                                mixins.Timeboxed,
                                relationship.Relatable,
                                mixins.Notifiable,

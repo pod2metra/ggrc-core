@@ -3,6 +3,7 @@
 
 """Module for integration tests for CycleTaskGroupObjectTask specifics."""
 
+import datetime
 import ddt
 
 from ggrc import db
@@ -54,9 +55,9 @@ class TestCTGOT(BaseTestCase):
                                    role=workflow_owner_role,
                                    context=workflow.context)
 
-    generator = wf_generator.WorkflowsGenerator()
-    self.cycle_id = generator.generate_cycle(workflow)[1].id
-    generator.activate_workflow(workflow)
+    self.generator = wf_generator.WorkflowsGenerator()
+    self.cycle_id = self.generator.generate_cycle(workflow)[1].id
+    self.generator.activate_workflow(workflow)
 
   @ddt.data((NOBODY, [False, False]),
             (WORKFLOW_OWNER, [True, True]),
@@ -135,3 +136,18 @@ class TestCTGOT(BaseTestCase):
 
     for ctask in all_models.CycleTaskGroupObjectTask.query.all():
       self.assertEqual(ctask.context_id, ctask_context_id)
+
+  @ddt.data("InProgress", "Finished", "Verified", "Declined")
+  def test_log_state(self, state):
+    all_models.Protocol.query.delete()
+    cycle = all_models.Cycle.query.get(self.cycle_id)
+    task = cycle.cycle_task_group_object_tasks[0]
+    task_id = task.id
+    task = all_models.CycleTaskGroupObjectTask.query.get(task_id)
+    field_name = "{}_date".format(state.lower())
+    self.assertIsNone(getattr(task, field_name))
+    self.generator.modify_object(task, {"status": state})
+    task = all_models.CycleTaskGroupObjectTask.query.get(task_id)
+    self.assertLessEqual(datetime.datetime.now() - getattr(task, field_name),
+                         datetime.timedelta(seconds=2))
+    self.assertEqual(1, len(task._date_logs_map[state.lower()]))

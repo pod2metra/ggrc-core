@@ -35,7 +35,7 @@ class TestTotalReindex(TestCase):
       'Cycle': 5,
       'CycleTaskEntry': 3,
       'CycleTaskGroup': 4,
-      'CycleTaskGroupObjectTask': 4,
+      'CycleTaskGroupObjectTask': 5,
       'Document': 3,
       'Issue': 6,
       'Market': 5,
