@@ -130,17 +130,26 @@ class CustomAttributable(object):
         values_getter = "attribute_object_id"
       else:
         values_getter = "attribute_value"
-      d_json = definition.log_json()
+      is_preconditions_failed = False
       values = []
       for val in vals[definition.id]:
-        values.append({
-            "id": val.id,
-            "value": getattr(val, values_getter),
-            "preconditions_failed": val.preconditions_failed,
-        })
-
-      d_json.update({"values": values})
-      results.append(d_json)
+        val_preconditions_failed = val.preconditions_failed
+        values.append({"id": val.id,
+                       "value": getattr(val, values_getter),
+                       "preconditions_failed": val_preconditions_failed})
+        if not is_preconditions_failed:
+          is_preconditions_failed = any(val_preconditions_failed.values())
+      if not is_preconditions_failed:
+        is_preconditions_failed = bool(definition.mandatory and not values)
+      results.append({"id": definition.id,
+                      "attribute_type": definition.attribute_type,
+                      "helptext": definition.helptext or "",
+                      "mandatory": bool(definition.mandatory),
+                      "options": definition.options,
+                      "placeholder": definition.placeholder or "",
+                      "title": definition.title or "",
+                      "values": values,
+                      "is_preconditions_failed": is_preconditions_failed})
     return results
 
   def _api_custom_attributes_setter(self, value, definitions):
@@ -494,9 +503,7 @@ class CustomAttributable(object):
     # it should be refactored once Evicence-CA mapping is introduced
     count = 0
     for cav in self.custom_attribute_values:
-      cav_flags = cav.custom_attribute.multi_choice_options_to_flags.get(
-          cav.attribute_value
-      )
+      cav_flags = cav.custom_attribute.options.get(cav.attribute_value)
       if cav_flags and cav_flags.evidence_required:
         count += 1
     return count

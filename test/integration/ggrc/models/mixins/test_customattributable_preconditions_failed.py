@@ -116,6 +116,8 @@ class TestPreconditionsFailed(TestCase):
     self.assertEqual(
         [k for k, v in ca.value.preconditions_failed.items() if v],
         ["value"])
+    self.assertTrue(
+        self.assessment.global_attributes[0]['is_preconditions_failed'])
 
   def test_preconditions_failed_with_mandatory_filled_global_ca(self):
     """No preconditions failed if global mandatory CA is filled."""
@@ -193,6 +195,8 @@ class TestPreconditionsFailed(TestCase):
 
     self.assertEqual(preconditions_failed, False)
     self.assertFalse(all(ca.value.preconditions_failed.values()))
+    self.assertFalse(
+        self.assessment.local_attributes[0]['is_preconditions_failed'])
 
   def test_preconditions_failed_with_present_mandatory_evidence(self):
     """No preconditions failed if evidence required by CA is present."""

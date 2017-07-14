@@ -316,7 +316,7 @@ class CustomAttributeValue(Base, Indexed, db.Model):
 
     """
     failed_preconditions = {
-        "value": self.custom_attribute.mandatory and self.is_empty
+        "value": bool(self.custom_attribute.mandatory and self.is_empty)
     }
     if (self.custom_attribute.attribute_type ==
             self.custom_attribute.ValidTypes.DROPDOWN):
@@ -325,7 +325,7 @@ class CustomAttributeValue(Base, Indexed, db.Model):
 
   def _check_dropdown_requirements(self):
     """Check mandatory comment and mandatory evidence for dropdown CAV."""
-    options_to_flags = self.custom_attribute.multi_choice_options_to_flags
+    options_to_flags = self.custom_attribute.options
     flags = options_to_flags.get(self.attribute_value)
     if not flags:
       return {}

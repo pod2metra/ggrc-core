@@ -4,7 +4,6 @@
 """Custom attribute definition module"""
 
 import itertools
-from collections import namedtuple
 
 from cached_property import cached_property
 from sqlalchemy import event
@@ -123,11 +122,22 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
     DATE = "Date"
     MAP = "Map"
 
-  class MultiChoiceMandatoryFlags(object):
+  class MultiChoiceMandatoryFlags(dict):
     """Enum representing flags in multi_choice_mandatory bitmaps."""
     # pylint: disable=too-few-public-methods
     COMMENT_REQUIRED = 0b01
     EVIDENCE_REQUIRED = 0b10
+
+    def __init__(self, mask):
+      """Initialize flag instance."""
+      self.comment_required = bool(mask & self.COMMENT_REQUIRED)
+      self.evidence_required = bool(mask & self.EVIDENCE_REQUIRED)
+      super(
+          CustomAttributeDefinition.MultiChoiceMandatoryFlags,
+          self
+      ).__init__(
+          **self.__dict__
+      )
 
   VALID_TYPES = {
       "Text": "Text",
@@ -250,7 +260,6 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
       definition_type = value.lower()
     else:
       return value
-
     if name in self._get_reserved_names(definition_type):
       raise ValueError(u"Attribute '{}' is reserved for this object type."
                        .format(name))
@@ -273,11 +282,8 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
     return value
 
   @property
-  def multi_choice_options_to_flags(self):
+  def options(self):
     """Parse mandatory comment and evidence flags from dropdown CA definition.
-
-    Args:
-      cad - a CA definition object
 
     Returns:
       {option_value: Flags} - a dict from dropdown options values to Flags
@@ -285,17 +291,14 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
                               Flags.evidence_required correspond to the values
                               from multi_choice_mandatory bitmasks
     """
-    if not self.multi_choice_options or not self.multi_choice_mandatory:
-      return {}
-
-    flag_cls = namedtuple("Flags", ["comment_required", "evidence_required"])
-    comment_required_flag = self.MultiChoiceMandatoryFlags.COMMENT_REQUIRED
-    evidence_required_flag = self.MultiChoiceMandatoryFlags.EVIDENCE_REQUIRED
-    masks = (int(m) for m in self.multi_choice_mandatory.split(","))
-    flags = (flag_cls(comment_required=(m & comment_required_flag),
-                      evidence_required=(m & evidence_required_flag))
-             for m in masks)
-    return dict(itertools.izip(self.multi_choice_options.split(","), flags))
+    mc_options = []
+    if self.multi_choice_options:
+      mc_options = self.multi_choice_options.split(",")
+    masks = itertools.cycle([0])
+    if self.multi_choice_mandatory:
+      masks = (int(m) for m in self.multi_choice_mandatory.split(","))
+    flags = (self.MultiChoiceMandatoryFlags(m) for m in masks)
+    return dict(itertools.izip(mc_options, flags))
 
 
 class CustomAttributeMapable(object):
