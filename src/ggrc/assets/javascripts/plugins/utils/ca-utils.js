@@ -235,7 +235,6 @@
 
     function prepareLocalAttribute(attr) {
       var options;
-      var optionsRequirements;
       var value;
       var validation;
       var validationConfig;
@@ -251,41 +250,28 @@
         return {};
       }
 
-      options = (attr.multi_choice_options || '').split(',');
-      optionsRequirements = (attr.multi_choice_mandatory || '').split(',');
+      options = can.Map.keys(attr.options || {});
       type = getCustomAttributeType(attr.attribute_type);
       value = new can.Map(attr.values[0] || {});
       validationMap = value.attr('preconditions_failed') || {};
       isDropdown = type === 'dropdown';
       showValidation = attr.mandatory || isDropdown;
-      isValid = showValidation ?
-        can.Map.keys(validationMap)
-          .map(function (key) {
-            return validationMap.attr(key);
-          })
-          .every(function (value) {
-            return !value;
-          }) :
-        true;
+      isValid = showValidation ? !attr.attr('is_preconditions_failed') : true;
 
       if (isDropdown) {
-        validationConfig = {};
-        options.forEach(function (item, index) {
-          validationConfig[item] =
-            Number(optionsRequirements[index]);
-        });
+        validationConfig = attr.options || {};
         hasMissingInfo = validationMap.attr('comment') ||
           validationMap.attr('evidence');
       }
       validation = {
         show: showValidation,
-        valid: isValid && !hasMissingInfo,
+        valid: isValid,
         hasMissingInfo: hasMissingInfo
       };
       return {
         type: type,
         id: attr.id,
-        value: value.value,
+        value: value.attr('value'),
         title: attr.title,
         placeholder: attr.placeholder,
         required: attr.mandatory,
