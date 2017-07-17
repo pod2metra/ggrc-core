@@ -240,8 +240,13 @@
       var validation;
       var validationConfig;
       var type;
+      var isValid;
+      var isDropdown;
+      var showValidation;
+      var validationMap;
+      var hasMissingInfo;
 
-      if (!attr) {
+      if (!attr || !attr.values) {
         console.warn('Attribute is mandatory argument');
         return {};
       }
@@ -249,27 +254,44 @@
       options = (attr.multi_choice_options || '').split(',');
       optionsRequirements = (attr.multi_choice_mandatory || '').split(',');
       type = getCustomAttributeType(attr.attribute_type);
-      value = attr.values[0] || new can.Map({});
-      validation = {
-        empty: true,
-        mandatory: attr.mandatory,
-        valid: true
-      };
-      if (type === 'dropdown') {
+      value = new can.Map(attr.values[0] || {});
+      validationMap = value.attr('preconditions_failed') || {};
+      isDropdown = type === 'dropdown';
+      showValidation = attr.mandatory || isDropdown;
+      isValid = showValidation ?
+        can.Map.keys(validationMap)
+          .map(function (key) {
+            return validationMap.attr(key);
+          })
+          .every(function (value) {
+            return !value;
+          }) :
+        true;
+
+      if (isDropdown) {
         validationConfig = {};
         options.forEach(function (item, index) {
           validationConfig[item] =
             Number(optionsRequirements[index]);
         });
+        hasMissingInfo = validationMap.attr('comment') ||
+          validationMap.attr('evidence');
       }
+      validation = {
+        show: showValidation,
+        valid: isValid && !hasMissingInfo,
+        hasMissingInfo: hasMissingInfo
+      };
       return {
         type: type,
         id: attr.id,
         value: value.value,
         title: attr.title,
         placeholder: attr.placeholder,
+        required: attr.mandatory,
         options: options,
         helptext: attr.helptext,
+        isDropdown: isDropdown,
         validation: validation,
         validationConfig: validationConfig,
         errorsMap: {
@@ -288,7 +310,7 @@
       var value;
       var type;
 
-      if (!attr) {
+      if (!attr || !attr.values) {
         console.warn('Attribute is mandatory argument');
         return {};
       }
