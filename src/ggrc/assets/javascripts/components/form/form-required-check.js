@@ -43,81 +43,59 @@
         var isEvidenceRequired = this.attr('isEvidenceRequired');
         this.attr('fields')
           .filter(function (item) {
-            return item.attr('type') === 'dropdown';
+            return item.attr('isDropdown');
           })
           .each(function (item) {
             var isCommentRequired;
-            if (item.attr('validationConfig') &&
-              (item.attr('validationConfig')[item.attr('value')] === 2 ||
-                item.attr('validationConfig')[item.attr('value')] === 3)) {
+            if (this.requireEvidence(item, item.attr('value'))) {
               isCommentRequired = item.attr('errorsMap.comment');
               item.attr('errorsMap.evidence', isEvidenceRequired);
               item.attr('validation.valid',
                 !isEvidenceRequired && !isCommentRequired);
             }
-          });
+          }.bind(this));
       },
       hasMissingEvidence: function () {
         var optionsWithEvidence = this.attr('fields')
-              .filter(function (item) {
-                return item.attr('isDropdown') &&
-                  item.attr('validationConfig') &&
-                  (item.attr('validationConfig')[item.attr('value')] === 2 ||
-                item.attr('validationConfig')[item.attr('value')] === 3);
-              }).length;
+          .filter(function (item) {
+            return this.requireEvidence(item, item.attr('value'));
+          }.bind(this)).length;
         return optionsWithEvidence > this.attr('evidenceAmount');
+      },
+      getPreconditions: function (field, value) {
+        return field.attr('validationConfig')[value] || {};
+      },
+      requireEvidence: function (field, value) {
+        return field.attr('isDropdown') &&
+          this.getPreconditions(field, value).evidence_required;
+      },
+      requireComment: function (field, value) {
+        return field.attr('isDropdown') &&
+          this.getPreconditions(field, value).comment_required;
       },
       performValidation: function (event) {
         var field = event.field;
         var value = event.value;
+        var hasMissingEvidence;
+        var hasMissingComment;
         var isEvidenceRequired = this.attr('isEvidenceRequired');
         this.updateEvidenceValidation();
-        if (field.attr('isDropdown') && field.attr('validationConfig')) {
-          if (!field.attr('validationConfig')[value]) {
-            field.attr('errorsMap.evidence', false);
-            field.attr('errorsMap.comment', false);
-            field.attr('validation.hasMissing', false);
-            field.attr('validation.valid', true);
-          }
-          if (field.attr('validationConfig')[value] === 0) {
-            field.attr('errorsMap.evidence', false);
-            field.attr('errorsMap.comment', false);
-            field.attr('validation.hasMissingInfo', false);
-            field.attr('validation.valid', true);
-          }
-          if (field.attr('validationConfig')[value] === 2) {
-            field.attr('errorsMap.evidence', isEvidenceRequired);
-            field.attr('errorsMap.comment', false);
-            field.attr('validation.hasMissingInfo', isEvidenceRequired);
-            field.attr('validation.valid', !isEvidenceRequired);
-            if (isEvidenceRequired) {
-              this.dispatch({
-                type: 'validationChanged',
-                field: field
-              });
-            }
-          }
-          if (field.attr('validationConfig')[value] === 1) {
-            field.attr('errorsMap.evidence', false);
-            field.attr('errorsMap.comment', true);
-            field.attr('validation.hasMissingInfo', true);
-            field.attr('validation.valid', false);
+        field.attr('validation.valid', !!(value));
+        if (field.attr('isDropdown')) {
+          hasMissingEvidence =
+            isEvidenceRequired && this.requireEvidence(field, value);
+          hasMissingComment = this.requireComment(field, value);
+          field.attr('errorsMap.evidence', hasMissingEvidence);
+          field.attr('errorsMap.comment', hasMissingComment);
+          field.attr('validation.valid',
+            !(hasMissingEvidence || hasMissingComment));
+          field.attr('validation.hasMissingInfo',
+            hasMissingEvidence || hasMissingComment);
+          if (hasMissingEvidence || hasMissingComment) {
             this.dispatch({
               type: 'validationChanged',
               field: field
             });
-          }
-          if (field.attr('validationConfig')[value] === 3) {
-            field.attr('errorsMap.evidence', isEvidenceRequired);
-            field.attr('errorsMap.comment', true);
-            field.attr('validation.hasMissingInfo', true);
-            field.attr('validation.valid', false);
-            this.dispatch({
-              type: 'validationChanged',
-              field: field
-            });
-          } else {
-            field.attr('validation.valid', !!(value));
           }
         }
       }
