@@ -253,7 +253,7 @@
       options = can.Map.keys(attr.options || {});
       type = getCustomAttributeType(attr.attribute_type);
       value = new can.Map(attr.values[0] || {});
-      validationMap = value.attr('preconditions_failed') || {};
+      validationMap = new can.Map(value.attr('preconditions_failed') || {});
       isDropdown = type === 'dropdown';
       showValidation = attr.mandatory || isDropdown;
       isValid = showValidation ? !attr.attr('is_preconditions_failed') : true;
@@ -274,9 +274,9 @@
         value: value.attr('value'),
         title: attr.title,
         placeholder: attr.placeholder,
-        required: attr.mandatory,
         options: options,
         helptext: attr.helptext,
+        required: attr.mandatory,
         isDropdown: isDropdown,
         validation: validation,
         validationConfig: validationConfig,
@@ -301,9 +301,9 @@
         return {};
       }
 
-      options = (attr.multi_choice_options || '').split(',');
+      options = can.Map.keys(attr.options || {});
       type = getCustomAttributeType(attr.attribute_type);
-      value = attr.values[0] || new can.Map({});
+      value = new can.Map(attr.values[0] || {});
 
       return {
         type: type,
@@ -312,10 +312,7 @@
         title: attr.title,
         placeholder: attr.placeholder,
         options: options,
-        helptext: attr.helptext,
-        valueId: can.compute(function () {
-          return value.attr('id');
-        })
+        helptext: attr.helptext
       };
     }
 
