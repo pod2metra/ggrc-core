@@ -5,20 +5,27 @@ from ggrc import db
 from ggrc.fulltext.mixin import Indexed
 from ggrc.access_control.roleable import Roleable
 from ggrc.models.context import HasOwnContext
-from ggrc.models.mixins import BusinessObject
-from ggrc.models.mixins import CustomAttributable
-from ggrc.models.mixins import LastDeprecatedTimeboxed
+from ggrc.models import mixins
 from ggrc.models.deferred import deferred
-from ggrc.models.object_document import PublicDocumentable
+from ggrc.models import object_document
 from ggrc.models.object_person import Personable
 from ggrc.models import reflection
 from ggrc.models.relationship import Relatable
 from ggrc.models.track_object_state import HasObjectState
 
 
-class Program(HasObjectState, CustomAttributable, PublicDocumentable, Roleable,
-              Personable, Relatable, HasOwnContext, LastDeprecatedTimeboxed,
-              BusinessObject, Indexed, db.Model):
+class Program(HasObjectState,
+              mixins.CustomAttributable,
+              object_document.PublicDocumentable,
+              Roleable,
+              Personable,
+              Relatable,
+              HasOwnContext,
+              mixins.LastDeprecatedTimeboxed,
+              mixins.BusinessObject,
+              mixins.Folderable,
+              Indexed,
+              db.Model):
   __tablename__ = 'programs'
 
   KINDS = ['Directive']

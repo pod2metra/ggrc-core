@@ -321,15 +321,15 @@ def _get_log_revisions(current_user_id, obj=None, force_obj=False):
   new_objects = set(cache.new)
   delete_objects = set(cache.deleted)
   all_edited_objects = itertools.chain(cache.new, cache.dirty, cache.deleted)
-  for o in all_edited_objects:
-    if o.type == "ObjectFolder" and o.folderable:
-      modified_objects.add(o.folderable)
-    if o.type == "Relationship" and o.get_related_for("Document"):
-      documentable = o.get_related_for("Document")
-      document = o.get_related_for(documentable.type)
-      if o in new_objects and document not in documentable.documents:
+  relationships_changes = (o for o in all_edited_objects
+                           if o.type == "Relationship")
+  for rel in relationships_changes:
+    if rel.get_related_for("Document"):
+      documentable = rel.get_related_for("Document")
+      document = rel.get_related_for(documentable.type)
+      if rel in new_objects and document not in documentable.documents:
         documentable.documents.append(document)
-      if o in delete_objects and document in documentable.documents:
+      if rel in delete_objects and document in documentable.documents:
         documentable.documents.remove(document)
       if (
               documentable not in new_objects and

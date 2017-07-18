@@ -6,8 +6,6 @@
 from ggrc.models.all_models import register_model
 from ggrc_gdrive_integration.models.object_event import ObjectEvent
 from ggrc_gdrive_integration.models.object_file import ObjectFile
-from ggrc_gdrive_integration.models.object_folder import ObjectFolder
 
 register_model(ObjectEvent)
 register_model(ObjectFile)
-register_model(ObjectFolder)

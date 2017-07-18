@@ -29,9 +29,17 @@ from ggrc_workflows.models import cycle_task_group
 from ggrc_workflows.services import google_holidays
 
 
-class Workflow(mixins.CustomAttributable, HasOwnContext, mixins.Timeboxed,
-               mixins.Described, mixins.Titled, mixins.Notifiable,
-               mixins.Stateful, mixins.Slugged, Indexed, db.Model):
+class Workflow(mixins.CustomAttributable,
+               HasOwnContext,
+               mixins.Timeboxed,
+               mixins.Described,
+               mixins.Titled,
+               mixins.Notifiable,
+               mixins.Stateful,
+               mixins.Slugged,
+               mixins.Folderable,
+               Indexed,
+               db.Model):
   """Basic Workflow first class object.
   """
   __tablename__ = 'workflows'

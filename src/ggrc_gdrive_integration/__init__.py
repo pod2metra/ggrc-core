@@ -6,16 +6,11 @@ from flask import Blueprint
 from ggrc import db             # noqa
 from ggrc import settings       # noqa
 from ggrc.app import app        # noqa
-from ggrc.models import Audit
-from ggrc.models import Control
 from ggrc.models import Document
 from ggrc.models import Meeting
-from ggrc.models import Program
 from ggrc.services.registry import service
 from ggrc_basic_permissions.contributed_roles import RoleContributions
-from ggrc_workflows.models import Workflow
 import ggrc_gdrive_integration.models as models
-from ggrc_gdrive_integration.models.object_folder import Folderable
 from ggrc_gdrive_integration.models.object_file import Fileable
 from ggrc_gdrive_integration.models.object_event import Eventable
 import ggrc_gdrive_integration.views
@@ -30,20 +25,12 @@ blueprint = Blueprint(
 )
 
 
-Program.__bases__ = (Folderable,) + Program.__bases__
-Program.late_init_folderable()
-Audit.__bases__ = (Folderable,) + Audit.__bases__
-Audit.late_init_folderable()
-Control.__bases__ = (Folderable,) + Control.__bases__
-Control.late_init_folderable()
-Document.__bases__ = (Fileable,) + Document.__bases__
+Document.__bases__ = (Fileable, ) + Document.__bases__
 Document.late_init_fileable()
-Meeting.__bases__ = (Eventable,) + Meeting.__bases__
+Meeting.__bases__ = (Eventable, ) + Meeting.__bases__
 Meeting.late_init_eventable()
 # TODO: now the Gdrive module is dependant on the Workflows module. it used to
 # be the other way around but none of them are actually okay
-Workflow.__bases__ = (Folderable,) + Workflow.__bases__
-Workflow.late_init_folderable()
 
 '''
 Some other spitballs from Dan here:
@@ -77,7 +64,6 @@ def init_extra_views(application):
 
 
 contributed_services = [
-    service('object_folders', models.ObjectFolder),
     service('object_files', models.ObjectFile),
     service('object_events', models.ObjectEvent)
 ]
@@ -86,36 +72,36 @@ contributed_services = [
 class GDriveRoleContributions(RoleContributions):
   contributions = {
       'Auditor': {
-          'read': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
+          'read': ['ObjectFile', 'ObjectEvent'],
       },
       'ProgramAuditEditor': {
-          'read': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'create': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'update': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'delete': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
+          'read': ['ObjectFile', 'ObjectEvent'],
+          'create': ['ObjectFile', 'ObjectEvent'],
+          'update': ['ObjectFile', 'ObjectEvent'],
+          'delete': ['ObjectFile', 'ObjectEvent'],
       },
       'ProgramAuditOwner': {
-          'read': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'create': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'update': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'delete': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
+          'read': ['ObjectFile', 'ObjectEvent'],
+          'create': ['ObjectFile', 'ObjectEvent'],
+          'update': ['ObjectFile', 'ObjectEvent'],
+          'delete': ['ObjectFile', 'ObjectEvent'],
       },
       'ProgramAuditReader': {
-          'read': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'create': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'delete': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
+          'read': ['ObjectFile', 'ObjectEvent'],
+          'create': ['ObjectFile', 'ObjectEvent'],
+          'delete': ['ObjectFile', 'ObjectEvent'],
       },
       'ProgramOwner': {
-          'read': ['ObjectFolder'],
-          'create': ['ObjectFolder'],
-          'update': ['ObjectFolder'],
-          'delete': ['ObjectFolder'],
+          'read': [],
+          'create': [],
+          'update': [],
+          'delete': [],
       },
       'Editor': {
-          'read': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'create': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'update': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
-          'delete': ['ObjectFolder', 'ObjectFile', 'ObjectEvent'],
+          'read': ['ObjectFile', 'ObjectEvent'],
+          'create': ['ObjectFile', 'ObjectEvent'],
+          'update': ['ObjectFile', 'ObjectEvent'],
+          'delete': ['ObjectFile', 'ObjectEvent'],
       },
 
   }

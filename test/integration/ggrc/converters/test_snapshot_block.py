@@ -99,6 +99,7 @@ class TestSnapshotBlockConverter(TestCase):
         ('updated_at', 'Last Updated'),
         ('modified_by', 'Last Updated By'),
         ('created_at', 'Created Date'),
+        ('folder', "Folder"),
     ]
     ac_roles = db.session.query(all_models.AccessControlRole.name).filter(
         all_models.AccessControlRole.object_type == "Control"

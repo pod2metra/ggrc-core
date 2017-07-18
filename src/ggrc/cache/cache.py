@@ -78,7 +78,6 @@ def all_cache_entries():
       resource('user_roles', 'UserRole'),
 
       # ggrc_gdrive_integration models
-      resource('object_folders', 'ObjectFolder'),
       resource('object_files', 'ObjectFile'),
       resource('object_events', 'ObjectEvent'),
 
@@ -119,7 +118,6 @@ def all_mapping_entries():
       mapping('UserRole', 'person'),
       mapping('UserRole', 'role'),
       mapping('ObjectEvent', 'eventable', True),
-      mapping('ObjectFolder', 'folderable', True),
       mapping('ObjectFile', 'fileable', True),
       mapping('Notification', 'recipients'),
       mapping('Notification', 'notification_object'),

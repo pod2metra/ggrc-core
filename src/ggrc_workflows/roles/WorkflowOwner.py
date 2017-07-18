@@ -20,7 +20,6 @@ permissions = {
         "UserRole",
         "Context",
         "Document",
-        "ObjectFolder",
         "ObjectFile",
     ],
     "create": [
@@ -36,7 +35,6 @@ permissions = {
         "CycleTaskEntry",
         "UserRole",
         "Document",
-        "ObjectFolder",
         "ObjectFile",
     ],
     "update": [
@@ -52,7 +50,6 @@ permissions = {
         "CycleTaskEntry",
         "UserRole",
         "Document",
-        "ObjectFolder",
         "ObjectFile",
     ],
     "delete": [
@@ -75,7 +72,6 @@ permissions = {
         "CycleTaskEntry",
         "UserRole",
         "Document",
-        "ObjectFolder",
         "ObjectFile",
     ],
     "view_object_page": [
