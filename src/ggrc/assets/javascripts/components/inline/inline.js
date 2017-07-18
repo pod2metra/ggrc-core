@@ -42,7 +42,7 @@
         this.attr('editMode', true);
       },
       setPerson: function (scope, el, ev) {
-        this.attr('context.value', ev.selectedItem.serialize());
+        this.attr('context.value', ev.selectedItem.serialize().id);
       },
       unsetPerson: function (scope, el, ev) {
         ev.preventDefault();

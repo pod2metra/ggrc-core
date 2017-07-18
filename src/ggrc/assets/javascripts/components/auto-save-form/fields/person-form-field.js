@@ -16,9 +16,7 @@
         _value: {
           set: function (newValue, setValue, onError, oldValue) {
             setValue(newValue);
-            if (oldValue === undefined ||
-                (oldValue && newValue &&
-                oldValue.id === newValue.id)) {
+            if (oldValue === newValue) {
               return;
             }
             this.valueChanged(newValue);
@@ -33,7 +31,7 @@
       },
       fieldId: null,
       setPerson: function (scope, el, ev) {
-        this.attr('_value', ev.selectedItem.serialize());
+        this.attr('_value', ev.selectedItem.serialize().id);
       },
       unsetPerson: function (scope, el, ev) {
         ev.preventDefault();
