@@ -195,6 +195,11 @@
               .map(GGRC.Utils.CustomAttributes.prepareLocalAttribute)
         );
       },
+      initGlobalAttributes: function () {
+        return this.attr('globalAttributes',
+          this.attr('instance.global_attributes')
+            .map(GGRC.Utils.CustomAttributes.prepareGlobalAttribute));
+      },
       onFormSave: function () {
         this.attr('triggerFormSaveCbs').fire();
       },
@@ -226,10 +231,30 @@
             });
           });
       },
+      saveGlobalAttributes: function (event) {
+        var globalAttributes = event.globalAttributes;
+        var caValues = this.attr('instance.global_attributes');
+        can.Map.keys(globalAttributes).forEach(function (fieldId) {
+          var caValue =
+            caValues.filter(function (item) {
+              return item.id === Number(fieldId);
+            })[0];
+          if (!caValue) {
+            console.error('Corrupted Date: ', caValues);
+            return;
+          }
+          if (caValue.attr('values').length) {
+            caValue.attr('values')[0].attr('value', globalAttributes[fieldId]);
+          } else {
+            caValue.attr('values').push({value: globalAttributes[fieldId]});
+          }
+        });
+
+        return this.attr('instance').save();
+      },
       saveFormFields: function (formFields) {
         var caValues = this.attr('instance.local_attributes');
-
-        Object.keys(formFields).forEach(function (fieldId) {
+        can.Map.keys(formFields).forEach(function (fieldId) {
           var caValue =
             caValues.filter(function (item) {
               return item.id === Number(fieldId);
@@ -282,6 +307,7 @@
     },
     init: function () {
       this.viewModel.initializeFormFields();
+      this.viewModel.initGlobalAttributes();
       this.viewModel.updateRelatedItems();
     },
     events: {
