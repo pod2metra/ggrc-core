@@ -32,7 +32,7 @@
 
   {{#case 'person'}}
     {{#if context.value}}
-      <person-info {person-obj}="context.value"></person-info>
+      <person-info {person-id}="context.value"></person-info>
     {{else}}
       <span class="empty-message">No person</span>
     {{/if}}

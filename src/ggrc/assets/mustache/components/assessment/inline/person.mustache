@@ -8,7 +8,7 @@
     <a href="#" ($click)="unsetPerson" class="inline-block">
       <i class="fa fa-times" aria-hidden="true"></i>
     </a>
-    <person-info class="inline-block" {person-obj}="context.value"></person-info>
+    <person-info class="inline-block" {person-id}="context.value"></person-info>
   {{/if}}
   <autocomplete
     search-items-type="Person"
