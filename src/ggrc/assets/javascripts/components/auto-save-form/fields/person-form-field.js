@@ -16,7 +16,7 @@
         _value: {
           set: function (newValue, setValue, onError, oldValue) {
             setValue(newValue);
-            if (oldValue === newValue) {
+            if (oldValue === undefined || oldValue === newValue) {
               return;
             }
             this.valueChanged(newValue);
