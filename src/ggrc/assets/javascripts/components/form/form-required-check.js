@@ -88,7 +88,7 @@
           field.attr('errorsMap.evidence', hasMissingEvidence);
           field.attr('errorsMap.comment', hasMissingComment);
           field.attr('validation.valid',
-            !(hasMissingEvidence || hasMissingComment));
+            !!(value) && !(hasMissingEvidence || hasMissingComment));
           field.attr('validation.hasMissingInfo',
             hasMissingEvidence || hasMissingComment);
           if (hasMissingEvidence || hasMissingComment) {
