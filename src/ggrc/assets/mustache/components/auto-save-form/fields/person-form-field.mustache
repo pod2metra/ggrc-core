@@ -13,9 +13,9 @@
     </div>
   {{else}}
     <autocomplete
-        {{#if disabled}}disabled{{/if}}
+      {{#if disabled}}disabled{{/if}}
       search-items-type="Person"
-      can-item-selected="setPerson"
+      (item-selected)="setPerson(%event)"
       placeholder="Select person"
     ></autocomplete>
   {{/if}}
