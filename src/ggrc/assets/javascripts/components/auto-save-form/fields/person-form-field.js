@@ -30,11 +30,12 @@
         }
       },
       fieldId: null,
-      setPerson: function (scope, el, ev) {
+      setPerson: function (ev) {
         this.attr('_value', ev.selectedItem.serialize().id);
       },
       unsetPerson: function (scope, el, ev) {
         ev.preventDefault();
+        ev.stopPropagation();
         this.attr('_value', null);
       },
       valueChanged: function (newValue) {
