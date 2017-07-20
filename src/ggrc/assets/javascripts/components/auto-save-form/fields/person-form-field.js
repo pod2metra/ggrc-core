@@ -29,6 +29,7 @@
           }
         }
       },
+      withDetails: false,
       fieldId: null,
       setPerson: function (ev) {
         this.attr('_value', ev.selectedItem.serialize().id);

@@ -9,7 +9,7 @@
       <a href="#" ($click)="unsetPerson">
         <i class="fa fa-fw fa-times" aria-hidden="true"></i>
       </a>
-      <person-info {person-id}="_value"></person-info>
+      <person-list-item {person-id}="_value" {with-Details}="withDetails"></person-list-item>
     </div>
   {{else}}
     <autocomplete
