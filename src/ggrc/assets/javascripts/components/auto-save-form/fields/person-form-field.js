@@ -27,10 +27,12 @@
             setValue(newValue);
             this.attr('_value', newValue);
           }
+        },
+        fieldId: {
+          type: 'number'
         }
       },
       withDetails: false,
-      fieldId: null,
       setPerson: function (ev) {
         this.attr('_value', ev.selectedItem.serialize().id);
       },
@@ -42,7 +44,7 @@
       valueChanged: function (newValue) {
         this.dispatch({
           type: 'valueChanged',
-          fieldId: this.fieldId,
+          fieldId: this.attr('fieldId'),
           value: newValue
         });
       }

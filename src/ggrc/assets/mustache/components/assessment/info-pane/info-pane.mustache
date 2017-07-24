@@ -147,7 +147,7 @@
                                     {^all-saved}="formState.allSaved"
                                     {^form-saved-deferred}="formState.formSavedDeferred"
                                     {^is-dirty}="formState.isDirty"
-                                    (valueChanged)="performValidation(%event)"
+                                    (value-changed)="performValidation(%event)"
                       ></auto-save-form>
                       <!-- Modal Window to fix validation issues of CA fields -->
                       <simple-modal {(state)}="modal.state"
