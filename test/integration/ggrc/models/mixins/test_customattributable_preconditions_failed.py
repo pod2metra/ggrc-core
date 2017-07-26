@@ -82,8 +82,8 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca_text.value.preconditions_failed.values()))
-    self.assertFalse(all(ca_cbox.value.preconditions_failed.values()))
+    self.assertFalse(any(ca_text.value.preconditions_failed.values()))
+    self.assertFalse(any(ca_cbox.value.preconditions_failed.values()))
 
   def test_preconditions_failed_with_mandatory_empty_ca(self):
     """Preconditions failed if mandatory CA is empty."""
@@ -103,7 +103,7 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca.value.preconditions_failed.values()))
+    self.assertFalse(any(ca.value.preconditions_failed.values()))
 
   def test_preconditions_failed_with_mandatory_empty_global_ca(self):
     """Preconditions failed if global mandatory CA is empty."""
@@ -127,7 +127,7 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca.value.preconditions_failed.values()))
+    self.assertFalse(any(ca.value.preconditions_failed.values()))
 
   def test_preconditions_failed_with_missing_mandatory_comment(self):
     """Preconditions failed if comment required by CA is missing."""
@@ -194,7 +194,7 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca.value.preconditions_failed.values()))
+    self.assertFalse(any(ca.value.preconditions_failed.values()))
     self.assertFalse(
         self.assessment.local_attributes[0]['is_preconditions_failed'])
 
@@ -217,7 +217,7 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca.value.preconditions_failed.values()))
+    self.assertFalse(any(ca.value.preconditions_failed.values()))
 
   def test_preconditions_failed_with_mandatory_comment_and_evidence(self):
     """Preconditions failed with mandatory comment and evidence missing."""
@@ -351,5 +351,5 @@ class TestPreconditionsFailed(TestCase):
     preconditions_failed = self.assessment.preconditions_failed
 
     self.assertEqual(preconditions_failed, False)
-    self.assertFalse(all(ca1.value.preconditions_failed.values()))
-    self.assertFalse(all(ca2.value.preconditions_failed.values()))
+    self.assertFalse(any(ca1.value.preconditions_failed.values()))
+    self.assertFalse(any(ca2.value.preconditions_failed.values()))
