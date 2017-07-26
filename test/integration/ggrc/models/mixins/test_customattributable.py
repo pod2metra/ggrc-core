@@ -87,14 +87,14 @@ class TestCustomAttributableMixin(TestCase):
     prog = ProgramFactory()
     cad1 = CAD(definition_type="section", title="CA 1",)
 
-    with self.assertRaises(KeyError):
-      prog.local_attributes = [{
+    with self.assertRaises(ValueError):
+      prog.global_attributes = [{
           "id": -1,
           "values": [{"value": "55"}],
       }]
 
-    with self.assertRaises(KeyError):
-      prog.local_attributes = [{
+    with self.assertRaises(ValueError):
+      prog.global_attributes = [{
           "id": cad1.id,
           "values": [{"value": "55"}],
       }]

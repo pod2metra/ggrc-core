@@ -162,7 +162,10 @@ class CustomAttributable(object):
     vals = {v.id: v for v in self.custom_attribute_values
             if v.custom_attribute_id in defs}
     for data in value:
-      definition = defs[data["id"]]
+      try:
+        definition = defs[data["id"]]
+      except KeyError:
+        raise ValueError("You try to setup invalid custom attribute value")
       mapping_type = None
       if definition.attribute_type.startswith("Map:"):
         mapping_type = definition.attribute_type[4:]
