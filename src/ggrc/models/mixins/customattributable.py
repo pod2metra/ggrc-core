@@ -201,23 +201,6 @@ class CustomAttributable(object):
   def custom_attribute_values(self):
     return self._custom_attribute_values
 
-  @custom_attribute_values.setter
-  def custom_attribute_values(self, values):
-    if not values:
-      return
-    values_map = {v.custom_attribute_id or v.custom_attribute.id: v
-                  for v in self.custom_attribute_values}
-    for new_value in values:
-      cad_id = new_value.custom_attribute_id or new_value.custom_attribute.id
-      existing_value = values_map.get(cad_id)
-      if existing_value:
-        existing_value.attribute_value = new_value.attribute_value
-        existing_value.attribute_object_id = new_value.attribute_object_id
-      else:
-        new_value.attributable = self
-        # new_value is automatically appended to self._custom_attribute_values
-        # on new_value.attributable = self
-
   @classmethod
   def indexed_query(cls):
     return super(CustomAttributable, cls).indexed_query().options(
