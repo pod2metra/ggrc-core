@@ -52,6 +52,7 @@ class TestCsvImport(TestCase):
     self.assertEqual(Product.query.count(), 5)
 
   def test_multi_basic_policy_orggroup_product_with_warnings(self):
+    """Test multi basic policy orggroup product with warnings"""
     filename = "multi_basic_policy_orggroup_product_with_warnings.csv"
     response_json = self.import_file(filename)
 
@@ -129,5 +130,6 @@ class TestCsvImport(TestCase):
     self.assertEqual(get_relationships_for(org1).count(), 5)
 
   def test_big_import_with_mappings(self):
+    """Test big import with mappings"""
     response = self.import_file("data_for_export_testing.csv")
     self._check_csv_response(response, {})

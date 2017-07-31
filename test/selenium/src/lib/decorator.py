@@ -57,3 +57,16 @@ def handle_alert(fun):
     selenium_utils.handle_alert(self._driver, accept=True)
     return result
   return wrapper
+
+
+def lazy_property(fun):
+  """Decorator for lazy initialization of property."""
+  prop_name = "_lazy_" + fun.__name__
+
+  @property
+  def lazy(self):
+    """Check if property exist in object, if no setattr"""
+    if not hasattr(self, prop_name):
+      setattr(self, prop_name, fun(self))
+    return getattr(self, prop_name)
+  return lazy

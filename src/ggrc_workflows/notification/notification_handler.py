@@ -82,7 +82,7 @@ def add_cycle_task_due_notifications(task):
   Args:
     task: CycleTaskGroupObjectTask instance to generate the notifications for.
   """
-  if task.status in task.inactive_states:
+  if task.is_done:
     return
   if not task.cycle_task_group.cycle.is_current:
     return
@@ -216,12 +216,11 @@ def handle_cycle_task_status_change(obj, new_status, old_status):
     add_notif(obj, notif_type)
     return
 
-  if obj.status in obj.inactive_states:
+  if obj.is_done:
     for notif in get_notification(obj):
       db.session.delete(notif)  # delete all notification for inactive obj
     # if all tasks are in inactive states then add notification to cycle
-    if all(task.status in task.inactive_states for task in
-           obj.cycle.cycle_task_group_object_tasks):
+    if all(task.is_done for task in obj.cycle.cycle_task_group_object_tasks):
       add_notif(obj.cycle, get_notification_type("all_cycle_tasks_completed"))
     db.session.flush()
     return

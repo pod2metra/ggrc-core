@@ -9,26 +9,27 @@ from ggrc.models.mixins import CustomAttributable
 from ggrc.models.mixins import Hierarchical
 from ggrc.models.mixins import BusinessObject
 from ggrc.models.deferred import deferred
-from ggrc.models.object_owner import Ownable
+from ggrc.models.object_document import PublicDocumentable
 from ggrc.models.object_person import Personable
-from ggrc.models.reflection import AttributeInfo
+from ggrc.models import reflection
 from ggrc.models.relationship import Relatable
 from ggrc.models.relationship import Relationship
 from ggrc.models.track_object_state import HasObjectState
 
 
 class Section(Roleable, HasObjectState, Hierarchical, db.Model,
-              CustomAttributable, Personable, Ownable, Relatable, Indexed,
-              BusinessObject):
+              CustomAttributable, Personable, Relatable, Indexed,
+              PublicDocumentable, BusinessObject):
 
   __tablename__ = 'sections'
   _table_plural = 'sections'
   _aliases = {
-      "url": "Section URL",
+      "document_url": None,
+      "document_evidence": None,
       "description": "Text of Section",
       "directive": {
           "display_name": "Policy / Regulation / Standard / Contract",
-          "type": AttributeInfo.Type.MAPPING,
+          "type": reflection.AttributeInfo.Type.MAPPING,
           "filter_by": "_filter_by_directive",
       }
   }
@@ -37,10 +38,7 @@ class Section(Roleable, HasObjectState, Hierarchical, db.Model,
                 'Section')
   notes = deferred(db.Column(db.Text), 'Section')
 
-  _publish_attrs = [
-      'na',
-      'notes',
-  ]
+  _api_attrs = reflection.ApiAttributes('na', 'notes')
   _sanitize_html = ['notes']
   _include_links = []
 

@@ -19,6 +19,7 @@ from ggrc.models.mixins import Base
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Stateful
 from ggrc.models.types import CompressedType
+from ggrc.models import reflection
 
 
 logger = getLogger(__name__)
@@ -38,10 +39,7 @@ class BackgroundTask(Base, Stateful, db.Model):
   parameters = deferred(db.Column(CompressedType), 'BackgroundTask')
   result = deferred(db.Column(CompressedType), 'BackgroundTask')
 
-  _publish_attrs = [
-      'name',
-      'result'
-  ]
+  _api_attrs = reflection.ApiAttributes('name', 'result')
 
   _aliases = {
       "status": {

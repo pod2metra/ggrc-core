@@ -40,24 +40,20 @@ class Snapshot(relationship.Relatable, WithLastAssessmentDate, mixins.Base,
   """
   __tablename__ = "snapshots"
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       "parent",
       "child_id",
       "child_type",
-      "revision",
-      "revision_id",
-      reflection.PublishOnly("archived"),
-      reflection.PublishOnly("revisions"),
-      reflection.PublishOnly("is_latest_revision"),
-      reflection.PublishOnly("original_object_deleted"),
-  ]
-
-  _update_attrs = [
-      "parent",
-      "child_id",
-      "child_type",
-      "update_revision"
-  ]
+      reflection.Attribute("revision", create=False, update=False),
+      reflection.Attribute("revision_id", create=False, update=False),
+      reflection.Attribute("archived", create=False, update=False),
+      reflection.Attribute("revisions", create=False, update=False),
+      reflection.Attribute("is_latest_revision", create=False, update=False),
+      reflection.Attribute("original_object_deleted",
+                           create=False,
+                           update=False),
+      reflection.Attribute("update_revision", read=False),
+  )
 
   _include_links = [
       "revision"
@@ -157,9 +153,7 @@ class Snapshot(relationship.Relatable, WithLastAssessmentDate, mixins.Base,
 class Snapshotable(object):
   """Provide `snapshotted_objects` on for parent objects."""
 
-  _publish_attrs = [
-      "snapshotted_objects",
-  ]
+  _api_attrs = reflection.ApiAttributes("snapshotted_objects")
 
   @declared_attr
   def snapshotted_objects(cls):  # pylint: disable=no-self-argument

@@ -15,6 +15,7 @@ from ggrc.models import mixins
 from ggrc.models.custom_attribute_value import CustomAttributeValue
 from ggrc.access_control import role as acr
 from ggrc.models.exceptions import ValidationError
+from ggrc.models import reflection
 
 
 class CustomAttributeDefinition(attributevalidator.AttributeValidator,
@@ -69,7 +70,7 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
                        name='uq_custom_attribute'),
       db.Index('ix_custom_attributes_title', 'title'))
 
-  _include_links = _publish_attrs = [
+  _include_links = [
       'definition_type',
       'definition_id',
       'attribute_type',
@@ -79,6 +80,8 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
       'helptext',
       'placeholder',
   ]
+
+  _api_attrs = reflection.ApiAttributes(*_include_links)
 
   _sanitize_html = [
       "multi_choice_options",

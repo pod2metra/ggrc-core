@@ -41,8 +41,21 @@
     background-color: $messageYellow;
   }
   .alert {
+    .alert_spinner-left {
+      position: absolute;
+      left: 10px;
+    }
+
     .close {
-      margin: 0;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 0.6;
+      }
+
+      * {
+        font-size: 20px;
+      }
     }
   }
   .modal-header & {
@@ -52,8 +65,7 @@
 
 .alert-progress {
   color: $darkText;
-  background: url('/static/images/ajax-loader.gif') no-repeat 10px 9px;
-  background-color: $messagePurple;
+  background-color: $messageTurquoise;
   padding-left: 35px;
 }
 

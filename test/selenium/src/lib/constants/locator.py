@@ -42,6 +42,7 @@ class Common(object):
                        XPATH_NOT_HIDDEN)
   # import / export pages
   CONTENT = ".content"
+  OPTION = "option"
 
 
 class Login(object):
@@ -216,13 +217,9 @@ class CommonModalUnifiedMapper(object):
   FILTER_BY_EXPRESSION = (By.CSS_SELECTOR, MODAL + " .col.filter h6")
   # user input elements
   OBJ_TYPE_DROPDOWN = (By.CSS_SELECTOR, MODAL + " .input-block-level")
-  OBJ_TYPE_DROPDOWN_OPTIONS = (By.CSS_SELECTOR,
-                               MODAL + " .input-block-level option")
   FILTER_VIA_EXPRESSION_TEXT_BOX = (By.CSS_SELECTOR, MODAL + " #mapper-filter")
   FILTER_BY_STATE_DROPDOWN = (By.CSS_SELECTOR,
                               MODAL + " .multiselect-dropdown__input")
-  FILTER_BY_STATE_DROPDOWN_OPTIONS = (By.CSS_SELECTOR,
-                                      MODAL + " .multiselect-dropdown__label")
   BUTTON_SEARCH = (By.CSS_SELECTOR, MODAL + " .filter-buttons .btn-small")
   FOUND_OBJECTS_TITLES = (By.CSS_SELECTOR, MODAL + " .flex-box .title-attr")
   FOUND_OBJECTS_CHECKBOXES = (By.CSS_SELECTOR,
@@ -286,12 +283,7 @@ class ModalCreateNewProgram(BaseModalCreateNew):
               '[data-test-id="new_program_dropdown_state_036a1fa6"]')
   BUTTON_HIDE_OPTIONAL_FIELDS = (By.ID, "formHide")
   BUTTON_SHOW_ALL_OPTIONAL_FIELDS = (By.ID, "formHide")
-  UI_PROGRAM_URL = (
-      By.CSS_SELECTOR,
-      '[data-test-id="new_program_field_program_url_86160053"]')
-  UI_REFERENCE_URL = (
-      By.CSS_SELECTOR,
-      '[data-test-id="new_program_field_reference_url_86160053"]')
+  REF_URL_CSS = (By.CSS_SELECTOR, '[data-id="reference_url_hidden"]')
   UI_EFFECTIVE_DATE = (By.CSS_SELECTOR,
                        '[test-id="new_program_field_effective_date_f2783a28"] '
                        '[data-id="effective_date_hidden"] .datepicker__input')
@@ -303,8 +295,6 @@ class ModalCreateNewProgram(BaseModalCreateNew):
   DESCRIPTION = (
       By.CSS_SELECTOR, '[data-test-id="label_description_2c925d94"]')
   PRIVACY = (By.CSS_SELECTOR, '[data-test-id="label_privacy_2c925d94"]')
-  PROGRAM_URL = (
-      By.CSS_SELECTOR, '[data-test-id="label_program_url_2c925d94"]')
 
 
 class ModalCreateNewOrgGroup(BaseModalCreateNew):
@@ -387,14 +377,7 @@ class ModalCreateNewControl(BaseModalCreateNew):
   ADMIN = (
       By.CSS_SELECTOR, '[data-test-id="control_owner_587d12d6"] label')
   BUTTON_ADD_OWNER = (By.CSS_SELECTOR, 'isolate-form .btn')
-  CONTROL_URL = (
-      By.CSS_SELECTOR, '[data-test-id="control_control_url-label_c4038873"]')
-  UI_CONTROL_URL = (
-      By.CSS_SELECTOR, '[data-test-id="control_control_url-input_c4038873"]')
-  REFERENCE_URL = (
-      By.CSS_SELECTOR, '[data-test-id="control_reference_url-label_8931063d"]')
-  UI_REFERENCE_URL = (
-      By.CSS_SELECTOR, '[data-test-id="control_reference_url-input_8931063d"]')
+  REF_URL_CSS = (By.CSS_SELECTOR, '[data-id="reference_url_hidden"]')
   SIGNIFICANCE = (
       By.CSS_SELECTOR, '[data-test-id="control_significance_18f15545"] label')
   DROPDOWN_SIGNIFICANCE = (
@@ -439,9 +422,6 @@ class ModalCreateNewAsmtTmpl(BaseModalCreateNew):
   """Locators for Create new Assessment Template modals."""
   ASSIGNEE_DROPDOWN = (
       By.CSS_SELECTOR, 'select[can-value="instance.default_people.assessors"]')
-  ASSIGNEE_DROPDOWN_OPTION = (
-      By.CSS_SELECTOR,
-      'select[can-value="instance.default_people.assessors"] option')
 
 
 class ModalEditObject(BaseModalCreateNew):
@@ -470,7 +450,6 @@ class ModalCustomAttribute(object):
       By.CSS_SELECTOR,
       '.modal-footer .confirm-buttons [data-toggle="modal-submit"]')
   ATTRIBUTE_TYPE_SELECTOR = (By.CSS_SELECTOR, "dropdown select")
-  ATTRIBUTE_TYPE_OPTIONS = (By.CSS_SELECTOR, "dropdown select option")
 
 
 class ModalSetVisibleFields(object):
@@ -547,6 +526,8 @@ class WidgetBarButtonAddDropdown(object):
         setattr(cls, object_, cls._Locator.get_dropdown_item(name))
   THREAD_ACTORS = _Locator.get_dropdown_item("threat_actor")
   WORKFLOW_TASKS = _Locator.get_dropdown_item("workflow_task")
+  ALL_MAPPABLE_WIDGETS_OBJS = (
+      By.CSS_SELECTOR, ".inner-nav-item a[data-toggle='unified-mapper']")
 
 
 class ObjectWidget(object):
@@ -626,6 +607,8 @@ class WidgetInfoPanel(CommonWidgetInfo):
                               _PIN_ACTION + ' [can-click="toggleSize"]')
   BUTTON_CLOSE = (By.CSS_SELECTOR,
                   _PIN_ACTION + ' [can-click="close"]')
+  # People section
+  PEOPLE_HEADERS_AND_VALUES = (By.CSS_SELECTOR, ".editable-people-group")
 
 
 class WidgetSnapshotsInfoPanel(WidgetInfoPanel):
@@ -662,18 +645,9 @@ class WidgetInfoProgram(WidgetInfoPanel):
   MANAGER_ENTERED = (By.CSS_SELECTOR,
                      '{} [data-test-id="title_manager_7a906d2e"] '
                      '[data-test-id="text_manager_7a906d2e"]'.format(WIDGET))
-  PROGRAM_URL = (
-      By.CSS_SELECTOR,
-      '{} [data-test-id="title_program_url_aa7d1a65"] h6'.format(WIDGET))
-  PROGRAM_URL_ENTERED = (
-      By.CSS_SELECTOR,
-      '{} [data-test-id="text_program_url_aa7d1a65"]'.format(WIDGET))
-  REFERENCE_URL = (
+  REF_URL_CSS = (
       By.CSS_SELECTOR,
       '{} [data-test-id="title_reference_url_aa7d1a65"]'.format(WIDGET))
-  REFERENCE_URL_ENTERED = (
-      By.CSS_SELECTOR,
-      '[data-test-id="text_reference_url_aa7d1a65"]'.format(WIDGET))
   CODE = (By.CSS_SELECTOR,
           '{} [data-test-id="title_code_cf47bc01"] h6'.format(WIDGET))
   CODE_ENTERED = (By.CSS_SELECTOR,
@@ -731,9 +705,6 @@ class WidgetInfoAssessment(WidgetInfoPanel):
   MAPPED_OBJECT_TITLE = (By.CSS_SELECTOR, ".title")
   MAPPED_OBJECT_DESCRIPTION = (By.CSS_SELECTOR, ".description")
   # Assessment Attributes tab
-  # People section
-  PEOPLE_HEADERS_AND_VALUES = (By.CSS_SELECTOR,
-                               "assessment-people .editable-people-group")
   # Code section
   _CODE = "assessment-inline-item[prop-name='slug'] "
   CODE_CSS = (By.CSS_SELECTOR, _CODE)
@@ -838,12 +809,14 @@ class WidgetAdminEvents(object):
 
 
 class CommonDropdownMenu(object):
+  """Locators for common drop down elements."""
   _DROPDOWN_MAIN = 'ul'
   _DROPDOWN_ITEMS = 'li'
   _DROPDOWN_ITEM_ICON = 'i'
   DROPDOWN_MAIN_CSS = (By.CSS_SELECTOR, _DROPDOWN_MAIN)
   DROPDOWN_ITEMS_CSS = (By.CSS_SELECTOR, _DROPDOWN_ITEMS)
   DROPDOWN_ITEM_ICON_CSS = (By.CSS_SELECTOR, _DROPDOWN_ITEM_ICON)
+  DROPDOWN_OPTIONS = (By.CSS_SELECTOR, Common.OPTION)
 
 
 class CommonDropdown3bbsInfoWidget(CommonDropdownMenu):
@@ -919,6 +892,7 @@ class AdminTreeView(object):
 
 
 class UnifiedMapperTreeView(TreeView):
+  """Common locators for UnifiedMapper from Tree View"""
   MODAL = ".object-modal"
   HEADER = MODAL + " .list-header"
   ITEMS = MODAL + Common.TREE_ITEM
@@ -936,6 +910,7 @@ class BaseWidgetGeneric(object):
     class should look like. Note that same functionality can be
     implemented using properties though with more code."""
     def __init__(cls, *args):
+      # pylint: disable=invalid-name
       _WIDJET = "#{}_widget"
       _FILTER_BUTTON = _WIDJET + " tree-filter-input .tree-filter__actions"
       _FILTER_DROPDOWN = _WIDJET + " tree-status-filter"
@@ -1090,9 +1065,24 @@ class CustomAttributesItemContent(AdminCustomAttributes):
   TREE_SPINNER = (By.CSS_SELECTOR, ".tree-spinner")
 
 
+class MultiInputField(object):
+  """Locators for multi input field."""
+  _form = ".create-form__layout"
+  ADD_BTN_CSS = (By.CSS_SELECTOR, ".btn")
+  TXT_CSS = (By.CSS_SELECTOR, _form + " input")
+  APPLY_BTN_CSS = (By.CSS_SELECTOR, _form + " [type='submit']")
+  CANCEL_BTN_CSS = (By.CSS_SELECTOR, _form + " [type='button']")
+  ITEMS = (By.CSS_SELECTOR, ".document-object-item")
+
+
+class MultiInputItem(object):
+  """Locators for single item in multi input field."""
+  LINK_CSS = (By.CSS_SELECTOR, "a")
+  DATE = (By.CSS_SELECTOR, "data")
+
+
 class CommentsPanel(object):
   """Locators for comments' panel."""
-  # _form = ".comment-add-form"
   HEADER_LBL_CSS = (By.CSS_SELECTOR, ".info-pane__section-title")
   INPUT_TXT_CSS = (By.CSS_SELECTOR, ".ql-editor")
   CB_SEND_CSS = (By.CSS_SELECTOR, ".comment-add-form__toolbar-item")

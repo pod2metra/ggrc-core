@@ -5,9 +5,12 @@
 
 """Test request import and updates."""
 
+import collections
+
 from ggrc import models
 
 from integration.ggrc import TestCase
+from integration.ggrc.models import factories
 
 
 class TestControlsImport(TestCase):
@@ -25,7 +28,6 @@ class TestControlsImport(TestCase):
 
   def test_import_controls_with_evidence(self):
     """Test importing of assessments with templates."""
-
     response = self.import_file("controls_no_warnings.csv")
     self._check_csv_response(response, {})
 
@@ -33,3 +35,32 @@ class TestControlsImport(TestCase):
     self.assertEqual(len(evidence), 1)
     control = models.Control.query.filter_by(slug="control-3").first()
     self.assertEqual(control.document_evidence[0].title, "Some title 3")
+
+  def test_import_control_end_date(self):
+    """End date on control should be non editable."""
+    control = factories.ControlFactory()
+    self.assertIsNone(control.end_date)
+    resp = self.import_data(collections.OrderedDict([
+        ("object_type", "Control"),
+        ("code", control.slug),
+        ("Last Deprecated Date", "06/06/2017"),
+    ]))
+    control = models.Control.query.get(control.id)
+    self.assertEqual(1, len(resp))
+    self.assertEqual(1, resp[0]["updated"])
+    self.assertIsNone(control.end_date)
+
+  def test_import_control_deprecated(self):
+    """End date should be set up after import in deprecated state."""
+    control = factories.ControlFactory()
+    self.assertIsNone(control.end_date)
+    resp = self.import_data(collections.OrderedDict([
+        ("object_type", "Control"),
+        ("code", control.slug),
+        ("state", models.Control.DEPRECATED),
+    ]))
+    control = models.Control.query.get(control.id)
+    self.assertEqual(1, len(resp))
+    self.assertEqual(1, resp[0]["updated"])
+    self.assertEqual(control.status, control.DEPRECATED)
+    self.assertIsNotNone(control.end_date)

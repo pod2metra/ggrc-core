@@ -4,6 +4,7 @@
 from ggrc import db
 from .mixins import Described, Base, Titled
 from .object_person import Personable
+from ggrc.models import reflection
 
 
 class Meeting(Titled, Personable, Described, Base, db.Model):
@@ -13,11 +14,11 @@ class Meeting(Titled, Personable, Described, Base, db.Model):
   start_at = db.Column(db.DateTime, nullable=False)
   end_at = db.Column(db.DateTime, nullable=False)
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'start_at',
       'end_at',
-      'title'
-  ]
+      'title',
+  )
   _sanitize_html = []
 
   @classmethod

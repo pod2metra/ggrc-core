@@ -6,6 +6,7 @@ from sqlalchemy import orm
 from ggrc import db
 from ggrc.models.mixins import Base
 from ggrc.utils import create_stub
+from ggrc.models import reflection
 
 
 class ObjectFile(Base, db.Model):
@@ -31,11 +32,11 @@ class ObjectFile(Base, db.Model):
         else None
     return setattr(self, self.fileable_attr, value)
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'file_id',
       'parent_folder_id',
       'fileable',
-  ]
+  )
 
   @classmethod
   def eager_query(cls):
@@ -63,9 +64,7 @@ class Fileable(object):
 
     cls.object_files = make_object_files(cls)
 
-  _publish_attrs = [
-      'object_files',
-  ]
+  _api_attrs = reflection.ApiAttributes('object_files', )
 
   @classmethod
   def eager_query(cls):

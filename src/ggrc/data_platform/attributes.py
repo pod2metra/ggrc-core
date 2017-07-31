@@ -56,8 +56,15 @@ class Attributes(base.Base, db.Model):
   @declared_attr
   def __table_args__(cls):  # pylint: disable=no-self-argument
     return (
-        db.Index("source_type", "source_id", "source_attr"),
+        db.Index("ix_source", "source_type", "source_id", "source_attr"),
         # db.Index("value_string"), not needed yet
-        db.Index("value_integer"),
-        db.Index("value_datetime"),
+        db.Index("ix_value_integer", "value_integer"),
+        db.Index("ix_value_datetime", "value_datetime"),
+        db.UniqueConstraint(
+            "object_id",
+            "object_type",
+            "attribute_definition_id",
+            "attribute_template_id",
+            name="uq_attributes",
+        ),
     )

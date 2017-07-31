@@ -6,6 +6,7 @@
 from ggrc import builder
 from ggrc import db
 from ggrc.models.mixins import Base
+from ggrc.models import reflection
 from ggrc.access_control import role
 from ggrc.models.types import LongJsonType
 
@@ -39,7 +40,7 @@ class Revision(Base, db.Model):
         db.Index('ix_revisions_resource_slug', 'resource_slug'),
     )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'resource_id',
       'resource_type',
       'source_type',
@@ -49,7 +50,7 @@ class Revision(Base, db.Model):
       'action',
       'content',
       'description',
-  ]
+  )
 
   @classmethod
   def eager_query(cls):
@@ -67,6 +68,14 @@ class Revision(Base, db.Model):
     self.resource_slug = getattr(obj, "slug", None)
     self.modified_by_id = modified_by_id
     self.action = action
+    if "access_control_list" in content and content["access_control_list"]:
+      for acl in content["access_control_list"]:
+        acl["person"] = {
+            "id": acl["person_id"],
+            "type": "Person",
+            "href": "/api/people/{}".format(acl["person_id"]),
+        }
+
     self._content = content
 
     for attr in ["source_type",
@@ -130,6 +139,7 @@ class Revision(Base, db.Model):
         "secondary_assessor": reverted_roles_dict.get("Secondary Assignees"),
         "contact": reverted_roles_dict.get("Primary Contacts"),
         "secondary_contact": reverted_roles_dict.get("Secondary Contacts"),
+        "owners": reverted_roles_dict.get("Admin"),
     }
     exists_roles = {i["ac_role_id"] for i in access_control_list}
     for field, role_id in map_field_to_role.items():
@@ -137,24 +147,48 @@ class Revision(Base, db.Model):
         continue
       if role_id in exists_roles or role_id is None:
         continue
-      person_id = (self._content.get(field) or {}).get("id")
-      if not person_id:
+      field_content = self._content.get(field) or {}
+      if not field_content:
         continue
-      access_control_list.append({
-          "display_name": roles_dict[role_id],
-          "ac_role_id": role_id,
-          "context_id": None,
-          "created_at": None,
-          "object_type": self.resource_type,
-          "updated_at": None,
-          "object_id": self.resource_id,
-          "modified_by_id": None,
-          "person_id": person_id,
-          "modified_by": None,
-          "id": None,
-      })
+      if not isinstance(field_content, list):
+        field_content = [field_content]
+      person_ids = {fc.get("id") for fc in field_content if fc.get("id")}
+      for person_id in person_ids:
+        access_control_list.append({
+            "display_name": roles_dict[role_id],
+            "ac_role_id": role_id,
+            "context_id": None,
+            "created_at": None,
+            "object_type": self.resource_type,
+            "updated_at": None,
+            "object_id": self.resource_id,
+            "modified_by_id": None,
+            "person_id": person_id,
+            # Frontend require data in such format
+            "person": {
+                "id": person_id,
+                "type": "Person",
+                "href": "/api/people/{}".format(person_id)
+            },
+            "modified_by": None,
+            "id": None,
+        })
     populated_content = self._content.copy()
     populated_content["access_control_list"] = access_control_list
+
+    if 'url' in self._content:
+      reference_url_list = []
+      for key in ('url', 'reference_url'):
+        link = self._content[key]
+        reference_url_list.append({
+            "display_name": link,
+            "document_type": "REFERENCE_URL",
+            "link": link,
+            "title": link,
+            "id": None
+        })
+      populated_content['reference_url'] = reference_url_list
+
     return populated_content
 
   @content.setter

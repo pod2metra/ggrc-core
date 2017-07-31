@@ -4,20 +4,21 @@
 """Module containing Document model."""
 
 from sqlalchemy import orm
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from ggrc import db
+from ggrc.access_control.roleable import Roleable
 from ggrc.fulltext.mixin import Indexed
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base
 from ggrc.models.relationship import Relatable
-from ggrc.models.object_owner import Ownable
 from ggrc.models.utils import validate_option
 from ggrc.models import exceptions
+from ggrc.models import reflection
 
 
-class Document(Ownable, Relatable, Base, Indexed, db.Model):
+class Document(Roleable, Relatable, Base, Indexed, db.Model):
   """Audit model."""
   __tablename__ = 'documents'
 
@@ -32,7 +33,9 @@ class Document(Ownable, Relatable, Base, Indexed, db.Model):
 
   URL = "URL"
   ATTACHMENT = "EVIDENCE"
-  document_type = deferred(db.Column(db.Enum(URL, ATTACHMENT),
+  REFERENCE_URL = "REFERENCE_URL"
+
+  document_type = deferred(db.Column(db.Enum(URL, ATTACHMENT, REFERENCE_URL),
                                      default=URL,
                                      nullable=False),
                            'Document')
@@ -66,7 +69,7 @@ class Document(Ownable, Relatable, Base, Indexed, db.Model):
       "document_type",
   ]
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'title',
       'link',
       'description',
@@ -74,7 +77,7 @@ class Document(Ownable, Relatable, Base, Indexed, db.Model):
       'year',
       'language',
       "document_type",
-  ]
+  )
 
   _sanitize_html = [
       'title',
@@ -103,13 +106,15 @@ class Document(Ownable, Relatable, Base, Indexed, db.Model):
     """Returns correct option, otherwise rises an error"""
     if document_type is None:
       document_type = self.URL
-    if document_type not in [self.URL, self.ATTACHMENT]:
+    if document_type not in [self.URL, self.ATTACHMENT, self.REFERENCE_URL]:
       raise exceptions.ValidationError(
           "Invalid value for attribute {attr}. "
-          "Expected options are `{url}`, `{attachment}`.".format(
+          "Expected options are `{url}`, `{attachment}`, `{reference_url}`".
+          format(
               attr=key,
               url=self.URL,
               attachment=self.ATTACHMENT,
+              reference_url=self.REFERENCE_URL
           )
       )
     return document_type
@@ -132,14 +137,16 @@ class Document(Ownable, Relatable, Base, Indexed, db.Model):
 
   @hybrid_property
   def slug(self):
-    if self.document_type == self.URL:
+    if self.document_type in (self.URL, self.REFERENCE_URL):
       return self.link
     return u"{} {}".format(self.link, self.title)
 
   # pylint: disable=no-self-argument
   @slug.expression
   def slug(cls):
-    return func.concat(cls.link, ' ', cls.title)
+    return case([(cls.document_type == cls.ATTACHMENT,
+                 func.concat(cls.link, ' ', cls.title))],
+                else_=cls.link)
 
   def log_json(self):
     tmp = super(Document, self).log_json()

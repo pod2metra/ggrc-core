@@ -2,6 +2,7 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Test Access Control Role"""
+import ddt
 
 from ggrc.access_control.role import AccessControlRole
 from integration.ggrc import TestCase
@@ -10,6 +11,7 @@ from integration.ggrc.models.factories import random_str
 from integration.ggrc.generator import ObjectGenerator
 
 
+@ddt.ddt
 class TestAccessControlRole(TestCase):
   """TestAccessControlRole"""
 
@@ -60,3 +62,36 @@ class TestAccessControlRole(TestCase):
       assert response.status_code == 403, \
           "Non admins should get forbidden error when POSTing role. {}".format(
               response.status)
+
+  @ddt.data(
+      ("name", "New ACR"),
+      ("read", False),
+      ("mandatory", False),
+      ("non_editable", False),
+  )
+  @ddt.unpack
+  def test_modify_non_editable_role(self, field_name, field_value):
+    """Test if user can modify non-editable role"""
+    # Primary Contacts role of Control is non-editable
+    ac_role = AccessControlRole.query.filter_by(
+        object_type="Control",
+        name="Primary Contacts",
+    ).first()
+
+    response = self.api.put(ac_role, {field_name: field_value})
+    assert response.status_code == 403, \
+        "Forbidden error should be thrown when non-editable " \
+        "role {} updated.".format(ac_role.name)
+
+  def test_delete_non_editable_role(self):
+    """Test if user can delete non-editable role"""
+    # Primary Contacts role of Control is non-editable
+    ac_role = AccessControlRole.query.filter_by(
+        object_type="Control",
+        name="Primary Contacts",
+    ).first()
+
+    response = self.api.delete(ac_role)
+    assert response.status_code == 403, \
+        "Forbidden error should be thrown when non-editable " \
+        "role {} deleted.".format(ac_role.name)

@@ -11,6 +11,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from ggrc.access_control.list import AccessControlList
 from ggrc.fulltext.attributes import CustomRoleAttr
+from ggrc.models import reflection
 from ggrc import db
 
 
@@ -21,12 +22,9 @@ class Roleable(object):
   control list includes a list of AccessControlList objects.
   """
 
-  _update_raw = _include_links = _publish_attrs = [
-      'access_control_list'
-  ]
-  _fulltext_attrs = [
-      CustomRoleAttr('access_control_list')
-  ]
+  _update_raw = _include_links = ['access_control_list', ]
+  _api_attrs = reflection.ApiAttributes(*_include_links)
+  _fulltext_attrs = [CustomRoleAttr('access_control_list'), ]
 
   @declared_attr
   def _access_control_list(cls):  # pylint: disable=no-self-argument

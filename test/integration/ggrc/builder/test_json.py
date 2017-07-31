@@ -26,9 +26,12 @@ class TestBuilder(TestCase):
   def mock_class(self, name, bases=(), _publish_attrs=None):
     cls = MagicMock()
     cls.__name__ = name
-    cls.__bases__ = bases
+    mro = ()
+    for base in bases:
+      mro += base.__mro__
+    cls.__mro__ = (cls, ) + mro
     if _publish_attrs:
-      cls._publish_attrs = _publish_attrs
+      cls._api_attrs = ggrc.models.reflection.ApiAttributes(*_publish_attrs)
     self.mock_builders.append(name)
     return cls
 

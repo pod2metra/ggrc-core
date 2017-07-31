@@ -6,7 +6,7 @@
 from ggrc import db
 from sqlalchemy.ext.associationproxy import association_proxy
 from ggrc.models.mixins import Base
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 
 
 class RiskObject(Base, db.Model):
@@ -39,10 +39,10 @@ class RiskObject(Base, db.Model):
         db.Index('ix_risk_id', 'risk_id'),
     )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'risk',
       'object',
-  ]
+  )
   _sanitize_html = [
   ]
 
@@ -81,10 +81,10 @@ class Riskable(object):
       )
     cls.risk_objects = make_risk_objects(cls)
 
-  _publish_attrs = [
-      PublishOnly('risks'),
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('risks', create=False, update=False),
       'risk_objects',
-  ]
+  )
 
   _include_links = [
   ]

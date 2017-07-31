@@ -11,23 +11,25 @@ from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Hierarchical
 from ggrc.models.mixins import LastDeprecatedTimeboxed
 from ggrc.models.mixins import BusinessObject
-from ggrc.models.object_owner import Ownable
+from ggrc.models.object_document import PublicDocumentable
 from ggrc.models.object_person import Personable
 from ggrc.models.relationship import Relatable
 from ggrc.models.track_object_state import HasObjectState
 from ggrc.fulltext.mixin import Indexed
+from ggrc.models import reflection
 
 
 class Clause(Roleable, HasObjectState, Hierarchical, CustomAttributable,
-             Personable, Ownable, LastDeprecatedTimeboxed, Relatable,
-             BusinessObject, Indexed, db.Model):
+             Personable, LastDeprecatedTimeboxed, Relatable,
+             PublicDocumentable, BusinessObject, Indexed, db.Model):
 
   __tablename__ = 'clauses'
   _table_plural = 'clauses'
   _aliases = {
-      "url": "Clause URL",
       "description": "Text of Clause",
       "directive": None,
+      "document_url": None,
+      "document_evidence": None,
   }
 
   # pylint: disable=invalid-name
@@ -35,10 +37,8 @@ class Clause(Roleable, HasObjectState, Hierarchical, CustomAttributable,
                 'Clause')
   notes = deferred(db.Column(db.Text), 'Clause')
 
-  _publish_attrs = [
-      'na',
-      'notes',
-  ]
+  _api_attrs = reflection.ApiAttributes('na', 'notes')
+
   _fulltext_attrs = [
       'na',
       'notes',

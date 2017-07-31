@@ -13,7 +13,6 @@ from ddt import ddt
 from ddt import unpack
 
 from ggrc import app
-from ggrc import views
 from ggrc import models
 from ggrc.models import all_models
 from ggrc import db
@@ -21,6 +20,7 @@ from ggrc import db
 from integration.ggrc import TestCase
 from integration.ggrc import generator
 from integration.ggrc.models import factories
+from integration.ggrc.models.factories import single_commit
 from integration.ggrc.services.test_query.test_basic import (
     BaseQueryAPITestCase)
 
@@ -63,6 +63,7 @@ class TestAuditSnapshotQueries(TestCase):
   def setUp(self):
     """Log in before performing queries."""
     self.client.get("/login")
+    self.client.post("/admin/reindex")
 
   def _post(self, request_data):
     return self.client.post(
@@ -168,8 +169,6 @@ class TestAuditSnapshotQueries(TestCase):
 
     # Create an unmapped control for base tests
     factories.ControlFactory(title="Control 0")
-
-    views.do_reindex()
 
   def test_basic_snapshot_query(self):
     """Test fetching all snapshots for a given Audit."""
@@ -498,13 +497,16 @@ class TestSnapshotIndexing(BaseQueryAPITestCase):
                          [process_nz_core_id, process_nz_prod_id])
 
   def _add_owner(self, ownable_type, ownable_id, person_id):
-    """Post ObjectOwner instance for ownable and person."""
-    self.generator.generate_object(
-        models.ObjectOwner,
-        {"ownable": {"type": ownable_type,
-                     "id": ownable_id},
-         "person": {"type": "Person",
-                    "id": person_id}},
+    """Create ACL for provided object and person."""
+    acr = all_models.AccessControlRole.query.filter_by(
+        object_type=ownable_type,
+        name="Admin"
+    ).first()
+    factories.AccessControlListFactory(
+        person_id=person_id,
+        object_type=ownable_type,
+        object_id=ownable_id,
+        ac_role=acr
     )
 
   def assert_rows_number_in_search(self, field, value, expected_num):
@@ -542,40 +544,58 @@ class TestSnapshotIndexing(BaseQueryAPITestCase):
 
   def test_control_owners(self):
     """Control Snapshots are filtered and sorted by Owners."""
-    program = factories.ProgramFactory()
-    controls = [factories.ControlFactory(),
-                factories.ControlFactory()]
-    people = [factories.PersonFactory(name="Ann", email="email1@example.com"),
-              factories.PersonFactory(name="Bob", email="email2@example.com"),
-              factories.PersonFactory(name="Carl", email="email3@example.com")]
-    program_id = program.id
-    control_ids = [c.id for c in controls]
-    people_ids = [p.id for p in people]
+    with single_commit():
+      program = factories.ProgramFactory()
+      controls = [factories.ControlFactory(),
+                  factories.ControlFactory()]
+      people = [
+          factories.PersonFactory(name="Ann", email="email1@example.com"),
+          factories.PersonFactory(name="Bob", email="email2@example.com"),
+          factories.PersonFactory(name="Carl", email="email3@example.com")
+      ]
+      program_id = program.id
+      control_ids = [c.id for c in controls]
+      people_ids = [p.id for p in people]
 
-    factories.RelationshipFactory(source=program, destination=controls[0])
-    factories.RelationshipFactory(source=program, destination=controls[1])
+      factories.RelationshipFactory(source=program, destination=controls[0])
+      factories.RelationshipFactory(source=program, destination=controls[1])
 
-    self._add_owner("Control", control_ids[0], people_ids[0])
-    self._add_owner("Control", control_ids[0], people_ids[2])
-    self._add_owner("Control", control_ids[1], people_ids[0])
-    self._add_owner("Control", control_ids[1], people_ids[1])
+      self._add_owner("Control", control_ids[0], people_ids[0])
+      self._add_owner("Control", control_ids[0], people_ids[2])
+      self._add_owner("Control", control_ids[1], people_ids[0])
+      self._add_owner("Control", control_ids[1], people_ids[1])
 
     program = models.Program.query.filter_by(id=program_id).one()
 
+    control_revisions = models.Revision.query.filter_by(
+        resource_type="Control"
+    ).all()
+    for c_rev in control_revisions:
+      c_rev.content = models.Control.query.get(c_rev.resource_id).log_json()
+      db.session.add(c_rev)
+    db.session.commit()
     self._create_audit(program=program, title="some title")
 
     control_user1_result = self._get_first_result_set(
         self._make_snapshot_query_dict("Control",
-                                       expression=["admin", "=", "Ann"]),
+                                       expression=["Admin", "=", "Ann"]),
         "Snapshot",
     )
     self.assertEqual(control_user1_result["count"], 2)
 
-    def owners(snapshot):
+    def owner_ids(snapshot):
       """Shortcut to get owners list of a snapshotted object."""
-      return snapshot["revision"]["content"]["owners"]
+      owners = []
+      admin_role_id = models.AccessControlRole.query.filter_by(
+          name="Admin",
+          object_type=snapshot["revision"]["resource_type"]
+      ).first().id
+      for acl in snapshot["revision"]["content"]["access_control_list"]:
+        if acl["ac_role_id"] == admin_role_id:
+          owners.append(acl["person_id"])
+      return owners
 
-    self.assertTrue(all(people_ids[0] in {o["id"] for o in owners(snap)}
+    self.assertTrue(all(people_ids[0] in {o for o in owner_ids(snap)}
                         for snap in control_user1_result["values"]))
 
     control_user2_result = self._get_first_result_set(
@@ -584,7 +604,7 @@ class TestSnapshotIndexing(BaseQueryAPITestCase):
         "Snapshot",
     )
     self.assertEqual(control_user2_result["count"], 1)
-    self.assertTrue(all(people_ids[1] in {o["id"] for o in owners(snap)}
+    self.assertTrue(all(people_ids[1] in {o for o in owner_ids(snap)}
                         for snap in control_user2_result["values"]))
 
     order_by_owners_result = self._get_first_result_set(

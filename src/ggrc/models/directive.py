@@ -1,24 +1,33 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
+from sqlalchemy import orm
+from sqlalchemy.orm import validates
+
 from ggrc import db
 from ggrc.access_control.roleable import Roleable
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import (BusinessObject, LastDeprecatedTimeboxed,
                                 CustomAttributable)
+from ggrc.models import reflection
 from ggrc.fulltext.mixin import Indexed
+from .object_document import PublicDocumentable
 from .object_person import Personable
-from .object_owner import Ownable
 from .relationship import Relatable
 from .utils import validate_option
 
-from sqlalchemy.orm import validates
-from sqlalchemy import orm
 from .track_object_state import HasObjectState
 
 
-class Directive(HasObjectState, LastDeprecatedTimeboxed, BusinessObject,
-                db.Model):
+# NOTE: The PublicDocumentable mixin is not applied directly to the Directive
+# base class, but instead to all of its specialized subclasses. The reason for
+# this is the PublicDocumentable's declared attribute `documents` that builds a
+# dynamic DB relationship based on the class name, and thus the attribute needs
+# to be run in the context of each particular subclass.
+# (of course, if there is a nice way of overriding/customizing declared
+# attributes in subclasses, we might want to use that approach)
+class Directive(HasObjectState, LastDeprecatedTimeboxed,
+                BusinessObject, db.Model):
   __tablename__ = 'directives'
 
   version = deferred(db.Column(db.String), 'Directive')
@@ -54,7 +63,7 @@ class Directive(HasObjectState, LastDeprecatedTimeboxed, BusinessObject,
       'polymorphic_on': meta_kind
   }
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'audit_start_date',
       'audit_frequency',
       'audit_duration',
@@ -63,7 +72,7 @@ class Directive(HasObjectState, LastDeprecatedTimeboxed, BusinessObject,
       'organization',
       'scope',
       'version',
-  ]
+  )
 
   _fulltext_attrs = [
       'audit_start_date',
@@ -99,7 +108,11 @@ class Directive(HasObjectState, LastDeprecatedTimeboxed, BusinessObject,
 
   _include_links = []
 
-  _aliases = {'kind': "Kind/Type", }
+  _aliases = {
+      'kind': "Kind/Type",
+      "document_url": None,
+      "document_evidence": None,
+  }
 
   @validates('kind')
   def validate_kind(self, key, value):
@@ -132,7 +145,7 @@ class Directive(HasObjectState, LastDeprecatedTimeboxed, BusinessObject,
 
 # FIXME: For subclasses, restrict kind
 class Policy(Roleable, CustomAttributable, Relatable,
-             Personable, Ownable, Directive, Indexed):
+             Personable, PublicDocumentable, Directive, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': 'Policy'
   }
@@ -144,7 +157,10 @@ class Policy(Roleable, CustomAttributable, Relatable,
       "Product Policy", "Contract-Related Policy", "Company Controls Policy"
   ])
 
-  _aliases = {"url": "Policy URL"}
+  _aliases = {
+      "document_url": None,
+      "document_evidence": None,
+  }
 
   @validates('meta_kind')
   def validates_meta_kind(self, key, value):
@@ -152,7 +168,7 @@ class Policy(Roleable, CustomAttributable, Relatable,
 
 
 class Regulation(Roleable, CustomAttributable, Relatable,
-                 Personable, Ownable, Directive, Indexed):
+                 Personable, PublicDocumentable, Directive, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': 'Regulation'
   }
@@ -162,8 +178,9 @@ class Regulation(Roleable, CustomAttributable, Relatable,
   VALID_KINDS = ("Regulation",)
 
   _aliases = {
-      "url": "Regulation URL",
       "kind": None,
+      "document_url": None,
+      "document_evidence": None,
   }
 
   @validates('meta_kind')
@@ -172,7 +189,7 @@ class Regulation(Roleable, CustomAttributable, Relatable,
 
 
 class Standard(Roleable, CustomAttributable, Relatable,
-               Personable, Ownable, Directive, Indexed):
+               Personable, PublicDocumentable, Directive, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': 'Standard'
   }
@@ -182,8 +199,9 @@ class Standard(Roleable, CustomAttributable, Relatable,
   VALID_KINDS = ("Standard",)
 
   _aliases = {
-      "url": "Standard URL",
       "kind": None,
+      "document_url": None,
+      "document_evidence": None,
   }
 
   @validates('meta_kind')
@@ -192,7 +210,7 @@ class Standard(Roleable, CustomAttributable, Relatable,
 
 
 class Contract(Roleable, CustomAttributable, Relatable,
-               Personable, Ownable, Directive, Indexed):
+               Personable, PublicDocumentable, Directive, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': 'Contract'
   }
@@ -202,8 +220,9 @@ class Contract(Roleable, CustomAttributable, Relatable,
   VALID_KINDS = ("Contract",)
 
   _aliases = {
-      "url": "Contract URL",
       "kind": None,
+      "document_url": None,
+      "document_evidence": None,
   }
 
   @validates('meta_kind')

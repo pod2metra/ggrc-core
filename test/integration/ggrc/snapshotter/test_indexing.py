@@ -19,6 +19,7 @@ from integration.ggrc.models import factories
 
 
 def get_records(_audit, _snapshots):
+  """Get Record objects related to provided audit and snapshots"""
   return db.session.query(Record).filter(
       tuple_(
           Record.type,
@@ -365,8 +366,6 @@ class TestSnapshotIndexing(SnapshotterBaseTestCase):
   def test_search_no_acl_in_content(self, field, role_name):
     """Test search older revisions without access_control_list."""
     with factories.single_commit():
-      factories.AccessControlRoleFactory(name=role_name,
-                                         object_type="Control")
       person = factories.PersonFactory(email="{}@example.com".format(field),
                                        name=field)
       control = factories.ControlFactory()

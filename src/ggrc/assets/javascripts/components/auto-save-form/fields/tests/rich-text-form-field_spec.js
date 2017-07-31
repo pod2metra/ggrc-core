@@ -22,7 +22,6 @@ describe('GGRC.Components.richTextFormField', function () {
   it('does not fire valueChanged event if value wasn\'t changed', function () {
     viewModel.attr('value', '');
     viewModel.attr('_value', 'newValue');
-    viewModel.onFocus();
     viewModel.attr('_value', 'newValue');
     viewModel.onBlur();
     expect(viewModel.dispatch).not.toHaveBeenCalled();
@@ -30,7 +29,6 @@ describe('GGRC.Components.richTextFormField', function () {
 
   it('fires valueChanged event on input value change', function () {
     viewModel.attr('value', '');
-    viewModel.onFocus();
     viewModel.attr('_value', 'newValue');
     viewModel.onBlur();
     expect(viewModel.dispatch).toHaveBeenCalledWith({
@@ -38,7 +36,6 @@ describe('GGRC.Components.richTextFormField', function () {
       fieldId: 'id',
       value: 'newValue'
     });
-    viewModel.onFocus();
     viewModel.attr('_value', 'newValue2');
     viewModel.onBlur();
     expect(viewModel.dispatch).toHaveBeenCalledWith({

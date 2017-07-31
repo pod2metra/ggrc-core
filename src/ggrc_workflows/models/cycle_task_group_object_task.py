@@ -128,7 +128,7 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
     return [(object_.__class__.__name__, object_.id) for object_ in
             self.related_objects]  # pylint: disable=not-an-iterable
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'cycle',
       'cycle_task_group',
       'task_group_task',
@@ -137,11 +137,11 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
       'task_type',
       'response_options',
       'selected_response_options',
-      reflection.PublishOnly('object_approval'),
-      reflection.PublishOnly('finished_date'),
-      reflection.PublishOnly('verified_date'),
-      reflection.PublishOnly('allow_change_state'),
-  ]
+      reflection.Attribute('object_approval', create=False, update=False),
+      reflection.Attribute('finished_date', create=False, update=False),
+      reflection.Attribute('verified_date', create=False, update=False),
+      reflection.Attribute('allow_change_state', create=False, update=False),
+  )
 
   default_description = "<ol>"\
                         + "<li>Expand the object review task.</li>"\

@@ -14,7 +14,7 @@ from ggrc.models import mixins
 from ggrc.models import relationship
 from ggrc.models.exceptions import ValidationError
 from ggrc.models.reflection import AttributeInfo
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 from ggrc.models.types import JsonType
 from ggrc.services import signals
 from ggrc.fulltext.mixin import Indexed
@@ -50,7 +50,7 @@ class AssessmentTemplate(assessment.AuditRelationship, relationship.Relatable,
 
   # labels to show to the user in the UI for various default people values
   DEFAULT_PEOPLE_LABELS = {
-      "Object Owners": "Object Admins",
+      "Admin": "Object Admins",
       "Audit Lead": "Audit Lead",
       "Auditors": "Auditors",
       "Principal Assignees": "Principal Assignees",
@@ -62,14 +62,16 @@ class AssessmentTemplate(assessment.AuditRelationship, relationship.Relatable,
   _title_uniqueness = False
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       "template_object_type",
       "test_plan_procedure",
       "procedure_description",
       "default_people",
-      PublishOnly("archived"),
-      PublishOnly("DEFAULT_PEOPLE_LABELS")
-  ]
+      reflection.Attribute("archived", create=False, update=False),
+      reflection.Attribute("DEFAULT_PEOPLE_LABELS",
+                           create=False,
+                           update=False),
+  )
 
   _fulltext_attrs = [
       "archived"

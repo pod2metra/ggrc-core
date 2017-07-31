@@ -9,6 +9,7 @@ from sqlalchemy import orm
 from ggrc import db
 from ggrc import fulltext
 from ggrc import views
+from ggrc.fulltext.mysql import MysqlRecordProperty
 from ggrc.utils import QueryCounter
 from ggrc.fulltext import mysql
 
@@ -29,23 +30,23 @@ class TestTotalReindex(TestCase):
       'Assessment': 10,
       'AssessmentTemplate': 4,
       'Audit': 5,
-      'Comment': 3,
-      'Contract': 6,
+      'Comment': 4,
+      'Contract': 7,
       'Control': 17,
       'Cycle': 5,
       'CycleTaskEntry': 3,
       'CycleTaskGroup': 4,
       'CycleTaskGroupObjectTask': 4,
-      'Document': 3,
+      'Document': 4,
       'Issue': 6,
-      'Market': 5,
-      'Objective': 15,
-      'OrgGroup': 5,
+      'Market': 6,
+      'Objective': 16,
+      'OrgGroup': 6,
       'Person': 4,
-      'Policy': 6,
-      'Process': 5,
-      'Program': 5,
-      'Regulation': 6,
+      'Policy': 7,
+      'Process': 6,
+      'Program': 6,
+      'Regulation': 7,
       'TaskGroup': 3,
       'TaskGroupObject': 5,
       'TaskGroupTask': 3,
@@ -93,7 +94,12 @@ class TestTotalReindex(TestCase):
     indexer = fulltext.get_indexer()
     count = indexer.record_type.query.count()
     views.do_reindex()
-    self.assertEqual(count, indexer.record_type.query.count())
+    # ACR roles are created in migration and aren't removed in setup
+    # Index for them will be created only after reindexing
+    reindexed_count = indexer.record_type.query.filter(
+        MysqlRecordProperty.type != "AccessControlRole"
+    ).count()
+    self.assertEqual(count, reindexed_count)
 
   COMMIT_INDEX_TEST_CASES = [(f, OBJECT_TEST_COUNT)
                              for f in INDEXED_MODEL_FACTORIES]

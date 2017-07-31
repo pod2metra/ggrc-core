@@ -14,6 +14,7 @@ from ggrc.fulltext.mixin import Indexed
 from ggrc.login import get_current_user
 from ggrc.models.mixins import Slugged, Titled, Described, WithContact
 from ggrc.models.types import JsonType
+from ggrc.models import reflection
 from ggrc_workflows.models.mixins import RelativeTimeboxed
 from ggrc_workflows.models.task_group import TaskGroup
 
@@ -84,7 +85,7 @@ class TaskGroupTask(WithContact, Titled, Described, RelativeTimeboxed,
       raise ValueError("Start date can not be after end date.")
     return value
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'task_group',
       'sort_index',
       'relative_start_month',
@@ -94,7 +95,7 @@ class TaskGroupTask(WithContact, Titled, Described, RelativeTimeboxed,
       'object_approval',
       'task_type',
       'response_options'
-  ]
+  )
   _sanitize_html = []
   _aliases = {
       "title": "Summary",

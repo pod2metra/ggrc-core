@@ -30,19 +30,22 @@
 
         clearTimeout(this.attr('saveTimeoutHandler'));
         this.attr('isSaving', true);
-        instance.attr(pendingChanges);
-        this.attr('pendingChanges', {});
 
-        instance.save().then(function () {
-          if (self.attr('autoSaveAfterSave')) {
-            self.attr('autoSaveAfterSave', false);
-            setTimeout(self.saveChange.bind(self));
-          }
+        instance.refresh().then(function () {
+          instance.attr(pendingChanges);
+          self.attr('pendingChanges', {});
 
-          self.attr('formSavedDeferred').resolve();
-        })
-        .always(function () {
-          self.attr('isSaving', false);
+          instance.save().then(function () {
+            if (self.attr('autoSaveAfterSave')) {
+              self.attr('autoSaveAfterSave', false);
+              setTimeout(self.saveChange.bind(self));
+            }
+
+            self.attr('formSavedDeferred').resolve();
+          })
+          .always(function () {
+            self.attr('isSaving', false);
+          });
         });
       },
       saveInlineForm: function (args) {

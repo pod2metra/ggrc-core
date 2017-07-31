@@ -18,9 +18,9 @@ class WithLastAssessmentDate(attributable.Attributable):
   """Defines logic to get max finished_date of all Asmts over own Snapshots."""
   # pylint: disable=too-few-public-methods
 
-  _publish_attrs = [
-      reflection.PublishOnly("last_assessment_date"),
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute("last_assessment_date", create=False, update=False),
+  )
 
   _aliases = {
       "last_assessment_date": {

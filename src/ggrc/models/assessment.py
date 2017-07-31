@@ -12,7 +12,6 @@ from sqlalchemy import orm
 from ggrc import db
 from ggrc.access_control.roleable import Roleable
 from ggrc.builder import simple_property
-from ggrc.models import reflection
 from ggrc.models.comment import Commentable
 from ggrc.models.custom_attribute_definition import CustomAttributeDefinition
 from ggrc.models.mixins.audit_relationship import AuditRelationship
@@ -32,7 +31,7 @@ from ggrc.models.mixins.with_similarity_score import WithSimilarityScore
 from ggrc.models.deferred import deferred
 from ggrc.models.object_document import PublicDocumentable
 from ggrc.models.object_person import Personable
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 from ggrc.models.relationship import Relatable
 from ggrc.models.relationship import Relationship
 from ggrc.models.track_object_state import HasObjectState
@@ -55,24 +54,6 @@ def reindex_by_relationship_attr(relationship_attr):
   )
   resulting_subquery = source_query.union(dest_query)
   return Assessment.query.filter(Assessment.id.in_(resulting_subquery)).all()
-
-
-def reindex_by_relationship(relationship):
-  """Return a list of assessments which which need to be reindexed
-
-  In case Relationship changed or created or deleted
-  """
-  source_type = relationship.source_type
-  destination_type = relationship.destination_type
-  if destination_type == "Assessment" and source_type == "Document":
-    instance = relationship.destination
-  elif source_type == "Assessment" and destination_type == "Document":
-    instance = relationship.source
-  else:
-    return []
-  if isinstance(instance, (Indexed, Commentable)):
-    return [instance]
-  return []
 
 
 class Assessment(Roleable, statusable.Statusable, AuditRelationship,
@@ -145,14 +126,14 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
   ])
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'design',
       'operationally',
       'audit',
       'assessment_type',
-      PublishOnly('archived'),
-      PublishOnly('object')
-  ]
+      reflection.Attribute('archived', create=False, update=False),
+      reflection.Attribute('object', create=False, update=False),
+  )
 
   _fulltext_attrs = [
       'archived',
@@ -185,10 +166,8 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
       'design',
       'notes',
       'operationally',
-      'reference_url',
       'test_plan',
       'title',
-      'url',
       'start_date',
       'end_date'
   }
@@ -205,7 +184,6 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
           "display_name": "Assessment Type",
           "mandatory": False,
       },
-      "url": "Assessment URL",
       "design": "Conclusion: Design",
       "operationally": "Conclusion: Operation",
       "related_creators": {
@@ -231,8 +209,7 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
   }
 
   AUTO_REINDEX_RULES = [
-      ReindexRule("RelationshipAttr", reindex_by_relationship_attr),
-      ReindexRule("Relationship", reindex_by_relationship)
+      ReindexRule("RelationshipAttr", reindex_by_relationship_attr)
   ]
 
   similarity_options = {

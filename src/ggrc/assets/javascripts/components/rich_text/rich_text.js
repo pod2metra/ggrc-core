@@ -35,9 +35,28 @@
             this.setText(text);
             return text;
           }
+        },
+        toolbarClasses: {
+          type: 'string',
+          value: '',
+          get: function () {
+            if (!this.attr('hiddenToolbar')) {
+              return '';
+            }
+
+            if (this.attr('editorHasFocus')) {
+              return '';
+            }
+
+            return 'rich-text__wrapper-hidden-toolbar';
+          }
         }
       },
+      tabIndex: '-1',
+      hiddenToolbar: false,
+      forceShow: false,
       editor: false,
+      editorHasFocus: false,
       initEditor: function (container, toolbarContainer, text) {
         var editor = new Quill(container, {
           theme: 'snow',
@@ -58,6 +77,11 @@
           editor.clipboard.dangerouslyPasteHTML(0, text);
         }
         editor.on('text-change', this.onChange.bind(this));
+
+        if (this.attr('hiddenToolbar')) {
+          editor.on('selection-change',
+            this.onSelectionChange.bind(this));
+        }
         this.attr('editor', editor);
       },
       urlMatcher: function (node, delta) {
@@ -87,6 +111,20 @@
       },
       isWhitespace: function (ch) {
         return (ch === ' ') || (ch === '\t') || (ch === '\n');
+      },
+      onSelectionChange: function () {
+        var editor = this.attr('editor');
+
+        if (editor.hasFocus()) {
+          this.attr('editorHasFocus', true);
+          return;
+        }
+
+        this.attr('editorHasFocus', false);
+      },
+      onRemoved: function () {
+        this.attr('editor')
+          .off('selection-change', this.onSelectionChang);
       },
       onChange: function (delta) {
         var match;
@@ -177,6 +215,12 @@
         var toolbar = this.element.find('.rich-text__toolbar')[0];
         var text = this.viewModel.attr('text');
         this.viewModel.initEditor(wysiwyg, toolbar, text);
+      },
+      removed: function () {
+        this.viewModel.onRemoved();
+      },
+      '.rich-text__content focus': function () {
+        this.viewModel.attr('editor').focus();
       }
     }
   });

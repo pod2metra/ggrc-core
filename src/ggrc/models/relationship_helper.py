@@ -52,15 +52,19 @@ def person_withcontact(object_type, related_type, related_ids):
     return None
 
 
-def person_ownable(object_type, related_type, related_ids):
+def acl_obj_id(object_type, related_type, related_ids, role=None):
   if object_type == "Person":
-    return db.session.query(models.ObjectOwner.person_id).filter(
-        (models.ObjectOwner.ownable_type == related_type) &
-        (models.ObjectOwner.ownable_id.in_(related_ids)))
+    return db.session.query(models.AccessControlList.person_id).filter(
+        (models.AccessControlList.object_type == related_type) &
+        (models.AccessControlList.object_id.in_(related_ids)) &
+        (models.AccessControlRole.name == role if role else True)
+    )
   elif related_type == "Person":
-    return db.session.query(models.ObjectOwner.ownable_id).filter(
-        (models.ObjectOwner.ownable_type == object_type) &
-        (models.ObjectOwner.person_id.in_(related_ids)))
+    return db.session.query(models.AccessControlList.object_id).filter(
+        (models.AccessControlList.object_type == object_type) &
+        (models.AccessControlList.person_id.in_(related_ids)) &
+        (models.AccessControlRole.name == role if role else True)
+    )
   else:
     return None
 
@@ -139,7 +143,7 @@ def get_special_mappings(object_type, related_type, related_ids):
   return [
       _audit_snapshot(object_type, related_type, related_ids),
       person_object(object_type, related_type, related_ids),
-      person_ownable(object_type, related_type, related_ids),
+      acl_obj_id(object_type, related_type, related_ids),
       person_withcontact(object_type, related_type, related_ids),
       program_audit(object_type, related_type, related_ids),
       program_risk_assessment(object_type, related_type, related_ids),

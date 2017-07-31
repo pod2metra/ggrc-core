@@ -37,9 +37,9 @@
         var redirectLink;
         var messages = {
           error: 'Assessment generation has failed.',
-          progress: 'Assessment generation is in process. This may take ' +
-                    'multiple hours depending on the volume.',
-          success: 'Assessment generation successful. {reload_link}'
+          progress: 'Assessment generation is in progress. This may take ' +
+          'several minutes.',
+          success: 'Assessment was generated successfully. {reload_link}'
         };
         if (statuses.Failure > 0) {
           type = 'error';

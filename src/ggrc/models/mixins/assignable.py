@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from ggrc import db
 from ggrc.models import person
 from ggrc.models import relationship
+from ggrc.models import reflection
 
 
 class Assignable(object):
@@ -19,8 +20,9 @@ class Assignable(object):
 
   ASSIGNEE_TYPES = set(["Assignee"])
 
-  _publish_attrs = ["assignees"]
-  _update_attrs = []
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute("assignees", create=False, update=False),
+  )
 
   _custom_publish = {
       "assignees": lambda obj: obj.publish_assignees(),

@@ -14,8 +14,8 @@ from sqlalchemy.orm import foreign
 from ggrc import builder
 from ggrc import db
 from ggrc.models.mixins import Base
-from ggrc.models.reflection import PublishOnly
 from ggrc.models.revision import Revision
+from ggrc.models import reflection
 from ggrc import utils
 from ggrc.fulltext.mixin import Indexed
 from ggrc.fulltext import get_indexer
@@ -26,14 +26,16 @@ class CustomAttributeValue(Base, Indexed, db.Model):
 
   __tablename__ = 'custom_attribute_values'
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'custom_attribute_id',
       'attributable_id',
       'attributable_type',
       'attribute_value',
       'attribute_object',
-      PublishOnly('preconditions_failed'),
-  ]
+      reflection.Attribute('preconditions_failed',
+                           create=False,
+                           update=False),
+  )
   _fulltext_attrs = ["attribute_value"]
   REQUIRED_GLOBAL_REINDEX = False
 

@@ -12,7 +12,6 @@
     destroy: 'DELETE /api/issues/{id}',
     create: 'POST /api/issues',
     mixins: [
-      'ownable',
       'ca_update',
       'timeboxed',
       'mapping-limit',
@@ -25,7 +24,6 @@
     },
     tree_view_options: {
       attr_list: can.Model.Cacheable.attr_list.concat([
-        {attr_title: 'Issue URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'}
       ]),
       attr_view: GGRC.mustache_path + '/base_objects/tree-item-attr.mustache'
@@ -52,6 +50,9 @@
     },
     object_model: function () {
       return CMS.Models[this.attr('object_type')];
+    },
+    after_save: function () {
+      this.dispatch('refreshRelatedDocuments');
     }
   });
 })(window.can, window.GGRC, window.CMS);

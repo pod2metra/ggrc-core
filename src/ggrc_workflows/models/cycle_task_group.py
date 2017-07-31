@@ -10,6 +10,7 @@ from sqlalchemy import orm, inspect
 
 from ggrc import db
 from ggrc.models import mixins
+from ggrc.models import reflection
 from ggrc.fulltext import mixin as index_mixin
 from ggrc.fulltext import attributes
 
@@ -61,13 +62,13 @@ class CycleTaskGroup(mixins.WithContact,
       db.String(length=250), default="", nullable=False)
   next_due_date = db.Column(db.Date)
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'cycle',
       'task_group',
       'cycle_task_group_tasks',
       'sort_index',
       'next_due_date'
-  ]
+  )
 
   _aliases = {
       "cycle": {

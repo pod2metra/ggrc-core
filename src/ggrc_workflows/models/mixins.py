@@ -42,9 +42,11 @@ class StatusValidatedMixin(mixins.Stateful):
   NO_VALIDATION_STATES = [ASSIGNED, IN_PROGRESS, FINISHED]
   VALID_STATES = NO_VALIDATION_STATES + [VERIFIED]
 
-  _publish_attrs = [
-      reflection.PublishOnly("is_verification_needed"),
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute("is_verification_needed",
+                           create=False,
+                           update=False),
+  )
 
   def is_verification_needed(self):
     raise NotImplementedError()
@@ -61,14 +63,15 @@ class StatusValidatedMixin(mixins.Stateful):
 
   @property
   def active_states(self):
-    return [i for i in self.valid_statuses() if i not in self.inactive_states]
+    return [i for i in self.valid_statuses() if i != self.done_status]
 
   @property
-  def inactive_states(self):
-    if self.is_verification_needed:
-      return [self.VERIFIED]
-    else:
-      return [self.FINISHED]
+  def done_status(self):
+    return self.VERIFIED if self.is_verification_needed else self.FINISHED
+
+  @property
+  def is_done(self):
+    return self.done_status == self.status
 
 
 class CycleStatusValidatedMixin(StatusValidatedMixin):
@@ -114,7 +117,7 @@ class CycleTaskStatusValidatedMixin(CycleTaskGroupRelatedStatusValidatedMixin):
     """Return True if task is overdue."""
     today = date.today()
     task_end_date = self.end_date or today
-    return self.status not in self.inactive_states and task_end_date < today
+    return not self.is_done and task_end_date < today
 
   _aliases = {
       "status": {

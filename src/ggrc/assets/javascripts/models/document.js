@@ -17,6 +17,7 @@
     destroy: 'DELETE /api/documents/{id}',
     EVIDENCE: 'EVIDENCE',
     URL: 'URL',
+    REFERENCE_URL: 'REFERENCE_URL',
     search: function (request, response) {
       return $.ajax({
         type: 'get',
@@ -39,7 +40,6 @@
     },
     attributes: {
       context: 'CMS.Models.Context.stub',
-      owners: 'CMS.Models.Person.stubs',
       kind: 'CMS.Models.Option.stub',
       year: 'CMS.Models.Option.stub'
     },

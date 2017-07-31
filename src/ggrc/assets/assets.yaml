@@ -143,8 +143,6 @@ dashboard-js-files:
   - controllers/dashboard_controller.js
   - controllers/quick_form_controller.js
   - controllers/mapper.js
-  # Helpers
-  - helpers/mapping_helpers.js
   # Modules and Apps
   - modules/widget_descriptor.js
   - modules/widget_list.js
@@ -246,6 +244,7 @@ dashboard-js-files:
   - components/quick_form/quick_add.js
   - components/quick_form/quick_update.js
   - components/access_control_list/access_control_list.js
+  - components/access_control_list/access_control_list_roles_helper.js
   - components/assessment_templates/assessment_templates.js
   - components/modal_wrappers/assessment_template_form.js
   - components/modal_wrappers/checkboxes_to_list.js
@@ -284,7 +283,6 @@ dashboard-js-files:
   - components/textarea-array/textarea-array.js
   - components/object-selection/object-selection.js
   - components/object-selection/object-selection-item.js
-  - components/last-assessment-date/last-assessment-date.js
   - components/tree/tree-no-results.js
   - components/tree/tree-assignee-field.js
   - components/tree/tree-people-list-field.js
@@ -328,6 +326,7 @@ dashboard-js-files:
   - components/related-objects/related-people-mapping.js
   - components/related-objects/related-people-access-control.js
   - components/related-objects/related-people-access-control-group.js
+  - components/related-objects/related-reference-urls.js
   - components/custom-roles/custom-roles.js
   - components/custom-roles/custom-roles-modal.js
   - components/inline/inline.js
@@ -433,11 +432,11 @@ dashboard-js-template-files:
   - base_objects/info-pane-utility.mustache
   - base_objects/info_header.mustache
   - base_objects/modal_contact_fields.mustache
+  - base_objects/modal_content_urls.mustache
   - base_objects/open_close.mustache
   - base_objects/sub_tree_type_selector.mustache
   - base_objects/mapper-item-description.mustache
   - base_templates/objects_tooltip.mustache
-  - base_templates/attachment_list.mustache
   - base_templates/url_list.mustache
   - base_templates/attachment.mustache
   - base_templates/base.mustache
@@ -626,7 +625,6 @@ dashboard-js-template-files:
   - people/object_list.mustache
   - people/option_column.mustache
   - people/option_detail.mustache
-  - people/owners_modal_connector.mustache
   - people/popover.mustache
   - people/tree-item-attr.mustache
   - people/tree_add_item.mustache

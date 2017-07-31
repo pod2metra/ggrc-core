@@ -512,6 +512,7 @@ class TestSnapshots(base.Test):
         messages.AssertionMessages.
         format_err_msg_equal([expected_control], actual_controls))
 
+  @pytest.mark.skip(reason="Will be fixed in GGRC-2750")
   @pytest.mark.smoke_tests
   def test_export_of_snapshoted_control_from_audit_via_tree_view(
       self, create_tmp_dir, create_audit_with_control_and_update_control,
@@ -615,3 +616,38 @@ class TestSnapshots(base.Test):
         src_obj=existing_obj))
     assert 0 == actual_controls_count
     assert [] == actual_controls
+
+  @pytest.mark.parametrize(
+      "dynamic_object",
+      ["new_assessment_rest", "new_issue_rest"],
+      indirect=["dynamic_object"])
+  @pytest.mark.smoke_tests
+  def test_asmts_and_issues_mapping_to_snapshotable_objs(
+      self, create_audit_with_control_and_update_control, dynamic_object,
+      selenium
+  ):
+    """Check only snapshotable objs are available to map via UnifiedMapper and
+    AddWidget button on Horizontal Nav Bar.
+    Test parameters:
+      "Checking assessment"
+      "Checking issue"
+    Steps:
+      - Get list of available objs from HNB
+      - Get list of available objs from UnifiedMapper
+      - Compare their with constant of snapshotable objs
+    """
+    mapped_audit = create_audit_with_control_and_update_control[
+        'new_audit_rest'][0]
+    source_obj = (dynamic_object[0].repr_ui().update_attrs(
+        custom_attributes={None: None}))
+    obj_service = get_ui_service(source_obj.type)(selenium)
+    objs_types_from_mapper = (
+        obj_service.get_objs_available_to_map_via_mapper(src_obj=mapped_audit))
+    objs_types_from_add_widget = (
+        obj_service.get_objs_available_to_map_via_add_widget(
+            src_obj=source_obj))
+    expected_objs_types = sorted(
+        objects.get_normal_form(snap_obj)
+        for snap_obj in objects.ALL_SNAPSHOTABLE_OBJS)
+    assert (expected_objs_types == objs_types_from_mapper ==
+            objs_types_from_add_widget)

@@ -12,6 +12,7 @@ from sqlalchemy.orm import foreign
 from sqlalchemy.orm import relationship
 
 from ggrc import builder
+from ggrc.models import reflection
 
 
 # pylint: disable=invalid-name
@@ -22,10 +23,9 @@ logger = getLogger(__name__)
 class Attributable(object):
   """Custom Attributable mixin."""
 
-  _publish_attrs = [
-      'attributes',
-  ]
-  _update_attrs = []
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('attributes', create=False, update=False),
+  )
 
   @declared_attr
   def _attributes(cls):  # pylint: disable=no-self-argument

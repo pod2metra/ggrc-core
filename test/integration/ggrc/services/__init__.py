@@ -10,6 +10,7 @@ import ggrc.builder
 import ggrc.services
 from ggrc import db
 from ggrc.models.mixins import Base
+from ggrc.models import reflection
 from ggrc.models.exceptions import ValidationError
 from ggrc.services.common import Resource
 from integration.ggrc import TestCase as BaseTestCase
@@ -40,8 +41,13 @@ class ServicesTestMockModel(Base, db.Model):
     return value
 
   # REST properties
-  _publish_attrs = ['modified_by_id', 'foo', 'code', 'validated']
-  _update_attrs = ['foo', 'code', 'validated']
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('modified_by_id', create=False, update=False),
+      'foo',
+      'code',
+      'validated',
+  )
+
 
 URL_MOCK_COLLECTION = '/api/mock_resources'
 URL_MOCK_RESOURCE = '/api/mock_resources/{0}'

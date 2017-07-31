@@ -14,7 +14,7 @@ from ggrc.models.mixins import (
     Titled, Slugged, Described, Timeboxed, WithContact
 )
 from ggrc.models.reflection import AttributeInfo
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 from ggrc.models import all_models
 from ggrc_workflows.models.task_group_object import TaskGroupObject
 
@@ -48,16 +48,16 @@ class TaskGroup(
   sort_index = db.Column(
       db.String(length=250), default="", nullable=False)
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'workflow',
       'task_group_objects',
-      PublishOnly('objects'),
+      reflection.Attribute('objects', create=False, update=False),
       'task_group_tasks',
       'lock_task_order',
       'sort_index',
       # Intentionally do not include `cycle_task_groups`
       # 'cycle_task_groups',
-  ]
+  )
 
   _aliases = {
       "title": "Summary",

@@ -34,6 +34,7 @@ class TestCheckPopulatedContent(unittest.TestCase):
       ('secondary_assessor', ("Secondary Assignees", 2)),
       ('contact', ("Primary Contacts", 3)),
       ('secondary_contact', ("Secondary Contacts", 4)),
+      ('owners', ("Admin", 5)),
   )
   @ddt.unpack
   def test_check_populated_content(self, key, role):
@@ -56,6 +57,12 @@ class TestCheckPopulatedContent(unittest.TestCase):
           "object_id": self.object_id,
           "modified_by_id": None,
           "person_id": self.user_id,
+          # Frontend require data in such format
+          "person": {
+              "id": self.user_id,
+              "type": "Person",
+              "href": "/api/people/{}".format(self.user_id)
+          },
           "modified_by": None,
           "id": None,
       })
@@ -105,3 +112,24 @@ class TestCheckPopulatedContent(unittest.TestCase):
                     return_value={}) as get_roles:
       self.assertEqual(revision.content, expected)
       get_roles.assert_called_once_with(self.object_type)
+
+  @ddt.data({'url': 'url1', 'reference_url': 'url2'})
+  def test_populated_content_urls(self, content):
+    """Test populated content for revision with urls."""
+    expected = [{'display_name': 'url1',
+                 'document_type': 'REFERENCE_URL',
+                 'id': None,
+                 'link': 'url1',
+                 'title': 'url1'},
+                {'display_name': 'url2',
+                 'document_type': 'REFERENCE_URL',
+                 'id': None,
+                 'link': 'url2',
+                 'title': 'url2'}]
+    obj = mock.Mock()
+    obj.id = self.object_id
+    obj.__class__.__name__ = self.object_type
+    revision = all_models.Revision(obj, mock.Mock(), mock.Mock(), content)
+    with mock.patch("ggrc.access_control.role.get_custom_roles_for",
+                    return_value={}):
+      self.assertEqual(revision.content["reference_url"], expected)

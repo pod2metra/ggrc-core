@@ -58,7 +58,6 @@
       ].concat(can.Model.Cacheable.attr_list.filter(function (attr) {
         return attr.attr_name !== 'owner';
       })).concat([
-        {attr_title: 'Program URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'},
         {attr_title: 'Effective Date', attr_name: 'start_date'},
         {attr_title: 'Last Deprecated Date', attr_name: 'end_date'}
@@ -85,7 +84,11 @@
       this.validateNonBlank('title');
       this._super.apply(this, arguments);
     }
-  }, {});
+  }, {
+    after_save: function () {
+      this.dispatch('refreshRelatedDocuments');
+    }
+  });
 
   can.Model.Cacheable('CMS.Models.Option', {
     root_object: 'option',
@@ -126,7 +129,6 @@
     isRoleable: true,
     attributes: {
       context: 'CMS.Models.Context.stub',
-      owners: 'CMS.Models.Person.stubs',
       modified_by: 'CMS.Models.Person.stub',
       sections: 'CMS.Models.get_stubs',
       controls: 'CMS.Models.Control.stubs',
@@ -144,7 +146,6 @@
           attr_name: 'last_assessment_date',
           order: 45 // between State and Primary Contact
         },
-        {attr_title: 'Objective URL', attr_name: 'url'},
         {attr_title: 'Reference URL', attr_name: 'reference_url'}
       ]),
       display_attr_names: ['title', 'owner', 'status', 'last_assessment_date'],
@@ -163,6 +164,9 @@
       this._super.apply(this, arguments);
     }
   }, {
+    after_save: function () {
+      this.dispatch('refreshRelatedDocuments');
+    }
   });
 
   can.Model.Cacheable('CMS.Models.Help', {

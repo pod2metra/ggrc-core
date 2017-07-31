@@ -6,6 +6,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base
+from ggrc.models import reflection
 
 
 class Context(Base, db.Model):
@@ -47,7 +48,10 @@ class Context(Base, db.Model):
             'related_object_type', 'related_object_id'),
     )
 
-  _publish_attrs = ['name', 'related_object', 'description']
+  _api_attrs = reflection.ApiAttributes('name',
+                                        'related_object',
+                                        'description')
+
   _sanitize_html = ['name', 'description']
   _include_links = []
 

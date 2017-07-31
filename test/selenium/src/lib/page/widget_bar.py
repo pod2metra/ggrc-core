@@ -9,13 +9,12 @@ from lib import base, factory
 from lib.constants import locator, element
 from lib.element import widget_bar
 from lib.page.widget import admin_widget
+from lib.utils import selenium_utils
 
 
 class _WidgetBar(base.Component):
   """All widget bars."""
-
-  def __init__(self, driver):
-    super(_WidgetBar, self).__init__(driver)
+  # pylint: disable=too-few-public-methods
 
   def get_active_widget_name(self):
     """In general multiple tabs are open. Get name of active one.
@@ -51,6 +50,18 @@ class _ObjectWidgetBar(_WidgetBar):
     """
     self.button_add_widget.click()
     return widget_bar.AddWidget(self._driver)
+
+  def get_mappable_via_add_widgets_objs_aliases(self):
+    """Returns the aliases of all currently available for mapping objects via
+    'Add Tab' button in Horizontal Nav Bar.
+    Return: list of str
+    """
+    # pylint: disable=invalid-name
+    self.button_add_widget.click()
+    add_elements = selenium_utils.get_when_all_visible(
+        self._driver,
+        locator.WidgetBarButtonAddDropdown.ALL_MAPPABLE_WIDGETS_OBJS)
+    return [add_el.text for add_el in add_elements]
 
   def select_info(self):
     """Select Info widget/tab. Each object has different Info widget."""

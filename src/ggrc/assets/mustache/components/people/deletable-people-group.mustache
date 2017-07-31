@@ -12,7 +12,6 @@
         <person-list-item person="{.}" {with-details}="withDetails">
           {{#unless isDisabled}}
             {{#unmapablePerson}}
-              {{#is_allowed 'update' instance}}
               <div class="action-toolbar__controls">
                 <a href="javascript://" class="info-action unmap" ($click)="unmap(person)">
                   <action-toolbar-control>
@@ -20,7 +19,6 @@
                   </action-toolbar-control>
                 </a>
               </div>
-              {{/is_allowed}}
             {{/unmapablePerson}}
           {{/unless}}
         </person-list-item>

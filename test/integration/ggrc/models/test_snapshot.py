@@ -61,7 +61,6 @@ class TestSnapshot(TestCase):
       "audit_objects",
       "audits",
       "controls",
-      "object_owners",
       "object_people",
       "objects",
       "people",
@@ -100,10 +99,13 @@ class TestSnapshot(TestCase):
       # while api returns only basic data in stubs
       "document_url",
       "document_evidence",
+      "reference_url",
 
       # computed attributes are not stored in revisions and should be ignored.
       "attributes",
       "last_assessment_date",
+
+      "access_control_list",  # TODO: remove this line (GGRC-2402)
   }
 
   def setUp(self):

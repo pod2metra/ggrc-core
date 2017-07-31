@@ -61,46 +61,22 @@ can.Control('CMS.Controllers.InfoPin', {
     return Math.floor($(window).height() / 3);
   },
   hideInstance: function () {
-    this.element.stop(true);
-    this.element.height(0).html('');
+    this.unsetInstance();
     $(window).trigger('resize');
   },
   unsetInstance: function () {
-    this.element.stop(true);
-    this.element.animate({
-      height: 0
-    }, {
-      duration: 800,
-      start: function () {
-        $(window).trigger('resize', 0);
-      },
-      complete: function () {
-        this.element.height(0).html('');
-        $('.cms_controllers_tree_view_node').removeClass('active');
-      }.bind(this)
-    });
+    this.element
+      .css({
+        height: 0,
+        'z-index': -1,
+        opacity: 0
+      })
+      .html('');
   },
-  setInstance: function (opts, el, maximizedState) {
-    var self = this;
+  setHtml: function (opts, view, confirmEdit, options, maximizedState) {
     var instance = opts.attr('instance');
     var parentInstance = opts.attr('parent_instance');
-    var options = this.findOptions(el);
-    var populatedOpts = opts.attr('options');
-    var view = this.findView(instance);
-    var panelHeight = this.getPinHeight(maximizedState);
-    var confirmEdit = instance.class.confirmEditModal ?
-      instance.class.confirmEditModal : {};
-    var currentPanelHeight;
-    instance.attr('view', view);
-
-    if (populatedOpts && !options.attr('result')) {
-      options = populatedOpts;
-    }
-
-    if (!_.isEmpty(confirmEdit)) {
-      confirmEdit.confirm = this.confirmEdit;
-    }
-
+    var self = this;
     this.element.html(can.view(view, {
       instance: instance,
       isSnapshot: !!instance.snapshot || instance.isRevision,
@@ -119,30 +95,58 @@ can.Control('CMS.Controllers.InfoPin', {
         return self.close.bind(self);
       }
     }));
+  },
+  prepareView: function (opts, el, maximizedState, setHtml) {
+    var instance = opts.attr('instance');
+    var options = this.findOptions(el);
+    var populatedOpts = opts.attr('options');
+    var confirmEdit = instance.class.confirmEditModal ?
+      instance.class.confirmEditModal : {};
+    var view = this.findView(instance);
+    instance.attr('view', view);
+
+    if (populatedOpts && !options.attr('result')) {
+      options = populatedOpts;
+    }
+
+    if (!_.isEmpty(confirmEdit)) {
+      confirmEdit.confirm = this.confirmEdit;
+    }
+
+    if (setHtml) {
+      this.setHtml(opts, view, confirmEdit, options, maximizedState);
+    }
+  },
+  setInstance: function (opts, el, maximizedState) {
+    var instance = opts.attr('instance');
+    var panelHeight = this.getPinHeight(maximizedState);
+    var currentPanelHeight;
+    var infoPaneOpenDfd = can.Deferred();
+
+    this.prepareView(opts, el, maximizedState, true);
+    // Load trees inside info pin
+    this.loadChildTrees();
 
     if (instance.info_pane_preload) {
       instance.info_pane_preload();
     }
 
-    // Load trees inside info pin
-    this.loadChildTrees();
-
     // Make sure pin is visible
     currentPanelHeight = this.element.height();
     if (!currentPanelHeight || currentPanelHeight !== panelHeight) {
-      this.element.animate({
-        height: panelHeight
-      }, {
-        duration: 800,
-        easing: 'easeOutExpo',
-        complete: function () {
-          this.ensureElementVisible(el);
-        }.bind(this)
-      });
+      this.element.css('height', this.getPinHeight(true));
     } else {
       this.ensureElementVisible(el);
     }
+
+    this.element.css('z-index', 1);
+    this.element.css('opacity', 1);
+
+    // Temporary solution...
+    setTimeout(infoPaneOpenDfd.resolve, 1000);
+
     this.element.trigger('scroll');
+    return infoPaneOpenDfd;
   },
   ensureElementVisible: function (el) {
     var $objectArea;
@@ -193,24 +197,10 @@ can.Control('CMS.Controllers.InfoPin', {
     return confirmDfd;
   },
   changeMaximizedState: function (maximizedState) {
-    var $win = $(window);
-    var options = {
-      duration: 800,
-      easing: 'easeOutExpo'
-    };
     var $activeTree = $('.cms_controllers_tree_view_node.active');
     var size = this.getPinHeight(maximizedState);
-    if (size <= this.element.height()) {
-      options.start = function () {
-        $win.trigger('resize', size);
-      };
-    } else {
-      options.complete = function () {
-        $win.trigger('resize');
-      };
-    }
 
-    this.element.animate({height: size}, options);
+    this.element.css('height', size);
 
     if (maximizedState) {
       $activeTree

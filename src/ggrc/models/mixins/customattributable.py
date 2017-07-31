@@ -18,7 +18,7 @@ from werkzeug.exceptions import BadRequest
 from ggrc import builder
 from ggrc import db
 from ggrc import utils
-from ggrc.models.reflection import AttributeInfo
+from ggrc.models import reflection
 
 
 # pylint: disable=invalid-name
@@ -29,12 +29,16 @@ logger = getLogger(__name__)
 class CustomAttributable(object):
   """Custom Attributable mixin."""
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'custom_attribute_values',
-      'custom_attribute_definitions',
-      'preconditions_failed',
-  ]
-  _update_attrs = ['custom_attribute_values', 'custom_attributes']
+      reflection.Attribute('custom_attribute_definitions',
+                           create=False,
+                           update=False),
+      reflection.Attribute('preconditions_failed',
+                           create=False,
+                           update=False),
+      reflection.Attribute('custom_attributes', read=False),
+  )
   _include_links = ['custom_attribute_values', 'custom_attribute_definitions']
   _update_raw = ['custom_attribute_values']
 
@@ -224,7 +228,7 @@ class CustomAttributable(object):
     """
     from ggrc.models.custom_attribute_definition \
         import CustomAttributeDefinition
-    field_names = AttributeInfo.gather_create_attrs(
+    field_names = reflection.AttributeInfo.gather_create_attrs(
         CustomAttributeDefinition)
 
     data = {fname: definition.get(fname) for fname in field_names}

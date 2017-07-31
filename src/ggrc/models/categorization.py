@@ -4,6 +4,7 @@
 from ggrc import db
 from sqlalchemy.ext.associationproxy import association_proxy
 from .mixins import Base
+from ggrc.models import reflection
 
 BACKREF_NAME_FORMAT = '{type}_{scope}_categorizable'
 
@@ -37,11 +38,10 @@ class Categorization(Base, db.Model):
     from ggrc.models.category import CategoryBase
     return CategoryBase.query.get(self.category_id).name
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       # 'categorizable',
-      'category',
-  ]
-  _update_attrs = []
+      reflection.Attribute('category', create=False, update=False)
+  )
 
   @classmethod
   def eager_query(cls):

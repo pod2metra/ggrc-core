@@ -295,7 +295,7 @@ def get_affected_objects(attribute_groups):
   for attr, groups in attribute_groups.iteritems():
     objects = set()
     objects.update(groups["computed_objects"])
-    objects.update(_objects_from_snapshots(groups["destinations_snapshots"]))
+    objects.update(_objects_from_snapshots(groups["destination_snapshots"]))
     objects.update(_get_objects_from_aggregates(
         groups["aggregate_objects"],
         attr.object_template.name

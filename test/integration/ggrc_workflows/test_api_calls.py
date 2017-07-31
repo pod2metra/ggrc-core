@@ -356,3 +356,19 @@ class TestStatusApiPost(TestCase):
     self.assert200(resp)
     workflow = all_models.Workflow.query.get(resp.json["workflow"]["id"])
     self.assertEqual(flag, workflow.is_verification_needed)
+
+  @ddt.data((u"InProgress", True, True),
+            (u"InProgress", False, True),
+            (u"Declined", True, True),
+            (u"Verified", True, False),
+            (u"Finished", True, True),
+            (u"Finished", False, False))
+  @ddt.unpack
+  def test_move_to_history(self, state, is_vf_needed, is_current):
+    """Moved to history if state changed."""
+    self.setup_cycle_state(is_vf_needed)
+    resp = self.api.put(self.task, data={"status": state})
+    task = all_models.CycleTaskGroupObjectTask.query.get(
+        resp.json["cycle_task_group_object_task"]["id"]
+    )
+    self.assertEqual(is_current, task.cycle.is_current)

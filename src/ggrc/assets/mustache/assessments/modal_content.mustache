@@ -34,7 +34,7 @@
         <div class="ggrc-form-item__row {{#instance.computed_errors.title}}field-failure{{/instance.computed_errors.title}}">
           <label class="form-label required-label ggrc-form-item__label">
             Title
-            <i class="fa fa-asterisk"></i> 
+            <i class="fa fa-asterisk"></i>
           </label>
           <input data-id="title_txtbx"
             tabindex="2"
@@ -47,14 +47,16 @@
         </div>
       </div>
 
-      <div class="ggrc-form-item ggrc-form-item__text-area">
+      <div class="ggrc-form-item">
         <div class="ggrc-form-item__row">
           <label class="ggrc-form-item__label">
             Test Plan
           </label>
-          <div class="wysiwyg-area">
-            <textarea tabindex="3" id="control_test_plan" class="triple wysihtml5" name="test_plan" placeholder="Enter Test Plan">{{{test_plan}}}</textarea>
-          </div>
+          <rich-text tab-index="3"
+              hidden-toolbar="true"
+              placeholder="Enter Test Plan"
+              {(text)}="test_plan">
+          </rich-text>
         </div>
       </div>
 
@@ -180,6 +182,12 @@
         </div>
       </div>
 
+      <div class="hide-wrap hidable">
+        <div class="row-fluid inner-hide">
+          {{> '/static/mustache/base_objects/modal_content_urls.mustache'}}
+        </div>
+      </div>
+
       <div class="additional-fields">
         <div class="expand-link">
           <a tabindex="9" class="show-hidden-fields info-show-hide active" href="javascript://">
@@ -198,6 +206,7 @@
           {{>'/static/mustache/assessments/modal_content_additional_fields.mustache'}}
         </div>
       </div>
+
     </form>
     {{/instance}}
   </div>

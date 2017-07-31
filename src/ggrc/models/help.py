@@ -4,6 +4,7 @@
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Titled, Slugged
+from ggrc.models import reflection
 
 
 class Help(Titled, Slugged, db.Model):
@@ -15,9 +16,7 @@ class Help(Titled, Slugged, db.Model):
   _fulltext_attrs = [
       'content',
   ]
-  _publish_attrs = [
-      'content',
-  ]
+  _api_attrs = reflection.ApiAttributes('content')
   _sanitize_html = [
       'content',
   ]

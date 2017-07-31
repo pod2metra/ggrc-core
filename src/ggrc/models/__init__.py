@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from ggrc import db
 from ggrc import settings
 from ggrc.models import inflector
-from ggrc.models.reflection import SanitizeHtmlInfo
+from ggrc.models import reflection
 from ggrc.models.all_models import *  # noqa
 from ggrc.utils import html_cleaner
 
@@ -149,8 +149,8 @@ def init_session_monitor_cache():
 def init_sanitization_hooks():
   # Register event listener on all String and Text attributes to sanitize them.
   for model in all_models.all_models:  # noqa
-    attr_info = SanitizeHtmlInfo(model)
-    for attr_name in attr_info._sanitize_html:
+    attr_names = reflection.AttributeInfo.gather_attrs(model, "_sanitize_html")
+    for attr_name in attr_names:
       attr = getattr(model, attr_name)
       sa.event.listen(attr, 'set', html_cleaner.cleaner, retval=True)
 

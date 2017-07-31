@@ -5,7 +5,7 @@ from ggrc import db
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from ggrc.models.mixins import Base
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 
 
 class AuditObject(Base, db.Model):
@@ -39,10 +39,7 @@ class AuditObject(Base, db.Model):
         db.Index('ix_audit_id', 'audit_id'),
     )
 
-  _publish_attrs = [
-      'audit',
-      'auditable',
-  ]
+  _api_attrs = reflection.ApiAttributes('audit', 'auditable')
 
   @classmethod
   def eager_query(cls):
@@ -79,10 +76,10 @@ class Auditable(object):
         cascade='all, delete-orphan',
     )
 
-  _publish_attrs = [
-      PublishOnly('audits'),
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('audits', create=False, update=False),
       'audit_objects',
-  ]
+  )
   _include_links = []
 
   @classmethod

@@ -47,7 +47,6 @@ from ggrc.models.meeting import Meeting
 from ggrc.models.notification import Notification
 from ggrc.models.notification import NotificationConfig
 from ggrc.models.notification import NotificationType
-from ggrc.models.object_owner import ObjectOwner
 from ggrc.models.object_person import ObjectPerson
 from ggrc.models.objective import Objective
 from ggrc.models.option import Option
@@ -105,7 +104,6 @@ all_models = [  # pylint: disable=invalid-name
     Market,
     Meeting,
     Objective,
-    ObjectOwner,
     ObjectPerson,
     Option,
     OrgGroup,

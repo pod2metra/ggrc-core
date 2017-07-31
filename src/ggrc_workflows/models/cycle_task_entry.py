@@ -8,6 +8,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from ggrc import db
 from ggrc.models.mixins import Base, Described
+from ggrc.models import reflection
 from ggrc.models.relationship import Relatable
 from ggrc.fulltext import mixin
 
@@ -35,11 +36,11 @@ class CycleTaskEntry(Relatable, Described, Base, mixin.Indexed, db.Model):
       backref='cycle_task_entries',
   )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'cycle',
       'cycle_task_group_object_task',
       'is_declining_review'
-  ]
+  )
 
   @hybrid_property
   def is_declining_review(self):

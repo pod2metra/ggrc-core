@@ -10,14 +10,14 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy import orm
 from ggrc import db
 from ggrc.models.deferred import deferred
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 
 
 class HasObjectState(object):
   """Has Object State Mixin"""
-  _publish_attrs = [
-      PublishOnly('os_state'),
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('os_state', create=False, update=False),
+  )
   _fulltext_attrs = ["os_state"]
   _aliases = {
       "os_state": {

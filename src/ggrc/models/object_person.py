@@ -9,7 +9,7 @@ from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base
 from ggrc.models.mixins import Timeboxed
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 
 
 class ObjectPerson(Timeboxed, Base, db.Model):
@@ -43,12 +43,12 @@ class ObjectPerson(Timeboxed, Base, db.Model):
         db.Index('ix_person_id', 'person_id'),
     )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'role',
       'notes',
       'person',
       'personable',
-  ]
+  )
   _sanitize_html = [
       'notes',
   ]
@@ -86,10 +86,10 @@ class Personable(object):
         cascade='all, delete-orphan',
     )
 
-  _publish_attrs = [
-      PublishOnly('people'),
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('people', create=False, update=False),
       'object_people',
-  ]
+  )
   _include_links = []
 
   @classmethod

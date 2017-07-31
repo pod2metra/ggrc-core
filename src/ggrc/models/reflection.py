@@ -65,7 +65,6 @@ ATTRIBUTE_ORDER = (
     "principal_assessor",
     "secondary_assessor",
     "secondary_contact",
-    "url",
     "assessment_type",
     "reference_url",
     "verify_frequency",
@@ -110,36 +109,35 @@ def is_filter_only(alias_properties):
   return False
 
 
-class PublishOnly(object):
-  """Attributes wrapped by ``PublishOnly`` instances should not be considered
-  to be a part of an inherited list. For example, ``_update_attrs`` can be
-  inherited from ``_publish_attrs`` if left unspecified. This class provides
-  a mechanism to use that inheritance while excluding some elements from the
-  resultant inherited list. For example, this:
+# pylint: disable=too-few-public-methods
+class Attribute(object):
+  """Class to define api attribute with allowed actions with that attribute."""
 
-  .. sourcecode::
+  __slots__ = ["attr", "create", "update", "read"]
 
-    _publish_attrs = [
-      'inherited_attr',
-      PublishOnly('not_inherited_attr'),
-      ]
+  def __init__(self, attr, create=True, update=True, read=True):
+    self.attr = attr
+    self.create = create
+    self.update = update
+    self.read = read
 
-  is equivalent to this:
 
-  .. sourcecode::
+class ApiAttributes(dict):
+  """Class to collect all required api attributes."""
 
-    _publish_attrs = [
-    'inherited_attr',
-    'not_inherited_attr',
-    ]
-    _update_attrs = [
-    'inherited_attr',
-    ]
-  """
-  # pylint: disable=too-few-public-methods
+  def __init__(self, *attrs):
+    super(ApiAttributes, self).__init__()
+    self.add(*attrs)
 
-  def __init__(self, attr_name):
-    self.attr_name = attr_name
+  def add(self, *attrs):
+    """Append attrs.
+
+    Attrs is the list of strings/unicodes or instances of Attribute class.
+    """
+    for attr in attrs:
+      if isinstance(attr, basestring):
+        attr = Attribute(attr)
+      self[attr.attr] = attr
 
 
 class AttributeInfo(object):
@@ -181,53 +179,33 @@ class AttributeInfo(object):
   def gather_attr_dicts(cls, tgt_class, src_attr):
     """ Gather dictionaries from target class parets """
     result = {}
-    for base_class in reversed(tgt_class.__bases__):
-      base_result = cls.gather_attr_dicts(base_class, src_attr)
-      result.update(base_result)
-    attrs = getattr(tgt_class, src_attr, {})
-    result.update(attrs)
+    for base in reversed(tgt_class.__mro__):
+      result.update(getattr(base, src_attr, None) or {})
     return result
 
   @classmethod
-  def gather_attrs(cls, tgt_class, src_attrs, accumulator=None,
-                   main_class=None):
+  def gather_attrs(cls, tgt_class, src_attr):
     """Gathers the attrs to be included in a list for publishing, update, or
     some other purpose. Supports inheritance by iterating the list of
     ``src_attrs`` until a list is found.
-
-    Inheritance of some attributes can be circumvented through use of the
-    ``DontPropoagate`` decorator class.
     """
-    if main_class is None:
-      main_class = tgt_class
-    src_attrs = src_attrs if isinstance(src_attrs, list) else [src_attrs]
-    accumulator = accumulator if accumulator is not None else set()
-    ignore_publishonly = True
-    for attr in src_attrs:
-      attrs = None
-      # Only get the attribute if it is defined on the target class, but
-      # get it via `getattr`, to handle `@declared_attr`
-      if attr in tgt_class.__dict__:
-        attrs = getattr(tgt_class, attr, None)
-        if callable(attrs):
-          attrs = attrs(main_class)
-      if attrs is not None:
-        if not ignore_publishonly:
-          attrs = [a for a in attrs if not isinstance(a, PublishOnly)]
-        else:
-          attrs = [a if not isinstance(a, PublishOnly) else a.attr_name for
-                   a in attrs]
-        accumulator.update(attrs)
-        break
+    accumulator = set()
+    callable_attrs = set()
+    for base in tgt_class.__mro__:
+      attrs = getattr(base, src_attr, None)
+      if callable(attrs):
+        callable_attrs.add(attrs)
       else:
-        ignore_publishonly = False
-    for base in tgt_class.__bases__:
-      cls.gather_attrs(base, src_attrs, accumulator, main_class=main_class)
+        accumulator = accumulator.union(set(attrs or []))
+    for attr in callable_attrs:
+      accumulator = accumulator.union(attr(tgt_class))
     return accumulator
 
   @classmethod
   def gather_publish_attrs(cls, tgt_class):
-    return cls.gather_attrs(tgt_class, '_publish_attrs')
+    return [attr_name for attr_name, attr in
+            cls.gather_attr_dicts(tgt_class, "_api_attrs").iteritems()
+            if attr.read]
 
   @classmethod
   def gather_aliases(cls, tgt_class):
@@ -235,32 +213,35 @@ class AttributeInfo(object):
 
   @classmethod
   def gather_visible_aliases(cls, tgt_class):
-    aliases = AttributeInfo.gather_aliases(tgt_class)
     return {
-        attr: props for attr, props in aliases.items()
+        attr: props for attr, props
+        in AttributeInfo.gather_aliases(tgt_class).iteritems()
         if props is not None and not is_filter_only(props)
     }
 
   @classmethod
   def gather_update_attrs(cls, tgt_class):
-    attrs = cls.gather_attrs(tgt_class, ['_update_attrs', '_publish_attrs'])
-    return attrs
+    return [attr_name for attr_name, attr in
+            cls.gather_attr_dicts(tgt_class, "_api_attrs").iteritems()
+            if attr.update]
 
   @classmethod
   def gather_create_attrs(cls, tgt_class):
-    return cls.gather_attrs(tgt_class, [
-        '_create_attrs', '_update_attrs', '_publish_attrs'])
+    return [attr_name for attr_name, attr in
+            cls.gather_attr_dicts(tgt_class, "_api_attrs").iteritems()
+            if attr.create]
 
   @classmethod
   def gather_include_links(cls, tgt_class):
-    return cls.gather_attrs(tgt_class, ['_include_links'])
+    return cls.gather_attrs(tgt_class, '_include_links')
 
   @classmethod
   def gather_update_raw(cls, tgt_class):
-    return cls.gather_attrs(tgt_class, ['_update_raw'])
+    return cls.gather_attrs(tgt_class, '_update_raw')
 
   @classmethod
   def get_acl_definitions(cls, object_class):
+    """Return list of ACL dicts."""
     from ggrc.access_control.role import AccessControlRole
     from ggrc import db
     if not hasattr(flask.g, "acl_role_names"):
@@ -345,8 +326,7 @@ class AttributeInfo(object):
     return definitions
 
   @classmethod
-  def get_custom_attr_definitions(cls, object_class, ca_cache=None,
-                                  include_oca=True):
+  def get_custom_attr_definitions(cls, object_class, ca_cache=None):
     """Get column definitions for custom attributes on object_class.
 
     Args:
@@ -354,8 +334,6 @@ class AttributeInfo(object):
       ca_cache: dictionary containing custom attribute definitions. If it's set
         this function will not look for CAD in the database. This should be
         used for bulk operations, and eventually replaced with memcache.
-      include_oca: Flag for including object level custom attributes. This
-        should be true only for defenitions needed for csv imports.
 
     returns:
       dict of custom attribute definitions.
@@ -409,8 +387,7 @@ class AttributeInfo(object):
     return set(sum(unique_columns, []))
 
   @classmethod
-  def get_object_attr_definitions(cls, object_class, ca_cache=None,
-                                  include_oca=True):
+  def get_object_attr_definitions(cls, object_class, ca_cache=None):
     """Get all column definitions for object_class.
 
     This function joins custom attribute definitions, mapping definitions and
@@ -419,7 +396,6 @@ class AttributeInfo(object):
     Args:
       object_class: Model for which we want the attribute definitions.
       ca_cache: dictionary containing custom attribute definitions.
-      include_oca: Flag for including object level custom attributes.
     """
     definitions = {}
 
@@ -452,9 +428,9 @@ class AttributeInfo(object):
     definitions.update(cls.get_acl_definitions(object_class))
 
     if object_class.__name__ not in EXCLUDE_CUSTOM_ATTRIBUTES:
-      definitions.update(
-          cls.get_custom_attr_definitions(object_class, ca_cache=ca_cache,
-                                          include_oca=include_oca))
+      definitions.update(cls.get_custom_attr_definitions(
+          object_class, ca_cache=ca_cache
+      ))
 
     if object_class.__name__ not in EXCLUDE_MAPPINGS:
       definitions.update(cls.get_mapping_definitions(object_class))
@@ -493,10 +469,3 @@ class AttributeInfo(object):
     custom_attrs.sort(key=lambda x: x.lower())
     mapping_attrs.sort(key=lambda x: x.lower())
     return default_attrs + custom_attrs + mapping_attrs
-
-
-class SanitizeHtmlInfo(AttributeInfo):
-
-  def __init__(self, tgt_class):
-    self._sanitize_html = SanitizeHtmlInfo.gather_attrs(
-        tgt_class, '_sanitize_html')

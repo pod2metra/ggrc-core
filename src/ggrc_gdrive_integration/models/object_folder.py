@@ -37,11 +37,11 @@ class ObjectFolder(Base, db.Model):
         db.Index('ix_folderable_id_type', 'folderable_id', 'folderable_type'),
     )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'folder_id',
       'parent_folder_id',
       'folderable',
-  ]
+  )
 
   @classmethod
   def eager_query(cls):
@@ -75,10 +75,10 @@ class Folderable(object):
     # pylint: disable=not-an-iterable
     return [{"id": fobject.folder_id} for fobject in self.object_folders]
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'object_folders',
-      reflection.PublishOnly('folders'),
-  ]
+      reflection.Attribute('folders', create=False, update=False),
+  )
 
   @classmethod
   def eager_query(cls):

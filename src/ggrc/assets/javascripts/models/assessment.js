@@ -54,11 +54,11 @@
       }, {
         attr_title: 'Conclusion: Design',
         attr_name: 'design',
-        order: 14
+        order: 13
       }, {
         attr_title: 'Conclusion: Operation',
         attr_name: 'operationally',
-        order: 15
+        order: 14
       }, {
         attr_title: 'Finished Date',
         attr_name: 'finished_date',
@@ -68,14 +68,9 @@
         attr_name: 'verified_date',
         order: 10
       }, {
-        attr_title: 'Assessment URL',
-        attr_name: 'url',
-        attr_sort_field: 'assessment url',
-        order: 12
-      }, {
         attr_title: 'Reference URL',
         attr_name: 'reference_url',
-        order: 13
+        order: 12
       }, {
         attr_title: 'Creators',
         attr_name: 'creators',
@@ -273,6 +268,7 @@
       return this._super(checkAssociations);
     },
     after_save: function () {
+      this.dispatch('refreshRelatedDocuments');
       if (this.audit && this.audit.selfLink) {
         this.audit.refresh();
       }
@@ -310,7 +306,14 @@
 
         this.audit.findAuditors().then(function (list) {
           list.forEach(function (item) {
-            markForAddition(self, item.person, 'Verifier');
+            var type = 'Verifier';
+            if (item.person === auditLead) {
+              type += ',Assessor';
+            }
+            if (item.person === currentUser) {
+              type += ',Creator';
+            }
+            markForAddition(self, item.person, type);
           });
         });
       } else {
@@ -365,7 +368,7 @@
       return dfd;
     },
     info_pane_preload: function () {
-      this.refresh();
+      return;
     }
   });
 })(window.can, window.GGRC, window.CMS);

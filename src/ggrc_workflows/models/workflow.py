@@ -140,9 +140,9 @@ class Workflow(mixins.CustomAttributable, HasOwnContext, mixins.Timeboxed,
       'notify_custom_message',
   ]
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'workflow_people',
-      reflection.PublishOnly('people'),
+      reflection.Attribute('people', create=False, update=False),
       'task_groups',
       'frequency',
       'notify_on_change',
@@ -151,11 +151,15 @@ class Workflow(mixins.CustomAttributable, HasOwnContext, mixins.Timeboxed,
       'object_approval',
       'recurrences',
       'is_verification_needed',
-      reflection.PublishOnly('next_cycle_start_date'),
-      reflection.PublishOnly('non_adjusted_next_cycle_start_date'),
-      reflection.PublishOnly('workflow_state'),
-      reflection.PublishOnly('kind'),
-  ]
+      reflection.Attribute('next_cycle_start_date',
+                           create=False, update=False),
+      reflection.Attribute('non_adjusted_next_cycle_start_date',
+                           create=False, update=False),
+      reflection.Attribute('workflow_state',
+                           create=False, update=False),
+      reflection.Attribute('kind',
+                           create=False, update=False),
+  )
 
   _fulltext_attrs = [
       ValueMapFullTextAttr(
@@ -326,8 +330,9 @@ class WorkflowState(object):
   to workflow tasks.
   """
 
-  _publish_attrs = [reflection.PublishOnly('workflow_state')]
-  _update_attrs = []
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('workflow_state', create=False, update=False)
+  )
 
   OVERDUE = "Overdue"
   VERIFIED = "Verified"

@@ -42,7 +42,6 @@ def all_cache_entries():
       resource('helps', 'Help'),
       resource('markets', 'Market'),
       resource('meetings', 'Meeting'),
-      resource('object_owners', 'ObjectOwner'),
       resource('object_people', 'ObjectPerson'),
       resource('objectives', 'Objective'),
       resource('options', 'Option'),
@@ -111,8 +110,6 @@ def all_mapping_entries():
   ret = [
       mapping('Audit', 'program'),
       mapping('CustomAttributeValue', 'attributable', True),
-      mapping('ObjectOwner', 'person'),
-      mapping('ObjectOwner', 'ownable', True),
       mapping('ObjectPerson', 'person'),
       mapping('ObjectPerson', 'personable', True),
       mapping('Section', 'directive'),  # this goes out?

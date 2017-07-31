@@ -45,7 +45,9 @@
       },
       closeModal: function () {
         this.viewModel.attr('is_saving', false);
-        this.element.find('.modal-dismiss').trigger('click');
+        if (this.element) {
+          this.element.find('.modal-dismiss').trigger('click');
+        }
       },
       '.modal-footer .btn-map click': function (el, ev) {
         var type = this.viewModel.attr('type');

@@ -583,26 +583,6 @@
   };
 
   /**
-   * Browser-specific utils.
-   */
-  GGRC.Utils.Browser = (function () {
-    /**
-     * Refresh current page
-     * @param {Boolean} force - Force refresh and don't wait for GGRC queue.
-     */
-    function refreshPage(force) {
-      if (force) {
-        window.onbeforeunload = null;
-      }
-      window.location.reload(force);
-    }
-
-    return {
-      refreshPage: refreshPage
-    };
-  })();
-
-  /**
    * Util methods for work with Snapshots.
    */
   GGRC.Utils.Snapshots = (function () {
@@ -739,6 +719,11 @@
         content.access_control_list.forEach(function (item) {
           item.person = new CMS.Models.Person({id: item.person_id}).stub();
         });
+      }
+
+      if (instance.child_type === 'Control' ||
+        instance.child_type === 'Objective') {
+        content.last_assessment_date = instance.last_assessment_date;
       }
 
       object = new model(content);
