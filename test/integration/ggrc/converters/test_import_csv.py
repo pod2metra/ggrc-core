@@ -45,8 +45,14 @@ class TestBasicCsvImport(TestCase):
   def test_policy_import_working_with_warnings(self):
     """Test Policy import with warnings."""
     def test_owners(policy):
-      self.assertNotEqual([], policy.owners)
-      self.assertEqual("user@example.com", policy.owners[0].email)
+      self.assertNotEqual([], policy.access_control_list)
+      self.assertEqual(
+          "user@example.com",
+          policy.access_control_list[0].person.email
+      )
+      owner = models.Person.query.filter_by(email="user@example.com").first()
+      self.assert_roles(policy, Admin=owner)
+
     filename = "policy_import_working_with_warnings.csv"
     response_json = self.import_file(filename)
 
@@ -66,14 +72,18 @@ class TestBasicCsvImport(TestCase):
 
     policies = models.Policy.query.all()
     self.assertEqual(len(policies), 4)
-    for policy in policies:
-      test_owners(policy)
+    # Only 1 and 3 policies should have owners
+    test_owners(policies[0])
+    test_owners(policies[2])
 
   def test_policy_same_titles(self):
     """Test Policy imports with title collisions."""
     def test_owners(policy):
-      self.assertNotEqual([], policy.owners)
-      self.assertEqual("user@example.com", policy.owners[0].email)
+      self.assertNotEqual([], policy.access_control_list)
+      self.assertEqual("user@example.com",
+                       policy.access_control_list[0].person.email)
+      owner = models.Person.query.filter_by(email="user@example.com").first()
+      self.assert_roles(policy, Admin=owner)
 
     filename = "policy_same_titles.csv"
     response_json = self.import_file(filename)
@@ -138,7 +148,6 @@ class TestBasicCsvImport(TestCase):
 
     Checks for fields being updarted correctly
     """
-
     filename = "pci_program.csv"
     response = self.import_file(filename)
 

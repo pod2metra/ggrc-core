@@ -131,8 +131,8 @@ class DeleteColumnHandler(ColumnHandler):
   """Column handler for deleting objects."""
 
   # this is a white list of objects that can be deleted in a cascade
-  # e.g. deleting a Market can delete the associated ObjectOwner object too
-  DELETE_WHITELIST = {"Relationship", "ObjectOwner", "ObjectPerson"}
+  # e.g. deleting a Market can delete the associated Relationship object too
+  DELETE_WHITELIST = {"Relationship", "AccessControlList", "ObjectPerson"}
   ALLOWED_VALUES = {"", "no", "false", "true", "yes", "force"}
   TRUE_VALUES = {"true", "yes", "force"}
 
@@ -263,35 +263,6 @@ class UsersColumnHandler(UserColumnHandler):
       people.add(get_current_user())
 
     return list(people)
-
-
-class OwnerColumnHandler(UsersColumnHandler):
-  """Handler for object owners.
-
-  This handler can accept a new line separated list of owner emails.
-  """
-
-  def set_obj_attr(self):
-    try:
-      for person in self.row_converter.obj.owners:
-        if person not in self.value:
-          self.row_converter.obj.owners.remove(person)
-      for person in self.value:
-        if person not in self.row_converter.obj.owners:
-          self.row_converter.obj.owners.append(person)
-    except:  # pylint: disable=bare-except
-      self.row_converter.add_error(errors.UNKNOWN_ERROR)
-      logger.exception(
-          "Import failed with setattr(%r, %r, %r)",
-          self.row_converter.obj, self.key, self.value,
-      )
-
-  def get_value(self):
-    """Get a list of object owner emails."""
-    cache = self.row_converter.block_converter.get_owners_cache()
-    emails = [cache[owner.person_id]
-              for owner in self.row_converter.obj.object_owners]
-    return "\n".join(emails)
 
 
 class SlugColumnHandler(ColumnHandler):

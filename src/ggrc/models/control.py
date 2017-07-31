@@ -20,14 +20,13 @@ from ggrc.models.mixins import TestPlanned
 from ggrc.models.mixins import LastDeprecatedTimeboxed
 from ggrc.models.mixins.with_last_assessment_date import WithLastAssessmentDate
 from ggrc.models.deferred import deferred
-from ggrc.models.object_owner import Ownable
 from ggrc.models.object_person import Personable
-from ggrc.models.reflection import PublishOnly
 from ggrc.models.relationship import Relatable
 from ggrc.models.track_object_state import HasObjectState
 from ggrc.models.utils import validate_option
 from ggrc.fulltext.mixin import Indexed
 from ggrc.fulltext import attributes
+from ggrc.models import reflection
 
 
 class ControlCategory(CategoryBase):
@@ -60,10 +59,10 @@ class ControlCategorized(Categorizable):
           ["category"]
       ),
   ]
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'categories',
-      PublishOnly('categorizations'),
-  ]
+      reflection.Attribute('categorizations', create=False, update=False),
+  )
 
   _include_links = []
 
@@ -106,10 +105,12 @@ class AssertionCategorized(Categorizable):
           ["category"]
       ),
   ]
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'assertions',
-      PublishOnly('categorized_assertions'),
-  ]
+      reflection.Attribute('categorized_assertions',
+                           create=False,
+                           update=False),
+  )
   _include_links = []
   _aliases = {
       "assertions": "Assertions",
@@ -139,7 +140,7 @@ class AssertionCategorized(Categorizable):
 class Control(WithLastAssessmentDate, HasObjectState, Roleable, Relatable,
               CustomAttributable, Personable, ControlCategorized,
               PublicDocumentable, AssertionCategorized, Hierarchical,
-              LastDeprecatedTimeboxed, Ownable, Auditable, TestPlanned,
+              LastDeprecatedTimeboxed, Auditable, TestPlanned,
               BusinessObject, Indexed, db.Model):
   __tablename__ = 'controls'
 
@@ -188,7 +189,7 @@ class Control(WithLastAssessmentDate, HasObjectState, Roleable, Relatable,
     )
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'active',
       'company_control',
       'directive',
@@ -201,8 +202,7 @@ class Control(WithLastAssessmentDate, HasObjectState, Roleable, Relatable,
       'version',
       'principal_assessor',
       'secondary_assessor',
-      # 'document_evidence',
-  ]
+  )
 
   _fulltext_attrs = [
       'active',
@@ -277,7 +277,6 @@ class Control(WithLastAssessmentDate, HasObjectState, Roleable, Relatable,
   _include_links = []
 
   _aliases = {
-      "url": "Control URL",
       "kind": "Kind/Nature",
       "means": "Type/Means",
       "verify_frequency": "Frequency",

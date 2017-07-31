@@ -189,6 +189,8 @@
     },
     filters: [],
     loaded: null,
+    refreshLoaded: true,
+    canOpenInfoPin: true,
     loadItems: function () {
       var modelName = this.attr('modelName');
       var pageInfo = this.attr('pageInfo');
@@ -230,9 +232,18 @@
           }
         }.bind(this));
     },
-    display: function () {
-      if (!this.attr('loaded')) {
-        this.attr('loaded', this.loadItems());
+    display: function (needToRefresh) {
+      var that = this;
+      var loadedItems;
+
+      if (!this.attr('loaded') || needToRefresh) {
+        loadedItems = this
+        .loadItems()
+        .then(function () {
+          that.setRefreshFlag(false); // refreshed
+        });
+
+        this.attr('loaded', loadedItems);
       }
 
       return this.attr('loaded');
@@ -285,6 +296,26 @@
       return filters.filter(function (options) {
         return options.filter && options.depth;
       }).reduce(this._concatFilters, '');
+    },
+    setRefreshFlag: function (refresh) {
+      this.attr('refreshLoaded', refresh);
+    },
+    needToRefresh: function (refresh) {
+      return this.attr('refreshLoaded');
+    },
+    initCount: function () {
+      var $el = this.attr('$el');
+      var counts = CurrentPageUtils.getCounts();
+      var countsName = this.attr('options').countsName ||
+        this.attr('model').shortName;
+
+      if ($el) {
+        can.trigger($el, 'updateCount', [counts.attr(countsName)]);
+      }
+
+      counts.on(countsName, function (ev, newVal, oldVal) {
+        can.trigger($el, 'updateCount', [newVal]);
+      });
     },
     registerFilter: function (option) {
       this.attr('filters').push(option);
@@ -548,6 +579,7 @@
       },
       ' selectTreeItem': function (el, ev, selectedEl, instance) {
         var parent = this.viewModel.attr('parent_instance');
+        var setInstanceDfd;
         var infoPaneOptions = new can.Map({
           instance: instance,
           parent_instance: parent,
@@ -555,11 +587,21 @@
         });
 
         ev.stopPropagation();
+
+        if (!this.viewModel.attr('canOpenInfoPin')) {
+          return;
+        }
+
+        this.viewModel.attr('canOpenInfoPin', false);
         el.find('.item-active').removeClass('item-active');
         selectedEl.addClass('item-active');
 
-        $('.pin-content').control()
+        setInstanceDfd = $('.pin-content').control()
           .setInstance(infoPaneOptions, selectedEl, true);
+
+        setInstanceDfd.then(function () {
+          this.viewModel.attr('canOpenInfoPin', true);
+        }.bind(this));
       },
       ' refreshTree': function (el, ev) {
         ev.stopPropagation();

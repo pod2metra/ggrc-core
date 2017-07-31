@@ -16,23 +16,7 @@ permissions = {
         "__GGRC_ALL__"
     ],
     "update": [
-        {
-            "type": "Program",
-            "terms": {
-                "list_property": "owners",
-                "value": "$current_user"
-            },
-            "condition": "contains"
-        }
     ],
     "delete": [
-        {
-            "type": "Program",
-            "terms": {
-                "list_property": "owners",
-                "value": "$current_user"
-            },
-            "condition": "contains"
-        },
     ]
 }

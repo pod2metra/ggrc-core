@@ -8,8 +8,6 @@
 import copy
 import random
 
-from datetime import datetime
-
 from lib.constants import element, objects, roles, url as const_url
 from lib.constants.element import AdminWidgetCustomAttributes
 from lib.entities.entity import (
@@ -35,210 +33,7 @@ class EntitiesFactory(object):
   obj_issue = unicode(objects.get_singular(objects.ISSUES, title=True))
   obj_ca = unicode(objects.get_singular(objects.CUSTOM_ATTRIBUTES))
   obj_comment = unicode(objects.get_singular(objects.COMMENTS, title=True))
-
-  types_of_values_ui_like_attrs = (str, unicode, int)
-  all_objs_attrs_names = Entity().get_attrs_names_for_entities()
-
-  @classmethod
-  def convert_obj_repr_from_obj_to_dict(cls, obj):
-    """Convert object or list of objects from object representation
-    'obj.attr_name' = 'attr_value' to dictionary or list of dictionaries with
-    items {'attr_name': 'attr_value'}.
-    """
-    if obj:
-      if isinstance(obj, list):
-        if (all(not isinstance(_, dict) and
-                not isinstance(_, cls.types_of_values_ui_like_attrs) and
-                _ for _ in obj)):
-          obj = [_.__dict__ for _ in obj]
-      else:
-        if (not isinstance(obj, dict) and
-                not isinstance(obj, cls.types_of_values_ui_like_attrs)):
-          obj = obj.__dict__
-      return obj
-
-  @classmethod  # noqa: ignore=C901
-  def convert_obj_repr_from_rest_to_ui(cls, obj):
-    """Convert object's attributes values from REST like
-    (dict or list of dict) representation to UI like with unicode.
-    Examples:
-    None to None, u'Ex' to u'Ex', [u'Ex1', u'Ex2', ...] to u'Ex1, Ex2',
-    {'name': u'Ex', ...} to u'Ex',
-    [{'name': u'Ex1', ...}, {'name': u'Ex2', ...}] to u'Ex1, Ex2'
-    """
-    # pylint: disable=too-many-locals
-    # pylint: disable=undefined-loop-variable
-    def convert_attr_value_from_dict_to_unicode(attr_name, attr_value):
-      """Convert attribute value from dictionary to unicode representation
-      (get value by key from dictionary 'attr_value' where key determine
-      according to 'attr_name').
-      """
-      if isinstance(attr_value, dict):
-        converted_attr_value = attr_value
-        if attr_name in [
-            "contact", "manager", "owners", "assessor", "creator", "verifier",
-            "created_by", "modified_by", "Assessor", "Creator", "Verifier"
-        ]:
-          converted_attr_value = unicode(attr_value.get("name"))
-        if attr_name in ["custom_attribute_definitions", "program", "audit",
-                         "objects_under_assessment"]:
-          converted_attr_value = (
-              unicode(attr_value.get("title")) if
-              attr_name != "custom_attribute_definitions" else
-              {attr_value.get("id"): attr_value.get("title").upper()}
-          )
-        if attr_name in ["custom_attribute_values"]:
-          converted_attr_value = {attr_value.get("custom_attribute_id"):
-                                  attr_value.get("attribute_value")}
-        if obj_attr_name == "comments":
-          converted_attr_value = {
-              k: (string_utils.convert_str_to_datetime(v) if
-                  k == "created_at" and isinstance(v, unicode) else v)
-              for k, v in attr_value.iteritems()
-              if k in ["modified_by", "created_at", "description"]}
-        return converted_attr_value
-    origin_obj = copy.deepcopy(obj)
-    for obj_attr_name in obj.__dict__.keys():
-      # 'Ex', u'Ex', 1, None to 'Ex', u'Ex', 1, None
-      obj_attr_value = (obj.assignees.get(obj_attr_name.title()) if (
-          obj_attr_name in ["assessor", "creator", "verifier"] and
-          "assignees" in obj.__dict__.keys()) else getattr(obj, obj_attr_name))
-      # u'2017-06-07T16:50:16' and u'2017-06-07 16:50:16' to datetime
-      if (obj_attr_name in ["updated_at", "created_at"] and
-              isinstance(obj_attr_value, unicode)):
-        obj_attr_value = string_utils.convert_str_to_datetime(obj_attr_value)
-      if isinstance(obj_attr_value, dict) and obj_attr_value:
-        # to "assignees" = {"Assessor": [], "Creator": [], "Verifier": []}
-        if obj_attr_name == "assignees":
-          obj_attr_value = {
-              k: ([convert_attr_value_from_dict_to_unicode(k, _v) for _v in v]
-                  if isinstance(v, list) else
-                  convert_attr_value_from_dict_to_unicode(k, v))
-              for k, v in obj_attr_value.iteritems()
-              if k in ["Assessor", "Creator", "Verifier"]}
-        # {'name': u'Ex1', 'type': u'Ex2', ...} to u'Ex1'
-        else:
-          obj_attr_value = convert_attr_value_from_dict_to_unicode(
-              obj_attr_name, obj_attr_value)
-      # [el1, el2, ...] or [{item1}, {item2}, ...] to [u'Ex1, u'Ex2', ...]
-      if (isinstance(obj_attr_value, list) and
-              all(isinstance(item, dict) for item in obj_attr_value)):
-        obj_attr_value = [
-            convert_attr_value_from_dict_to_unicode(obj_attr_name, item) for
-            item in obj_attr_value]
-      setattr(obj, obj_attr_name, obj_attr_value)
-    # merge "custom_attribute_definitions" and "custom_attribute_values"
-    obj_cas_attrs_names = ["custom_attributes", "custom_attribute_definitions",
-                           "custom_attribute_values"]
-    if set(obj_cas_attrs_names).issubset(obj.__dict__.keys()):
-      cas_def = obj.custom_attribute_definitions
-      cas_val = obj.custom_attribute_values
-      # form CAs values of CAs definitions exist but CAs values not, or if CAs
-      # definitions have different then CAs values lengths
-      if cas_def and (not cas_val or (isinstance(cas_def and cas_val, list) and
-                                      len(cas_def) != len(cas_val))):
-        cas_val_dicts_keys = ([_.keys()[0] for _ in cas_val] if
-                              isinstance(cas_val, list) else [None])
-        _cas_val = [
-            {k: v} for k, v in
-            CustomAttributeDefinitionsFactory().generate_ca_values(
-                list_ca_def_objs=origin_obj.custom_attribute_definitions,
-                is_none_values=True).iteritems()
-            if k not in cas_val_dicts_keys]
-        cas_val = _cas_val if not cas_val else cas_val + _cas_val
-      cas_def_dict = (
-          dict([_def.iteritems().next() for _def in cas_def]) if
-          (isinstance(cas_def, list) and
-           all(isinstance(_def, dict) for _def in cas_def)) else {None: None})
-      cas_val_dict = (
-          dict([_val.iteritems().next() for _val in cas_val]) if
-          (isinstance(cas_def, list) and
-           all(isinstance(_def, dict) for _def in cas_def)) else {None: None})
-      cas = string_utils.merge_dicts_by_same_key(cas_def_dict, cas_val_dict)
-      setattr(obj, "custom_attributes", cas)
-    return obj
-
-  @classmethod
-  def convert_objs_repr_from_rest_to_ui(cls, objs):
-    """Convert objects's attributes values from REST like
-    (dict or list of dict) representation to UI like with unicode.
-    'objs' can be list of objects to convert or one object.
-    """
-    return ([cls.convert_obj_repr_from_rest_to_ui(obj) for obj in objs] if
-            isinstance(objs, list) else
-            cls.convert_obj_repr_from_rest_to_ui(objs))
-
-  @classmethod
-  def update_objs_attrs_values_by_entered_data(
-      cls, objs, is_replace_attrs_values=True, is_allow_none_values=True,
-      is_replace_values_of_dicts=False, **arguments
-  ):
-    """Update object or list of objects ('objs') attributes values by manually
-    entered data if attribute name exist in 'attrs_names' witch equal to
-    'all_objs_attrs_names' according to dictionary of attributes and values
-    '**arguments'. If 'is_replace_attrs_values' then replace attributes values,
-    if not 'is_replace_attrs_values' then update (merge) attributes values
-    witch should be lists. If 'is_allow_none_values' then allow to set None
-    object's attributes values, and vice versa.
-    If 'is_replace_values_of_dicts' then update values of dicts in list which
-    is value of particular object's attribute name:
-    (**arguments is attr={'key1': 'new_value2', 'key2': 'new_value2'}).
-    """
-    # pylint: disable=expression-not-assigned
-    def update_obj_attrs_values(obj, is_replace_attrs_values,
-                                is_allow_none_values, **arguments):
-      """Update object's attributes values."""
-      for obj_attr_name in arguments:
-        if (obj_attr_name in
-                Entity().get_attrs_names_for_entities(obj.__class__)):
-          _obj_attr_value = arguments.get(obj_attr_name)
-          condition = (True if is_allow_none_values else _obj_attr_value)
-          if condition and not is_replace_values_of_dicts:
-            # convert repr from objects to dicts exclude datetime objects
-            obj_attr_value = (
-                cls.convert_obj_repr_from_obj_to_dict(_obj_attr_value) if
-                not isinstance(_obj_attr_value, datetime) else _obj_attr_value)
-            if not is_replace_attrs_values:
-              origin_obj_attr_value = getattr(obj, obj_attr_name)
-              obj_attr_value = (
-                  dict(origin_obj_attr_value.items() + obj_attr_value.items())
-                  if obj_attr_name == "custom_attributes" else
-                  string_utils.convert_to_list(origin_obj_attr_value) +
-                  string_utils.convert_to_list(obj_attr_value))
-            setattr(obj, obj_attr_name, obj_attr_value)
-          if is_replace_values_of_dicts and isinstance(_obj_attr_value, dict):
-            obj_attr_value = string_utils.exchange_dicts_items(
-                transform_dict=_obj_attr_value,
-                dicts=string_utils.convert_to_list(
-                    getattr(obj, obj_attr_name)),
-                is_keys_not_values=False)
-            obj_attr_value = (
-                obj_attr_value if isinstance(getattr(obj, obj_attr_name), list)
-                else obj_attr_value[0])
-            setattr(obj, obj_attr_name, obj_attr_value)
-      return obj
-    if objs and arguments:
-      return [update_obj_attrs_values(
-          obj, is_replace_attrs_values, is_allow_none_values, **arguments) for
-          obj in objs] if isinstance(objs, list) else update_obj_attrs_values(
-          objs, is_replace_attrs_values, is_allow_none_values, **arguments)
-
-  @classmethod
-  def filter_objs_attrs(cls, objs, attrs_to_include):
-    """Make objects's copy and filter objects's attributes (delete attributes
-    from objects witch not in list'attrs_to_include').
-    'objs' can be list of objects or object.
-    """
-    # pylint: disable=expression-not-assigned
-    def filter_obj_attrs(obj, attrs_to_include):
-      """Filter one object's attributes."""
-      obj = copy.deepcopy(obj)
-      [delattr(obj, obj_attr) for obj_attr in obj.__dict__.keys()
-       if obj_attr not in attrs_to_include]
-      return obj
-    return ([filter_obj_attrs(obj, attrs_to_include) for obj in objs] if
-            isinstance(objs, list) else
-            filter_obj_attrs(objs, attrs_to_include))
+  obj_snapshot = unicode(objects.get_singular(objects.SNAPSHOTS, title=True))
 
   @classmethod
   def generate_string(cls, first_part):
@@ -265,7 +60,7 @@ class CommentsFactory(EntitiesFactory):
   """Factory class for Comments entities."""
   # pylint: disable=too-many-locals
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(CommentEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(CommentEntity)
 
   @classmethod
   def create_empty(cls):
@@ -282,9 +77,9 @@ class CommentsFactory(EntitiesFactory):
     Predictable values will be used for type, owners, modified_by.
     """
     comment_entity = cls._create_random_comment()
-    comment_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=comment_entity, is_allow_none_values=False, type=type, id=id,
-        href=href, modified_by=modified_by,
+    comment_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=comment_entity, is_allow_none_values=False, type=type,
+        id=id, href=href, modified_by=modified_by,
         created_at=created_at, description=description)
     return comment_entity
 
@@ -301,7 +96,7 @@ class CommentsFactory(EntitiesFactory):
 class ObjectPersonsFactory(EntitiesFactory):
   """Factory class for Persons entities."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(PersonEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(PersonEntity)
 
   @classmethod
   def default(cls):
@@ -320,14 +115,18 @@ class ObjectPersonsFactory(EntitiesFactory):
     Predictable values will be used for type, email and system_wide_role.
     """
     person_entity = cls._create_random_person()
-    person_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=person_entity, is_allow_none_values=False, type=type, id=id,
-        name=name, href=href, url=url, email=email, company=company,
+    person_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=person_entity, is_allow_none_values=False, type=type,
+        id=id, name=name, href=href, url=url, email=email, company=company,
         system_wide_role=system_wide_role, updated_at=updated_at,
         custom_attribute_definitions=custom_attribute_definitions,
         custom_attribute_values=custom_attribute_values,
         custom_attributes=custom_attributes)
     return person_entity
+
+  @classmethod
+  def get_acl_member(cls, role_id, person):
+    return {"ac_role_id": role_id, "person": person}
 
   @classmethod
   def _create_random_person(cls):
@@ -343,7 +142,7 @@ class ObjectPersonsFactory(EntitiesFactory):
 class CustomAttributeDefinitionsFactory(EntitiesFactory):
   """Factory class for entities."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(
+  obj_attrs_names = Entity.get_attrs_names_for_entities(
       CustomAttributeEntity)
 
   @classmethod
@@ -471,14 +270,15 @@ class CustomAttributeDefinitionsFactory(EntitiesFactory):
             AdminWidgetCustomAttributes.DROPDOWN and not
             obj.multi_choice_options):
       obj.multi_choice_options = random_list_strings()
-    return cls.update_objs_attrs_values_by_entered_data(objs=obj, **arguments)
+    return Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=obj, **arguments)
 
 
 class ProgramsFactory(EntitiesFactory):
   """Factory class for Programs entities."""
   # pylint: disable=too-many-locals
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(ProgramEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(ProgramEntity)
 
   @classmethod
   def create_empty(cls):
@@ -499,9 +299,9 @@ class ProgramsFactory(EntitiesFactory):
     Predictable values will be used for type, status, manager, contact.
     """
     program_entity = cls._create_random_program()
-    program_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=program_entity, is_allow_none_values=False, type=type, id=id,
-        title=title, href=href, url=url, slug=slug, status=status,
+    program_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=program_entity, is_allow_none_values=False, type=type,
+        id=id, title=title, href=href, url=url, slug=slug, status=status,
         manager=manager, contact=contact, secondary_contact=secondary_contact,
         updated_at=updated_at, os_state=os_state,
         custom_attribute_definitions=custom_attribute_definitions,
@@ -526,7 +326,7 @@ class ControlsFactory(EntitiesFactory):
   """Factory class for Controls entities."""
   # pylint: disable=too-many-locals
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(ControlEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(ControlEntity)
 
   @classmethod
   def create_empty(cls):
@@ -534,6 +334,7 @@ class ControlsFactory(EntitiesFactory):
     empty_control = ControlEntity()
     empty_control.type = cls.obj_control
     empty_control.custom_attributes = {None: None}
+    empty_control.access_control_list = []
     return empty_control
 
   @classmethod
@@ -541,20 +342,21 @@ class ControlsFactory(EntitiesFactory):
              slug=None, status=None, owners=None, contact=None,
              secondary_contact=None, updated_at=None, os_state=None,
              custom_attribute_definitions=None, custom_attribute_values=None,
-             custom_attributes=None):
+             custom_attributes=None, access_control_list=None):
     """Create Control object.
     Random values will be used for title and slug.
     Predictable values will be used for type, status, owners and contact.
     """
     control_entity = cls._create_random_control()
-    control_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=control_entity, is_allow_none_values=False, type=type, id=id,
-        title=title, href=href, url=url, slug=slug, status=status,
+    control_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=control_entity, is_allow_none_values=False, type=type,
+        id=id, title=title, href=href, url=url, slug=slug, status=status,
         owners=owners, contact=contact, secondary_contact=secondary_contact,
         updated_at=updated_at, os_state=os_state,
         custom_attribute_definitions=custom_attribute_definitions,
         custom_attribute_values=custom_attribute_values,
-        custom_attributes=custom_attributes)
+        custom_attributes=custom_attributes,
+        access_control_list=access_control_list)
     return control_entity
 
   @classmethod
@@ -565,7 +367,13 @@ class ControlsFactory(EntitiesFactory):
     random_control.title = cls.generate_string(cls.obj_control)
     random_control.slug = cls.generate_slug()
     random_control.status = unicode(element.ObjectStates.DRAFT)
+    random_control.contact = ObjectPersonsFactory().default().__dict__
     random_control.owners = [ObjectPersonsFactory().default().__dict__]
+    random_control.access_control_list = [
+        ObjectPersonsFactory().get_acl_member(roles.ADMIN_ID,
+                                              random_control.owners[0]),
+        ObjectPersonsFactory().get_acl_member(roles.PRIMARY_CONTACT_ID,
+                                              random_control.contact)]
     return random_control
 
 
@@ -573,7 +381,7 @@ class ObjectivesFactory(EntitiesFactory):
   """Factory class for Objectives entities."""
   # pylint: disable=too-many-locals
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(ObjectiveEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(ObjectiveEntity)
 
   @classmethod
   def create_empty(cls):
@@ -594,9 +402,9 @@ class ObjectivesFactory(EntitiesFactory):
     Predictable values will be used for type, status, owners.
     """
     objective_entity = cls._create_random_objective()
-    objective_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=objective_entity, is_allow_none_values=False, type=type, id=id,
-        title=title, href=href, url=url, slug=slug, status=status,
+    objective_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=objective_entity, is_allow_none_values=False, type=type,
+        id=id, title=title, href=href, url=url, slug=slug, status=status,
         owners=owners, contact=contact, secondary_contact=secondary_contact,
         updated_at=updated_at, os_state=os_state,
         custom_attribute_definitions=custom_attribute_definitions,
@@ -619,7 +427,7 @@ class ObjectivesFactory(EntitiesFactory):
 class AuditsFactory(EntitiesFactory):
   """Factory class for Audit entity."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(AuditEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(AuditEntity)
 
   @classmethod
   def clone(cls, audit, count_to_clone=1):
@@ -627,8 +435,9 @@ class AuditsFactory(EntitiesFactory):
     Predictable values will be used for type, title.
     """
     # pylint: disable=anomalous-backslash-in-string
-    return [cls.update_objs_attrs_values_by_entered_data(
-        objs=copy.deepcopy(audit), title=audit.title + " - copy " + str(num),
+    return [Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=copy.deepcopy(audit),
+        title=audit.title + " - copy " + str(num),
         slug=None, updated_at=None, href=None, url=None, id=None)
         for num in xrange(1, count_to_clone + 1)]
 
@@ -650,9 +459,9 @@ class AuditsFactory(EntitiesFactory):
     Predictable values will be used for type, status, contact.
     """
     audit_entity = cls._create_random_audit()
-    audit_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=audit_entity, is_allow_none_values=False, type=type, id=id,
-        title=title, href=href, url=url, slug=slug, status=status,
+    audit_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=audit_entity, is_allow_none_values=False, type=type,
+        id=id, title=title, href=href, url=url, slug=slug, status=status,
         program=program, contact=contact, updated_at=updated_at,
         custom_attribute_definitions=custom_attribute_definitions,
         custom_attribute_values=custom_attribute_values,
@@ -674,7 +483,7 @@ class AuditsFactory(EntitiesFactory):
 class AssessmentTemplatesFactory(EntitiesFactory):
   """Factory class for Assessment Templates entities."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(
+  obj_attrs_names = Entity.get_attrs_names_for_entities(
       AssessmentTemplateEntity)
 
   @classmethod
@@ -683,9 +492,9 @@ class AssessmentTemplatesFactory(EntitiesFactory):
     Predictable values will be used for type, title.
     """
     # pylint: disable=anomalous-backslash-in-string
-    return [cls.update_objs_attrs_values_by_entered_data(
-        objs=copy.deepcopy(asmt_tmpl), slug=None, updated_at=None, href=None,
-        url=None, id=None) for _ in xrange(1, count_to_clone + 1)]
+    return [Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=copy.deepcopy(asmt_tmpl), slug=None, updated_at=None,
+        href=None, url=None, id=None) for _ in xrange(1, count_to_clone + 1)]
 
   @classmethod
   def create_empty(cls):
@@ -708,9 +517,9 @@ class AssessmentTemplatesFactory(EntitiesFactory):
     """
     # pylint: disable=too-many-locals
     asmt_tmpl_entity = cls._create_random_asmt_tmpl()
-    asmt_tmpl_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=asmt_tmpl_entity, is_allow_none_values=False, type=type, id=id,
-        title=title, href=href, url=url, slug=slug, audit=audit,
+    asmt_tmpl_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=asmt_tmpl_entity, is_allow_none_values=False, type=type,
+        id=id, title=title, href=href, url=url, slug=slug, audit=audit,
         default_people=default_people,
         template_object_type=template_object_type, updated_at=updated_at,
         custom_attribute_definitions=custom_attribute_definitions,
@@ -737,7 +546,7 @@ class AssessmentTemplatesFactory(EntitiesFactory):
 class AssessmentsFactory(EntitiesFactory):
   """Factory class for Assessments entities."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(AssessmentEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(AssessmentEntity)
 
   @classmethod
   def generate(cls, objs_under_asmt, audit, asmt_tmpl=None):
@@ -757,9 +566,8 @@ class AssessmentsFactory(EntitiesFactory):
         audit=audit.title, objects_under_assessment=[obj_under_asmt],
         custom_attribute_definitions=cas_def) for
         obj_under_asmt in objs_under_asmt]
-    return [
-        cls.update_objs_attrs_values_by_entered_data(objs=asmt_obj, slug=None)
-        for asmt_obj in asmts_objs]
+    return [Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=asmt_obj, slug=None) for asmt_obj in asmts_objs]
 
   @classmethod
   def create_empty(cls):
@@ -784,8 +592,8 @@ class AssessmentsFactory(EntitiesFactory):
     """
     # pylint: disable=too-many-locals
     asmt_entity = cls._create_random_asmt()
-    asmt_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=asmt_entity, is_allow_none_values=False, type=type, id=id,
+    asmt_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=asmt_entity, is_allow_none_values=False, type=type, id=id,
         title=title, href=href, url=url, slug=slug, status=status,
         owners=owners, audit=audit, recipients=recipients, assignees=assignees,
         verified=verified, updated_at=updated_at,
@@ -816,7 +624,7 @@ class AssessmentsFactory(EntitiesFactory):
 class IssuesFactory(EntitiesFactory):
   """Factory class for Issues entities."""
 
-  obj_attrs_names = Entity().get_attrs_names_for_entities(IssueEntity)
+  obj_attrs_names = Entity.get_attrs_names_for_entities(IssueEntity)
 
   @classmethod
   def create_empty(cls):
@@ -824,6 +632,7 @@ class IssuesFactory(EntitiesFactory):
     empty_issue = IssueEntity
     empty_issue.type = cls.obj_issue
     empty_issue.custom_attributes = {None: None}
+    empty_issue.access_control_list = []
     return empty_issue
 
   @classmethod
@@ -831,21 +640,22 @@ class IssuesFactory(EntitiesFactory):
              slug=None, status=None, audit=None, owners=None, contact=None,
              secondary_contact=None, updated_at=None, os_state=None,
              custom_attribute_definitions=None, custom_attribute_values=None,
-             custom_attributes=None):
+             custom_attributes=None, access_control_list=None):
     """Create Issue object.
     Random values will be used for title and slug.
     Predictable values will be used for type, status, owners and contact.
     """
     # pylint: disable=too-many-locals
     issue_entity = cls._create_random_issue()
-    issue_entity = cls.update_objs_attrs_values_by_entered_data(
-        objs=issue_entity, is_allow_none_values=False, type=type, id=id,
+    issue_entity = Entity.update_objs_attrs_values_by_entered_data(
+        obj_or_objs=issue_entity, is_allow_none_values=False, type=type, id=id,
         title=title, href=href, url=url, slug=slug, status=status, audit=audit,
         owners=owners, contact=contact, secondary_contact=secondary_contact,
         updated_at=updated_at, os_state=os_state,
         custom_attribute_definitions=custom_attribute_definitions,
         custom_attribute_values=custom_attribute_values,
-        custom_attributes=custom_attributes)
+        custom_attributes=custom_attributes,
+        access_control_list=access_control_list)
     return issue_entity
 
   @classmethod
@@ -858,4 +668,9 @@ class IssuesFactory(EntitiesFactory):
     random_issue.status = unicode(element.IssueStates.DRAFT)
     random_issue.owners = [ObjectPersonsFactory().default().__dict__]
     random_issue.contact = ObjectPersonsFactory().default().__dict__
+    random_issue.access_control_list = [
+        ObjectPersonsFactory().get_acl_member(roles.ADMIN_ID,
+                                              random_issue.owners[0]),
+        ObjectPersonsFactory().get_acl_member(roles.PRIMARY_CONTACT_ID,
+                                              random_issue.contact)]
     return random_issue

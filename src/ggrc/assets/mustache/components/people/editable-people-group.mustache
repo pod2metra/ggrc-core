@@ -39,13 +39,11 @@
             {empty-message}="emptyListMessage">
             <person-list-item person="{.}" {with-details}="withDetails">
               {{#unmapablePerson}}
-                {{#is_allowed 'update' instance}}
                 <a href="javascript://"
                   class="info-action editable-people-group__unmap {{#if isDisabled}}disabled{{/if}}"
                   ($click)="unmap(person)">
                   <i class="fa fa-trash"></i>
                 </a>
-                {{/is_allowed}}
               {{/unmapablePerson}}
             </person-list-item>
           </object-list>
@@ -53,13 +51,11 @@
           {{#if isLoading}}
             <spinner {toggle}="isLoading"></spinner>
           {{else}}
-            {{#is_allowed 'update' instance}}
-              <autocomplete
-                  search-items-type="Person"
-                  (item-selected)="personSelected(%event.selectedItem)"
-                  placeholder="Add person">
-              </autocomplete>
-            {{/is_allowed}}
+            <autocomplete
+                search-items-type="Person"
+                (item-selected)="personSelected(%event.selectedItem)"
+                placeholder="Add person">
+            </autocomplete>
           {{/if}}
           </div>
           <ul class="inline-edit__controls inline-edit__controls--edit-mode">

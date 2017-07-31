@@ -23,8 +23,7 @@ def get_object_column_definitions(object_class):
   Returns:
     dict: Updated attribute definitions dict with additional data.
   """
-  attributes = AttributeInfo.get_object_attr_definitions(object_class,
-                                                         include_oca=True)
+  attributes = AttributeInfo.get_object_attr_definitions(object_class)
   column_handlers = model_column_handlers(object_class)
   for key, attr in attributes.iteritems():
     handler_key = attr.get("handler_key", key)

@@ -109,20 +109,22 @@ CMS.Controllers.Filterable('CMS.Controllers.DashboardWidgets', {
     }
   },
   display: function () {
-    var that = this
-      , tracker_stop = GGRC.Tracker.start(
-      'DashboardWidget', 'display', this.options.model.shortName)
-      ;
-
-    if (this._display_deferred) {
-      return this._display_deferred;
-    }
+    var that = this;
+    var tracker_stop = GGRC.Tracker.start(
+      'DashboardWidget', 'display', this.options.model.shortName
+    );
 
     this._display_deferred = this.prepare().then(function () {
       var dfd;
+      var $containerVM = that.element
+        .find('tree-widget-container')
+        .viewModel();
+      var FORCE_REFRESH = true;
 
-      if (that.options.widgetType === 'treeview') {
-        dfd = that.element.find('tree-widget-container').viewModel().display();
+      if (!that.content_controller && $containerVM.needToRefresh()) {
+        dfd = $containerVM.display(FORCE_REFRESH);
+      } else if (that.options.widgetType === 'treeview') {
+        dfd = $containerVM.display();
       } else if (that.content_controller && that.content_controller.display) {
         dfd = that.content_controller.display();
       } else {

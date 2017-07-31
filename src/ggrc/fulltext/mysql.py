@@ -20,8 +20,9 @@ from ggrc import db
 from ggrc.login import is_creator
 from ggrc.models import all_models
 from ggrc.models.inflector import get_model
-from ggrc.utils import query_helpers
+from ggrc.query import my_objects
 from ggrc.rbac import context_query_filter
+from ggrc.rbac import permissions
 from ggrc.fulltext.sql import SqlIndexer
 
 
@@ -70,7 +71,7 @@ class MysqlIndexer(SqlIndexer):
     """
     type_queries = []
     for model_name in model_names:
-      contexts, resources = query_helpers.get_context_resource(
+      contexts, resources = permissions.get_context_resource(
           model_name=model_name,
           permission_type=permission_type,
           permission_model=permission_model
@@ -104,7 +105,7 @@ class MysqlIndexer(SqlIndexer):
     if not contact_id:
       return query
 
-    union_query = query_helpers.get_myobjects_query(
+    union_query = my_objects.get_myobjects_query(
         types=types,
         contact_id=contact_id,
         is_creator=is_creator()

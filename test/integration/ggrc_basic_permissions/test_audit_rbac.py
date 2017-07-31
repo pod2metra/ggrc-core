@@ -9,8 +9,6 @@ from os.path import dirname
 from os.path import join
 from collections import defaultdict
 
-# pylint: disable=unused-import
-from ggrc.app import app  # NOQA
 from ggrc.models import all_models
 import ggrc_basic_permissions as perms
 
@@ -143,8 +141,8 @@ class TestPermissionsOnAssessmentTemplate(TestCase):
             "audit_title": audit.title,
             "people_value": [],
             "default_people": {
-                "assessors": "Object Owners",
-                "verifiers": "Object Owners",
+                "assessors": "Admin",
+                "verifiers": "Admin",
             },
             "context": {"id": audit.context.id},
         }
@@ -167,8 +165,8 @@ class TestPermissionsOnAssessmentTemplate(TestCase):
             "audit_title": self.audit.title,
             "people_value": [],
             "default_people": {
-                "assessors": "Object Owners",
-                "verifiers": "Object Owners",
+                "assessors": "Admin",
+                "verifiers": "Admin",
             },
             "context": {"id": self.audit.context.id},
             "title": "123",

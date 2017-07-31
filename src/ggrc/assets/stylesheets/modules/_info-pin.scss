@@ -13,6 +13,7 @@
   background: $white;
   z-index: zIndex(pin-content);
   overflow: auto;
+  transition: height 0.3s ease-in, z-index 0.3s ease-in, opacity 0.3s ease-in;
 
   .info {
     box-shadow: none;

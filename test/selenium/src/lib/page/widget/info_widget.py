@@ -50,13 +50,12 @@ class CommonInfo(base.Widget):
     # pylint: disable=not-an-iterable
     # pylint: disable=invalid-name
     selenium_utils.wait_for_js_to_load(self._driver)
-    if not self.all_headers_and_values:
-      if custom_scopes_locator:
-        self.all_headers_and_values = self._driver.find_elements(
-            *custom_scopes_locator)
-      if not custom_scopes_locator and self.locator_headers_and_values:
-        self.all_headers_and_values = self._driver.find_elements(
-            *self.locator_headers_and_values)
+    if custom_scopes_locator:
+      self.all_headers_and_values = self._driver.find_elements(
+          *custom_scopes_locator)
+    if not custom_scopes_locator and self.locator_headers_and_values:
+      self.all_headers_and_values = self._driver.find_elements(
+          *self.locator_headers_and_values)
     header_and_value = (
         next((scope.text.splitlines() + [None]
               if len(scope.text.splitlines()) == 1
@@ -195,12 +194,8 @@ class Programs(InfoPanel):
     self.manager = base.Label(self._driver, self._locators.MANAGER)
     self.manager_entered = base.Label(
         self._driver, self._locators.MANAGER_ENTERED)
-    self.program_url = base.Label(self._driver, self._locators.PROGRAM_URL)
-    self.program_url_entered = base.Label(
-        self._driver, self._locators.PROGRAM_URL_ENTERED)
-    self.reference_url = base.Label(self._driver, self._locators.REFERENCE_URL)
-    self.reference_url_entered = base.Label(
-        self._driver, self._locators.REFERENCE_URL_ENTERED)
+    self.ref_url = base.MultiInputField(
+        self._driver, self._locators.REF_URL_CSS)
     self.code = base.Label(self._driver, self._locators.CODE)
     self.code_entered = base.Label(self._driver, self._locators.CODE_ENTERED)
     self.effective_date = base.Label(
@@ -380,15 +375,17 @@ class Controls(SnapshotableInfoPanel):
 
   def __init__(self, driver):
     super(Controls, self).__init__(driver)
-    self.admin_text, self.admin_entered_text = (
-        self.get_header_and_value_text_from_custom_scopes(
-            self._elements.ADMIN.upper()))
-    self.primary_contact_text, self.primary_contact_entered_text = (
-        self.get_header_and_value_text_from_custom_scopes(
-            self._elements.PRIMARY_CONTACT.upper()))
     self.code_text, self.code_entered_text = (
         self.get_header_and_value_text_from_custom_scopes(
             self._elements.CODE.upper()))
+    self.admin_text, self.admin_entered_text = (
+        self.get_header_and_value_text_from_custom_scopes(
+            self._elements.ADMIN.upper(),
+            self._locators.PEOPLE_HEADERS_AND_VALUES))
+    self.primary_contact_text, self.primary_contact_entered_text = (
+        self.get_header_and_value_text_from_custom_scopes(
+            self._elements.PRIMARY_CONTACT.upper(),
+            self._locators.PEOPLE_HEADERS_AND_VALUES))
     self.cas_text = self.get_headers_and_values_dict_from_cas_scopes()
     # scope
     self.list_all_headers_text = [

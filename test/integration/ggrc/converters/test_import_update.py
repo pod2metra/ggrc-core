@@ -18,7 +18,6 @@ class TestImportUpdates(TestCase):
 
   def test_policy_basic_update(self):
     """ Test simple policy title update """
-
     filename = "policy_basic_import.csv"
     response = self.import_file(filename)
 
@@ -43,4 +42,7 @@ class TestImportUpdates(TestCase):
         models.Revision.resource_id == policy.id
     ).count()
     self.assertEqual(revision_count, 4)
-    self.assertEqual(policy.owners[0].email, "user1@example.com")
+    self.assertEqual(
+        policy.access_control_list[0].person.email,
+        "user1@example.com"
+    )

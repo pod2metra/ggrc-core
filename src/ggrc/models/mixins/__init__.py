@@ -49,8 +49,10 @@ class Identifiable(object):
   id = db.Column(db.Integer, primary_key=True)  # noqa
 
   # REST properties
-  _publish_attrs = ['id', 'type']
-  _update_attrs = []
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('id', create=False, update=False),
+      reflection.Attribute('type', create=False, update=False),
+  )
 
   _inflector = ModelInflectorDescriptor()
 
@@ -108,7 +110,7 @@ class ChangeTracked(object):
   @declared_attr
   def modified_by_id(cls):  # pylint: disable=no-self-argument
     """Id of user who did the last modification of the object."""
-    return deferred(db.Column(db.Integer), cls.__name__)
+    return db.Column(db.Integer)
 
   @declared_attr
   def created_at(cls):  # pylint: disable=no-self-argument
@@ -118,7 +120,7 @@ class ChangeTracked(object):
         nullable=False,
         default=db.text('current_timestamp'),
     )
-    return deferred(column, cls.__name__)
+    return column
 
   @declared_attr
   def updated_at(cls):  # pylint: disable=no-self-argument
@@ -129,7 +131,7 @@ class ChangeTracked(object):
         default=db.text('current_timestamp'),
         onupdate=db.text('current_timestamp'),
     )
-    return deferred(column, cls.__name__)
+    return column
 
   @declared_attr
   def modified_by(cls):  # pylint: disable=no-self-argument
@@ -153,18 +155,17 @@ class ChangeTracked(object):
   # transaction_id = db.Column(db.Integer)
 
   # REST properties
-  _publish_attrs = [
-      'modified_by',
-      'created_at',
-      'updated_at',
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('modified_by', create=False, update=False),
+      reflection.Attribute('created_at', create=False, update=False),
+      reflection.Attribute('updated_at', create=False, update=False),
+  )
   _fulltext_attrs = [
       attributes.DatetimeFullTextAttr('created_at', 'created_at'),
       attributes.DatetimeFullTextAttr('updated_at', 'updated_at'),
       attributes.FullTextAttr("modified_by", "modified_by", ["name", "email"]),
   ]
 
-  _update_attrs = []
   _aliases = {
       "updated_at": {
           "display_name": "Last Updated",
@@ -221,7 +222,7 @@ class Titled(object):
     return ()
 
   # REST properties
-  _publish_attrs = ['title']
+  _api_attrs = reflection.ApiAttributes('title')
   _fulltext_attrs = ['title']
   _sanitize_html = ['title']
   _aliases = {"title": "Title"}
@@ -235,7 +236,7 @@ class Described(object):
     return deferred(db.Column(db.Text), cls.__name__)
 
   # REST properties
-  _publish_attrs = ['description']
+  _api_attrs = reflection.ApiAttributes('description')
   _fulltext_attrs = ['description']
   _sanitize_html = ['description']
   _aliases = {"description": "Description"}
@@ -255,7 +256,7 @@ class Noted(object):
     return deferred(db.Column(db.Text), cls.__name__)
 
   # REST properties
-  _publish_attrs = ['notes']
+  _api_attrs = reflection.ApiAttributes('notes')
   _fulltext_attrs = ['notes']
   _sanitize_html = ['notes']
   _aliases = {"notes": "Notes"}
@@ -264,36 +265,6 @@ class Noted(object):
   def indexed_query(cls):
     return super(Noted, cls).indexed_query().options(
         orm.Load(cls).load_only("notes"),
-    )
-
-
-class Hyperlinked(object):
-  """Mixin that defines `url` and `reference_url` fields."""
-
-  @declared_attr
-  def url(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.String), cls.__name__)
-
-  @declared_attr
-  def reference_url(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.String), cls.__name__)
-
-  # REST properties
-  _publish_attrs = ['url', 'reference_url']
-
-  _aliases = {
-      "url": "Url",
-      "reference_url": "Reference URL",
-  }
-  _fulltext_attrs = [
-      'url',
-      'reference_url',
-  ]
-
-  @classmethod
-  def indexed_query(cls):
-    return super(Hyperlinked, cls).indexed_query().options(
-        orm.Load(cls).load_only("url", "reference_url"),
     )
 
 
@@ -315,10 +286,7 @@ class Hierarchical(object):
     )
 
   # REST properties
-  _publish_attrs = [
-      'children',
-      'parent',
-  ]
+  _api_attrs = reflection.ApiAttributes('children', 'parent')
   _fulltext_attrs = [
       'children',
       'parent',
@@ -352,7 +320,7 @@ class Timeboxed(object):
     return deferred(db.Column(db.Date), cls.__name__)
 
   # REST properties
-  _publish_attrs = ['start_date', 'end_date']
+  _api_attrs = reflection.ApiAttributes('start_date', 'end_date')
 
   _aliases = {
       "start_date": "Effective Date",
@@ -374,8 +342,27 @@ class Timeboxed(object):
 class LastDeprecatedTimeboxed(Timeboxed):
   """Mixin that redefines `end_date`'s alias."""
   _aliases = {
-      "end_date": "Last Deprecated Date",
+      "end_date": {
+          "display_name": "Last Deprecated Date",
+          "view_only": True,
+      },
   }
+
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('end_date', create=False, update=False),
+  )
+
+  AUTO_SETUP_STATUS = "Deprecated"
+
+  @validates('status')
+  def validate_status(self, key, value):
+    """Autosetup current date as end date if 'Deprecated' status will setup."""
+    superinstance = super(Timeboxed, self)
+    if hasattr(superinstance, "validate_status"):
+      value = superinstance.validate_status(key, value)
+    if value != self.status and value == self.AUTO_SETUP_STATUS:
+      self.end_date = datetime.datetime.now()
+    return value
 
 
 class Stateful(object):
@@ -389,7 +376,7 @@ class Stateful(object):
     return deferred(db.Column(
         db.String, default=cls.default_status, nullable=False), cls.__name__)
 
-  _publish_attrs = ['status']
+  _api_attrs = reflection.ApiAttributes('status')
   _fulltext_attrs = ['status']
   _aliases = {
       "status": {
@@ -446,9 +433,9 @@ class FinishedDate(object):
         cls.__name__
     )
 
-  _publish_attrs = [
-      reflection.PublishOnly('finished_date')
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('finished_date', create=False, update=False),
+  )
 
   _aliases = {
       "finished_date": "Finished Date"
@@ -509,10 +496,10 @@ class VerifiedDate(object):
   def verified(self):
     return self.verified_date != None  # noqa
 
-  _publish_attrs = [
-      reflection.PublishOnly('verified'),
-      reflection.PublishOnly('verified_date'),
-  ]
+  _api_attrs = reflection.ApiAttributes(
+      reflection.Attribute('verified', create=False, update=False),
+      reflection.Attribute('verified_date', create=False, update=False),
+  )
 
   _aliases = {
       "verified_date": "Verified Date"
@@ -566,7 +553,7 @@ class ContextRBAC(object):
         db.Index('fk_{}_contexts'.format(model.__tablename__), 'context_id'),
     )
 
-  _publish_attrs = ['context']
+  _api_attrs = reflection.ApiAttributes('context')
 
   @classmethod
   def indexed_query(cls):
@@ -652,11 +639,6 @@ class Base(ChangeTracked, ContextRBAC, Identifiable):
         value = getattr(self, attr)
         # hardcoded [:-3] is used to strip "_id" suffix
         res[attr[:-3]] = self._person_stub(value) if value else None
-
-    if hasattr(self, "owners"):
-      res["owners"] = [
-          self._person_stub(owner.id) for owner in self.owners if owner
-      ]
 
     for attr_name in AttributeInfo.gather_publish_attrs(self.__class__):
       if is_attr_of_type(self, attr_name, models.Option):
@@ -757,7 +739,7 @@ class Slugged(Base):
     return ()
 
   # REST properties
-  _publish_attrs = ['slug']
+  _api_attrs = reflection.ApiAttributes('slug')
   _fulltext_attrs = ['slug']
   _sanitize_html = ['slug']
   _aliases = {
@@ -860,7 +842,7 @@ class WithContact(object):
             model.__tablename__), 'secondary_contact_id'),
     )
 
-  _publish_attrs = ['contact', 'secondary_contact']
+  _api_attrs = reflection.ApiAttributes('contact', 'secondary_contact')
   _fulltext_attrs = [
       attributes.FullTextAttr(
           "contact",
@@ -898,8 +880,7 @@ class WithContact(object):
   }
 
 
-class BusinessObject(Stateful, Noted, Described, Hyperlinked,
-                     Titled, Slugged):
+class BusinessObject(Stateful, Noted, Described, Titled, Slugged):
   """Mixin that groups most commonly-used mixins into one."""
   DRAFT = 'Draft'
   ACTIVE = 'Active'
@@ -928,7 +909,7 @@ class TestPlanned(object):
     return deferred(db.Column(db.Text), cls.__name__)
 
   # REST properties
-  _publish_attrs = ['test_plan']
+  _api_attrs = reflection.ApiAttributes('test_plan')
   _fulltext_attrs = ['test_plan']
   _sanitize_html = ['test_plan']
   _aliases = {"test_plan": "Test Plan"}
@@ -949,7 +930,6 @@ __all__ = [
     "Described",
     "FinishedDate",
     "Hierarchical",
-    "Hyperlinked",
     "Identifiable",
     "Noted",
     "Notifiable",

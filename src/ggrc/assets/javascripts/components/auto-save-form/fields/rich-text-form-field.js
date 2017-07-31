@@ -14,7 +14,6 @@
     viewModel: {
       _value: '',
       _oldValue: null,
-      focused: false,
       placeholder: '',
       define: {
         value: {
@@ -56,18 +55,11 @@
           value: newValue
         });
       },
-      onFocus: function () {
-        this.attr('focused', true);
-      },
       onBlur: function () {
-        this.attr('focused', false);
         this.checkValueChanged();
       }
     },
     events: {
-      '.ql-editor focus': function () {
-        this.viewModel.onFocus();
-      },
       '.ql-editor blur': function () {
         this.viewModel.onBlur();
       }

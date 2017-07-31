@@ -6,6 +6,7 @@ from ggrc import db
 from sqlalchemy.orm import validates
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base, Hierarchical
+from ggrc.models import reflection
 
 
 class CategorizedPublishable(object):
@@ -55,11 +56,11 @@ class CategoryBase(Hierarchical, Base, db.Model):
     return self.__class__.__name__
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'name',
       'type',
       'required',
-  ]
+  )
   _sanitize_html = [
       'name',
   ]

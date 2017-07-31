@@ -9,6 +9,7 @@ import collections
 import json
 import logging
 
+import sqlalchemy
 from flask import flash
 from flask import g
 from flask import render_template
@@ -35,13 +36,12 @@ from ggrc.models.reflection import AttributeInfo
 from ggrc.rbac import permissions
 from ggrc.services.common import as_json
 from ggrc.services.common import inclusion_filter
-from ggrc.services import query as services_query
+from ggrc.query import views as query_views
 from ggrc.snapshotter import rules
 from ggrc.snapshotter.indexer import reindex as reindex_snapshots
 from ggrc.views import converters
 from ggrc.views import cron
 from ggrc.views import filters
-from ggrc.views import mockups
 from ggrc.views import notifications
 from ggrc.views.registry import object_view
 from ggrc.utils import benchmark
@@ -96,6 +96,7 @@ def start_compute_attributes(revision_ids):
 
 def do_reindex():
   """Update the full text search index."""
+  from ggrc.data_platform import computed_attributes
 
   indexer = get_indexer()
   indexed_models = {
@@ -122,6 +123,7 @@ def do_reindex():
   with benchmark("Create records for %s" % "Snapshot"):
     reindex_snapshots()
   indexer.invalidate_cache()
+  computed_attributes.compute_attributes("all_latest")
 
 
 def get_permissions_json():
@@ -193,7 +195,9 @@ def get_roles_json():
 def get_access_control_roles_json():
   """Get a list of all access control roles"""
   with benchmark("Get access roles JSON"):
-    attrs = all_models.AccessControlRole.query.all()
+    attrs = all_models.AccessControlRole.query.options(
+        sqlalchemy.orm.undefer_group("AccessControlRole_complete")
+    ).all()
     published = []
     for attr in attrs:
       published.append(publish(attr))
@@ -204,14 +208,18 @@ def get_access_control_roles_json():
 def get_attributes_json():
   """Get a list of all custom attribute definitions"""
   with benchmark("Get attributes JSON"):
-    attrs = models.CustomAttributeDefinition.eager_query().filter(
-        models.CustomAttributeDefinition.definition_id.is_(None)
-    )
-    published = []
-    for attr in attrs:
-      published.append(publish(attr))
-    published = publish_representation(published)
-    return as_json(published)
+    with benchmark("Get attributes JSON: query"):
+      attrs = models.CustomAttributeDefinition.eager_query().filter(
+          models.CustomAttributeDefinition.definition_id.is_(None)
+      ).all()
+    with benchmark("Get attributes JSON: publish"):
+      published = []
+      for attr in attrs:
+        published.append(publish(attr))
+      published = publish_representation(published)
+    with benchmark("Get attributes JSON: json"):
+      publish_json = as_json(published)
+      return publish_json
 
 
 def get_import_types(export_only=False):
@@ -445,12 +453,11 @@ def init_extra_views(app_):
 
   This should be used for any views that might use extension modules.
   """
-  mockups.init_mockup_views()
   filters.init_filter_views()
   converters.init_converter_views()
   cron.init_cron_views(app_)
   notifications.init_notification_views(app_)
-  services_query.init_query_view(app_)
+  query_views.init_query_views(app_)
 
 
 def init_all_views(app_):

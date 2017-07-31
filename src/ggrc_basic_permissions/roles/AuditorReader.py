@@ -45,7 +45,6 @@ permissions = {
         "Process",
         "SystemControl",
         "SystemSystem",
-        "ObjectOwner",
         "Person",
         "Program",
         "Role",

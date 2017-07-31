@@ -432,14 +432,10 @@ function resize_areas(event, target_info_pin_height) {
                 return m + h;
               }, 0);
 
-    var pin_height = $.isNumeric(target_info_pin_height) ?
-                   target_info_pin_height :
-                   $pin.height();
-
     // the 5 gives user peace of mind they've reached bottom
     var UIHeight = [$topNav.height(), $header.height(),
                       $footer.height(),
-                      margins, pin_height, 5]
+                      margins, 5]
               .reduce(function (m, h) {
                 return m + h;
               }, 0);

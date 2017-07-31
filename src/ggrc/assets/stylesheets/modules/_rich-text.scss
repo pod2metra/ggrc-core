@@ -9,6 +9,14 @@ rich-text {
   .rich-text__wrapper {
     border: 1px solid $warmGray;
     border-radius: 2px;
+    min-height: 82px;
+
+    &.rich-text__wrapper-hidden-toolbar {
+      .ql-toolbar,
+      .ql-tooltip {
+        display: none;
+      }
+    }
 
     .rich-text__toolbar {
       border: none;
@@ -19,7 +27,7 @@ rich-text {
 
     .rich-text__content {
       border: none;
-      padding: 8px 10px;
+      padding: 4px;
       max-height: 424px;
       overflow-y: auto;
 

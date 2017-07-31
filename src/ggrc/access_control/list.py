@@ -5,7 +5,7 @@
 
 from ggrc import db
 from ggrc.models import mixins
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 
 
 class AccessControlList(mixins.Base, db.Model):
@@ -16,11 +16,11 @@ class AccessControlList(mixins.Base, db.Model):
   """
   __tablename__ = 'access_control_list'
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       "person",
-      PublishOnly("person_id"),
+      reflection.Attribute("person_id", create=False, update=False),
       "ac_role_id"
-  ]
+  )
 
   person_id = db.Column(db.Integer, db.ForeignKey('people.id'), nullable=False)
   ac_role_id = db.Column(db.Integer, db.ForeignKey(

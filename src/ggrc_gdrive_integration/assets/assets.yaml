@@ -24,4 +24,3 @@ dashboard-js-template-files:
   - roles/gdrive_option_detail.mustache
   - audits/gdrive_folder_picker.mustache
   - workflows/gdrive_folder_picker.mustache
-  - requests/gdrive_evidence_storage.mustache

@@ -8,7 +8,7 @@ from sqlalchemy import orm
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import (
-    Timeboxed, Noted, Described, Hyperlinked, WithContact,
+    Timeboxed, Noted, Described, WithContact,
     Titled, Slugged, CustomAttributable, Stateful
 )
 
@@ -18,7 +18,7 @@ from ggrc.models.relationship import Relatable
 from ggrc.models.object_person import Personable
 from ggrc.models.context import HasOwnContext
 from ggrc.models.reflection import AttributeInfo
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 from ggrc.models.program import Program
 from ggrc.models.person import Person
 from ggrc.models.snapshot import Snapshotable
@@ -27,7 +27,7 @@ from ggrc.fulltext.mixin import Indexed
 
 class Audit(Snapshotable, clonable.Clonable, PublicDocumentable,
             CustomAttributable, Personable, HasOwnContext, Relatable,
-            Timeboxed, Noted, Described, Hyperlinked, WithContact, Titled,
+            Timeboxed, Noted, Described, WithContact, Titled,
             Stateful, Slugged, Indexed, db.Model):
   """Audit model."""
 
@@ -60,7 +60,7 @@ class Audit(Snapshotable, clonable.Clonable, PublicDocumentable,
   archived = deferred(db.Column(db.Boolean,
                       nullable=False, default=False), 'Audit')
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'report_start_date',
       'report_end_date',
       'audit_firm',
@@ -69,8 +69,8 @@ class Audit(Snapshotable, clonable.Clonable, PublicDocumentable,
       'program',
       'object_type',
       'archived',
-      PublishOnly('audit_objects')
-  ]
+      reflection.Attribute('audit_objects', create=False, update=False),
+  )
 
   _fulltext_attrs = [
       'archived',
@@ -117,7 +117,6 @@ class Audit(Snapshotable, clonable.Clonable, PublicDocumentable,
       },
       "secondary_contact": None,
       "notes": None,
-      "url": None,
       "reference_url": None,
       "archived": {
           "display_name": "Archived",

@@ -2,7 +2,6 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 import ggrc.builder
-from blinker import Namespace
 from flask import request, render_template, current_app
 from ggrc.rbac import permissions
 from ggrc.services.common import \
@@ -14,18 +13,6 @@ from werkzeug.exceptions import Forbidden
 class BaseObjectView(ModelView):
   model_template = '{model_plural}/show.haml'
   base_template = 'base_objects/show.haml'
-
-  signals = Namespace()
-  extension_contributions = signals.signal('View Extension Contributions',
-                                           """
-      Gathers any extension contributions to be included into a template.
-      Receiver functions must expect the following arguments:
-      :sender: The model class of the object being rendered.
-      :obj: the model instance being rendered.
-      :context: A context for extensions to use in rendering the their
-          contribution.
-      """,
-                                           )
 
   def dispatch_request(self, *args, **kwargs):
     method = request.method.lower()
@@ -71,14 +58,6 @@ class BaseObjectView(ModelView):
     template_paths =\
         self.get_model_template_paths_for_object(obj) + [self.base_template]
     return render_template(template_paths, **context)
-
-  def extension_content(self, obj):
-    contributions = self.extension_contributions.send(
-        obj.__class__,
-        obj=obj,
-        context=self.get_context_for_object(obj),
-    )
-    return [template for func, template in contributions if template]
 
   def get(self, id):
     with benchmark("Query for object"):

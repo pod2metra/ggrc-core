@@ -7,8 +7,8 @@ import re
 
 from lib import factory
 from lib.constants import objects, url, path, messages, roles, element, regex
-from lib.entities.entities_factory import EntitiesFactory
 from lib.entities.entity import Entity
+from lib.page import dashboard
 from lib.page.widget.info_widget import SnapshotableInfoPanel
 from lib.utils import selenium_utils, string_utils, file_utils
 
@@ -78,8 +78,8 @@ class BaseWebUiService(object):
                   "*" in val):
             scope[key] = val.replace("*", "")
     return [
-        EntitiesFactory.update_objs_attrs_values_by_entered_data(
-            objs=factory_obj, is_allow_none_values=False, **scope) for
+        Entity.update_objs_attrs_values_by_entered_data(
+            obj_or_objs=factory_obj, is_allow_none_values=False, **scope) for
         scope, factory_obj in zip(list_scopes_to_convert, list_factory_objs)]
 
   def open_widget_of_mapped_objs(self, src_obj):
@@ -332,6 +332,28 @@ class BaseWebUiService(object):
     dropdown_on_info_panel = (
         self.open_info_panel_of_obj_by_title(src_obj, obj).open_info_3bbs())
     dropdown_on_info_panel.select_unmap()
+
+  def get_objs_available_to_map_via_mapper(self, src_obj):
+    """Open unified mapper of object from treeview and return list of strings
+    from "object types" dropdown.
+    """
+    # pylint: disable=invalid-name
+    objs_widget = self.open_widget_of_mapped_objs(src_obj)
+    first_tree_view_item = (
+        objs_widget.tree_view.get_list_members_as_list_scopes()[0])
+    dropdown = objs_widget.tree_view.open_tree_actions_dropdown_by_title(
+        title=first_tree_view_item[element.Common.TITLE.upper()])
+    return sorted(dropdown.select_map().get_available_to_map_obj_aliases())
+
+  def get_objs_available_to_map_via_add_widget(self, src_obj):
+    """Open Info Widget of source object. Clock 'add widget' button. Return
+    list of objects names from 'add widget' dropdown available to map with
+    source object.
+    """
+    # pylint: disable=invalid-name
+    self.open_info_page_of_obj(src_obj)
+    return sorted(dashboard.Dashboard(
+        self.driver).get_mappable_via_add_widgets_objs_aliases())
 
 
 class SnapshotsWebUiService(BaseWebUiService):

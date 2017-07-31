@@ -16,6 +16,7 @@ from ggrc.models.object_document import Documentable
 from ggrc.models.person import Person
 from ggrc.models.program import Program
 from ggrc.models.relationship import Relatable
+from ggrc.models import reflection
 
 
 class RiskAssessment(Documentable, Timeboxed, Noted, Described,
@@ -46,11 +47,11 @@ class RiskAssessment(Documentable, Timeboxed, Noted, Described,
 
   _fulltext_attrs = []
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'ra_manager',
       'ra_counsel',
       'program',
-  ]
+  )
 
   _aliases = {
       "ra_manager": {

@@ -14,6 +14,45 @@ describe('GGRC.Components.treeWidgetContainer', function () {
     CurrentPageUtils = GGRC.Utils.CurrentPage;
   });
 
+  describe('display() method', function () {
+    var display;
+    var dfd;
+
+    beforeEach(function () {
+      dfd = new $.Deferred();
+
+      display = vm.display.bind(vm);
+      spyOn(vm, 'loadItems').and.returnValue(dfd);
+      vm.attr('loaded', null);
+      vm.attr('refreshLoaded', true);
+    });
+
+    it('sets loaded field if it does not exist', function () {
+      display();
+      expect(vm.attr('loaded')).not.toBeNull();
+    });
+
+    it('sets loaded field if needToRefresh param is true', function () {
+      vm.attr('loaded', dfd);
+      display(true);
+      expect(vm.attr('loaded')).not.toBeNull();
+    });
+
+    it('sets refreshLoaded flag in false after resolve loaded field',
+    function () {
+      display(true);
+      dfd.resolve();
+      expect(vm.attr('refreshLoaded')).toBe(false);
+    });
+
+    it('returns value of loaded field', function () {
+      var result;
+      vm.attr('loaded', dfd);
+      result = display();
+      expect(result).toBe(dfd);
+    });
+  });
+
   describe('onSort() method', function () {
     var onSort;
 
@@ -91,6 +130,56 @@ describe('GGRC.Components.treeWidgetContainer', function () {
         expect(can.makeArray(vm.attr('showedItems'))).toEqual([]);
         done();
       });
+    });
+  });
+
+  describe('setRefreshFlag() method', function () {
+    var setRefreshFlag;
+
+    beforeEach(function () {
+      setRefreshFlag = vm.setRefreshFlag.bind(vm);
+      vm.attr('refreshLoaded', null);
+    });
+
+    it('sets refreshLoaded state in true if refresh param is true',
+    function () {
+      setRefreshFlag(true);
+      expect(vm.attr('refreshLoaded')).toBe(true);
+    });
+
+    it('sets refreshLoaded state in false if refresh param is false',
+    function () {
+      setRefreshFlag(false);
+      expect(vm.attr('refreshLoaded')).toBe(false);
+    });
+  });
+
+  describe('needToRefresh() method', function () {
+    var needToRefresh;
+    var setRefreshFlag;
+
+    beforeEach(function () {
+      needToRefresh = vm.needToRefresh.bind(vm);
+      setRefreshFlag = vm.setRefreshFlag.bind(vm);
+      vm.attr('refreshLoaded', null);
+    });
+
+    it('returns true if refreshLoaded field is true',
+    function () {
+      var result;
+      setRefreshFlag(true);
+      result = needToRefresh();
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false if refreshLoaded field is false',
+    function () {
+      var result;
+      setRefreshFlag(false);
+      result = needToRefresh();
+
+      expect(result).toBe(false);
     });
   });
 

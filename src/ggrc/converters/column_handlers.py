@@ -82,11 +82,10 @@ _DEFAULT_COLUMN_HANDLERS_DICT = {
     "network_zone": handlers.OptionColumnHandler,
     "notes": handlers.TextareaColumnHandler,
     "operationally": handlers.ConclusionColumnHandler,
-    "owners": handlers.OwnerColumnHandler,
     "principal_assessor": handlers.UserColumnHandler,
     "program": handlers.ProgramColumnHandler,
     "recipients": list_handlers.ValueListHandler,
-    "reference_url": handlers.TextColumnHandler,
+    "reference_url": document.ReferenceUrlHandler,
     "related_assessors": related_person.RelatedAssessorsColumnHandler,
     "related_assignees": related_person.RelatedAssigneesColumnHandler,
     "related_creators": related_person.RelatedCreatorsColumnHandler,
@@ -107,7 +106,6 @@ _DEFAULT_COLUMN_HANDLERS_DICT = {
     "test_plan": handlers.TextareaColumnHandler,
     "test_plan_procedure": boolean.CheckboxColumnHandler,
     "title": handlers.RequiredTextColumnHandler,
-    "url": handlers.TextColumnHandler,
     "verify_frequency": handlers.OptionColumnHandler,
 
     # Mapping column handlers

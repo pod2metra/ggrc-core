@@ -3,6 +3,7 @@
 
 from ggrc import db
 from ggrc.models.mixins import Base
+from ggrc.models import reflection
 
 
 class Event(Base, db.Model):
@@ -21,12 +22,12 @@ class Event(Base, db.Model):
       cascade='all, delete-orphan',
   )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'action',
       'resource_id',
       'resource_type',
       'revisions',
-  ]
+  )
 
   _include_links = [
       'revisions',

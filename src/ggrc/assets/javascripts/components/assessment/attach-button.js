@@ -14,6 +14,10 @@
     tag: tag,
     template: template,
     viewModel: {
+      canAttach: false,
+      isFolderAttached: false,
+      checksPassed: false,
+      error: {},
       instance: {},
       isAttachActionDisabled: false,
       onBeforeCreate: function (event) {
@@ -43,6 +47,60 @@
 
         if (this.attr('instance')) {
           this.attr('instance').dispatch('refreshInstance');
+        }
+      },
+      checkFolder: function () {
+        var self = this;
+
+        return this.findFolder().then(function (folder) {
+          if (folder) {
+            self.attr('isFolderAttached', true);
+          }
+          self.attr('canAttach', true);
+        }, function (err) {
+          console.log(err);
+          self.attr('error', err);
+          self.attr('canAttach', false);
+        }).always(function () {
+          self.attr('checksPassed', true);
+        });
+      },
+      findFolderId: function () {
+        var self = this;
+        var auditId = this.attr('instance.audit.id');
+        var foldersDfd = CMS.Models.ObjectFolder.findAll({
+          folderable_id: auditId,
+          folderable_type: 'Audit'});
+
+        return foldersDfd.then(function (folders) {
+          if (folders.length > 0) {
+            return folders[0].folder_id;
+          }
+          self.attr('canAttach', true);
+        });
+      },
+      findFolder: function () {
+        var GFolder = CMS.Models.GDriveFolder;
+
+        return this.findFolderId().then(function (id) {
+          if (!id) {
+            return can.Deferred().resolve();
+          }
+
+          return GFolder.findOne({id: id});
+        });
+      }
+    },
+    events: {
+      inserted: function () {
+        var viewModel = this.viewModel;
+        var instance = viewModel.attr('instance');
+
+        if (Permission.is_allowed_for('update', instance) &&
+          !instance.archived) {
+          viewModel.checkFolder().always(function () {
+            viewModel.attr('hasPermissions', true);
+          });
         }
       }
     }

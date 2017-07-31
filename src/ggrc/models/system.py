@@ -9,15 +9,25 @@ from ggrc.fulltext.mixin import Indexed
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import (BusinessObject, LastDeprecatedTimeboxed,
                                 CustomAttributable)
-from ggrc.models.object_owner import Ownable
+from ggrc.models.object_document import PublicDocumentable
 from ggrc.models.object_person import Personable
 from ggrc.models.relationship import Relatable
 from ggrc.models.utils import validate_option
 from ggrc.models import track_object_state
+from ggrc.models import reflection
 
 
-class SystemOrProcess(track_object_state.HasObjectState, BusinessObject,
-                      LastDeprecatedTimeboxed, db.Model):
+# NOTE: The PublicDocumentable mixin is not applied directly to the
+# SystemOrProcess base class, but instead to all of its specialized subclasses.
+# The reason for this is the PublicDocumentable's declared attribute
+# `documents` that builds a dynamic DB relationship based on the class name,
+# and thus the attribute needs to be run in the context of each particular
+# subclass.
+# (of course, if there is a nice way of overriding/customizing declared
+# attributes in subclasses, we might want to use that approach)
+class SystemOrProcess(track_object_state.HasObjectState,
+                      LastDeprecatedTimeboxed,
+                      BusinessObject, db.Model):
   # Override model_inflector
   _table_plural = 'systems_or_processes'
   __tablename__ = 'systems'
@@ -38,24 +48,21 @@ class SystemOrProcess(track_object_state.HasObjectState, BusinessObject,
   }
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'infrastructure',
-      'is_biz_process',
       'version',
       'network_zone',
-  ]
+      reflection.Attribute('is_biz_process', create=False, update=False),
+  )
   _fulltext_attrs = [
-      'infrastructure',
-      'version',
-      'network_zone',
-  ]
-  _update_attrs = [
       'infrastructure',
       'version',
       'network_zone',
   ]
   _sanitize_html = ['version']
   _aliases = {
+      "document_url": None,
+      "document_evidence": None,
       "network_zone": {
           "display_name": "Network Zone",
       },
@@ -96,13 +103,16 @@ class SystemOrProcess(track_object_state.HasObjectState, BusinessObject,
 
 
 class System(CustomAttributable, Personable, Roleable,
-             Relatable, Ownable, SystemOrProcess, Indexed):
+             Relatable, PublicDocumentable, SystemOrProcess, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': False
   }
   _table_plural = 'systems'
 
-  _aliases = {"url": "System URL"}
+  _aliases = {
+      "document_url": None,
+      "document_evidence": None,
+  }
 
   @validates('is_biz_process')
   def validates_is_biz_process(self, key, value):
@@ -110,13 +120,16 @@ class System(CustomAttributable, Personable, Roleable,
 
 
 class Process(CustomAttributable, Personable, Roleable,
-              Relatable, Ownable, SystemOrProcess, Indexed):
+              Relatable, PublicDocumentable, SystemOrProcess, Indexed):
   __mapper_args__ = {
       'polymorphic_identity': True
   }
   _table_plural = 'processes'
 
-  _aliases = {"url": "Process URL"}
+  _aliases = {
+      "document_url": None,
+      "document_evidence": None,
+  }
 
   @validates('is_biz_process')
   def validates_is_biz_process(self, key, value):

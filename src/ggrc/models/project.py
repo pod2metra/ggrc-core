@@ -6,14 +6,17 @@ from ggrc.access_control.roleable import Roleable
 from ggrc.fulltext.mixin import Indexed
 from .mixins import (BusinessObject, LastDeprecatedTimeboxed,
                      CustomAttributable)
-from .object_owner import Ownable
+from .object_document import PublicDocumentable
 from .object_person import Personable
 from .relationship import Relatable
 from .track_object_state import HasObjectState
 
 
 class Project(Roleable, HasObjectState, CustomAttributable, Personable,
-              Relatable, LastDeprecatedTimeboxed, Ownable, BusinessObject,
-              Indexed, db.Model):
+              Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
+              BusinessObject, Indexed, db.Model):
   __tablename__ = 'projects'
-  _aliases = {"url": "Project URL"}
+  _aliases = {
+      "document_url": None,
+      "document_evidence": None,
+  }

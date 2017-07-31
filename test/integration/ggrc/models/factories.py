@@ -195,8 +195,8 @@ class AssessmentTemplateFactory(TitledFactory):
   test_plan_procedure = False
   procedure_description = factory.LazyAttribute(
       lambda _: random_str(length=100))
-  default_people = {"assessors": "Object Owners",
-                    "verifiers": "Object Owners"}
+  default_people = {"assessors": "Admin",
+                    "verifiers": "Admin"}
 
 
 class ContractFactory(TitledFactory):
@@ -278,6 +278,12 @@ class OrgGroupFactory(TitledFactory):
     model = models.OrgGroup
 
 
+class SystemFactory(TitledFactory):
+
+  class Meta:
+    model = models.System
+
+
 class ProcessFactory(TitledFactory):
 
   class Meta:
@@ -296,16 +302,6 @@ class MarketFactory(TitledFactory):
     model = models.Market
 
 
-class OwnerFactory(ModelFactory):
-  """ObjectOwner factory class"""
-
-  class Meta:
-    model = models.ObjectOwner
-
-  person = None
-  ownable = None
-
-
 class AccessControlListFactory(ModelFactory):
   """Access Control List factory class"""
 
@@ -322,3 +318,10 @@ class AccessControlRoleFactory(ModelFactory):
   name = factory.LazyAttribute(
       lambda _: random_str(prefix="Access Control Role - ")
   )
+  non_editable = False
+
+
+class AccessControlRoleAdminFactory(AccessControlRoleFactory):
+  """Access Control Role Admin factory class"""
+  mandatory = u"1"
+  name = "Admin"

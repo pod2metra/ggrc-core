@@ -86,21 +86,18 @@ class TestExportSnapshots(TestCase):
     control_dicts = {
         control.slug: {
             # normal fields
-            "Admin": "\n".join(owner.email for owner in control.owners),
             "Code": "*" + control.slug,
             "Revision Date": unicode(snapshot.revision.created_at),
-            "Control URL": control.url,
             "Description": control.description,
             "Effective Date": control.start_date.strftime("%m/%d/%Y"),
             "Fraud Related": u"yes" if control.fraud_related else u"no",
             "Frequency": control.verify_frequency.display_name,
             "Kind/Nature": control.kind.display_name,
             "Notes": control.notes,
-            "Reference URL": control.reference_url,
             "Review State": control.os_state,
             "Significance": u"key" if control.key_control else u"non-key",
             "State": control.status,
-            "Last Deprecated Date": control.end_date.strftime("%m/%d/%Y"),
+            "Last Deprecated Date": "",
             "Test Plan": control.test_plan,
             "Title": control.title,
             "Type/Means": control.means.display_name,
@@ -113,6 +110,7 @@ class TestExportSnapshots(TestCase):
             # Special snapshot export fields
             "Audit": audit.slug,
             "Evidence": u"\n".join(c.slug for c in control.document_evidence),
+            "Reference URL": u"\n".join(c.slug for c in control.reference_url),
             "Assertions": u"\n".join(c.name for c in control.assertions),
             "Categories": u"\n".join(c.name for c in control.categories),
             # Computed attributes
@@ -193,17 +191,14 @@ class TestExportSnapshots(TestCase):
     control_dicts = {
         control.slug: {
             # normal fields
-            "Admin": u"",
             "Code": "*" + control.slug,
             "Revision Date": unicode(snapshot.revision.created_at),
-            "Control URL": u"",
             "Description": u"",
             "Effective Date": u"",
             "Fraud Related": u"",
             "Frequency": u"",
             "Kind/Nature": u"",
             "Notes": u"",
-            "Reference URL": u"",
             "Review State": u"Unreviewed",
             "Significance": u"",
             "State": u"Draft",
@@ -218,6 +213,7 @@ class TestExportSnapshots(TestCase):
 
             # Custom attributes
             "RT": u"",
+            "Reference URL": u"",
             "checkbox": u"no",
             "date": u"",
             "dropdown": u"",

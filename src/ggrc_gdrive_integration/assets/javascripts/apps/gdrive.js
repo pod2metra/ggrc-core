@@ -125,6 +125,4 @@
 
   GGRC.register_hook('Workflow.storage_folder_picker',
     GGRC.mustache_path + '/workflows/gdrive_folder_picker.mustache');
-  GGRC.register_hook('Request.gdrive_evidence_storage',
-    GGRC.mustache_path + '/requests/gdrive_evidence_storage.mustache');
 })(window.can, window.can.$, window.CMS, window.GGRC);

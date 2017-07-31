@@ -8,6 +8,7 @@ from sqlalchemy.orm import backref
 from ggrc import db
 from ggrc.models.mixins import Base
 from ggrc.models import utils
+from ggrc.models import reflection
 
 
 class NotificationConfig(Base, db.Model):
@@ -20,11 +21,11 @@ class NotificationConfig(Base, db.Model):
       'Person',
       backref=backref('notification_configs', cascade='all, delete-orphan'))
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'person_id',
       'notif_type',
       'enable_flag',
-  ]
+  )
 
   VALID_TYPES = [
       'Email_Now',

@@ -119,8 +119,7 @@ class CustomAttributeModal(_Modal):
     self.checkbox_mandatory = base.Checkbox(
         self._driver, self._locators.CHECKBOX_MANDATORY)
     self.attribute_type_selector = base.DropdownStatic(
-        self._driver, self._locators.ATTRIBUTE_TYPE_SELECTOR,
-        self._locators.ATTRIBUTE_TYPE_OPTIONS)
+        self._driver, self._locators.ATTRIBUTE_TYPE_SELECTOR)
     self.ui_possible_values = None
 
   def enter_inline_help(self, inline_help):

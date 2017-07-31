@@ -40,6 +40,7 @@ from ggrc.rbac import permissions, context_query_filter
 from ggrc.services.attribute_query import AttributeQueryBuilder
 from ggrc.services import signals
 from ggrc.models.background_task import BackgroundTask, create_task
+from ggrc.query import utils as query_utils
 from ggrc import settings
 
 
@@ -48,11 +49,6 @@ logger = getLogger(__name__)
 
 
 CACHE_EXPIRY_COLLECTION = 60
-
-
-def get_oauth_credentials():
-  from flask import session
-  return session.get('oauth_credentials')
 
 
 def _get_cache_manager():
@@ -325,8 +321,6 @@ def _get_log_revisions(current_user_id, obj=None, force_obj=False):
   folder_modified_objects = []
   all_edited_objects = itertools.chain(cache.new, cache.dirty, cache.deleted)
   for o in all_edited_objects:
-    if o.type == "ObjectOwner" and o.ownable:
-      owner_modified_objects.append(o.ownable)
     if o.type == "ObjectFolder" and o.folderable:
       folder_modified_objects.append(o.folderable)
   revisions.extend(_revision_generator(
@@ -440,21 +434,6 @@ class ModelView(View):
   def modified_at(self, obj):
     return getattr(obj, self.modified_attr_name)
 
-  def _get_type_select_column(self, model):
-    mapper = model._sa_class_manager.mapper
-    if mapper.polymorphic_on is None:
-      # if len(mapper.self_and_descendants) == 1:
-      type_column = sqlalchemy.literal(mapper.class_.__name__)
-    else:
-      # Handle polymorphic types with CASE
-      type_column = sqlalchemy.case(
-          value=mapper.polymorphic_on,
-          whens={
-              val: m.class_.__name__
-              for val, m in mapper.polymorphic_map.items()
-          })
-    return type_column
-
   def _get_type_where_clause(self, model):
     mapper = model._sa_class_manager.mapper
     if mapper.polymorphic_on is None:
@@ -480,7 +459,7 @@ class ModelView(View):
     columns = []
     columns.append(mapper.primary_key[0].label('id'))
     # columns.append(model.id.label('id'))
-    columns.append(self._get_type_select_column(model).label('type'))
+    columns.append(query_utils.get_type_select_column(model).label('type'))
     if hasattr(mapper.c, 'context_id'):
       columns.append(mapper.c.context_id.label('context_id'))
     if hasattr(mapper.c, 'updated_at'):
@@ -1601,6 +1580,9 @@ def filter_resource(resource, depth=0, user_permissions=None):  # noqa
         return None
     elif resource['type'] == "Revision" and _is_creator():
       # Make a check for revision objects that are a special case
+      if not hasattr(ggrc.models.all_models, resource['resource_type']):
+        # there are no permissions for old objects
+        return None
       res_model = getattr(ggrc.models.all_models, resource['resource_type'])
       instance = res_model.query.get(resource['resource_id'])
       if instance is None or\

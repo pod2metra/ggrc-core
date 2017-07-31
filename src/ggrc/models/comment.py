@@ -20,11 +20,12 @@ from ggrc.models.revision import Revision
 from ggrc.models.mixins import Base
 from ggrc.models.mixins import Described
 from ggrc.models.mixins import Notifiable
-from ggrc.models.object_owner import Ownable
 from ggrc.models.relationship import Relatable, Relationship
+from ggrc.access_control.roleable import Roleable
 from ggrc.fulltext.mixin import Indexed, ReindexRule
 from ggrc.fulltext.attributes import MultipleSubpropertyFullTextAttr
 from ggrc.models import inflector
+from ggrc.models import reflection
 
 
 class Commentable(object):
@@ -80,10 +81,8 @@ class Commentable(object):
 
   send_by_default = db.Column(db.Boolean, nullable=True, default=True)
 
-  _publish_attrs = [
-      "recipients",
-      "send_by_default",
-  ]
+  _api_attrs = reflection.ApiAttributes("recipients", "send_by_default")
+
   _aliases = {
       "recipients": "Recipients",
       "send_by_default": "Send by default",
@@ -134,7 +133,7 @@ def reindex_by_relationship(relationship):
   return []
 
 
-class Comment(Relatable, Described, Ownable, Notifiable,
+class Comment(Roleable, Relatable, Described, Notifiable,
               Base, Indexed, db.Model):
   """Basic comment model."""
   __tablename__ = "comments"
@@ -160,15 +159,14 @@ class Comment(Relatable, Described, Ownable, Notifiable,
   )
 
   # REST properties
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       "assignee_type",
-      "custom_attribute_revision",
-  ]
-
-  _update_attrs = [
-      "assignee_type",
-      "custom_attribute_revision_upd",
-  ]
+      reflection.Attribute("custom_attribute_revision",
+                           create=False,
+                           update=False),
+      reflection.Attribute("custom_attribute_revision_upd",
+                           read=False),
+  )
 
   _sanitize_html = [
       "description",

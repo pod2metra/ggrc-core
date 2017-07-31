@@ -5,7 +5,6 @@
 
 {{#instance.class.info_pane_options.comments}}
 {{#add_to_current_scope parent_instance=instance}}
-{{#if_mapping_ready "comments" instance}}
   <mapping-tree-view
     parent-instance="instance"
     is-loading="isLoading"
@@ -16,6 +15,5 @@
     item-template="/static/mustache/base_templates/comment_subtree.mustache"
     >
   </mapping-tree-view>
-{{/if_mapping_ready}}
 {{/add_to_current_scope}}
-{{/instance}}
+{{/instance.class.info_pane_options.comments}}

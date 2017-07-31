@@ -121,10 +121,10 @@
         type = type || '';
         this.attr('isUpdating' + can.capitalize(type), true);
         GGRC.Utils.QueryAPI
-          .batchRequests(query)
+          .makeRequest({data: [query]})
           .done(function (response) {
-            var type = Object.keys(response)[0];
-            var values = response[type].values;
+            var type = Object.keys(response[0])[0];
+            var values = response[0][type].values;
             dfd.resolve(values);
           })
           .fail(function () {
@@ -228,28 +228,30 @@
           });
       },
       saveFormFields: function (formFields) {
-        var caValues = can.makeArray(
-          this.attr('instance.custom_attribute_values')
-        );
-        Object.keys(formFields).forEach(function (fieldId) {
-          var caValue =
-            caValues
-              .find(function (item) {
-                return item.def.id === Number(fieldId);
-              });
-          if (!caValue) {
-            console.error('Corrupted Date: ', caValues);
-            return;
-          }
-          caValue.attr('attribute_value',
-            GGRC.Utils.CustomAttributes.convertToCaValue(
-              caValue.attr('attributeType'),
-              formFields[fieldId]
-            )
+        return this.attr('instance').refresh().then(function () {
+          var caValues = can.makeArray(
+            this.attr('instance.custom_attribute_values')
           );
-        });
+          Object.keys(formFields).forEach(function (fieldId) {
+            var caValue =
+              caValues
+                .find(function (item) {
+                  return item.def.id === Number(fieldId);
+                });
+            if (!caValue) {
+              console.error('Corrupted Date: ', caValues);
+              return;
+            }
+            caValue.attr('attribute_value',
+              GGRC.Utils.CustomAttributes.convertToCaValue(
+                caValue.attr('attributeType'),
+                formFields[fieldId]
+              )
+            );
+          });
 
-        return this.attr('instance').save();
+          return this.attr('instance').save();
+        }.bind(this));
       },
       showRequiredInfoModal: function (e, field) {
         var scope = field || e.field;

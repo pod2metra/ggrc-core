@@ -86,7 +86,6 @@ class TestCustomAttributesDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "Policy URL",
         "Reference URL",
         "Kind/Type",
         "Effective Date",
@@ -96,6 +95,8 @@ class TestCustomAttributesDefinitions(TestCase):
         "Mandatory Attribute",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_names = element_names.union(mapping_names).union(unmapping_names)
     self.assertEqual(expected_names, display_names)
@@ -133,7 +134,6 @@ class TestCustomAttributesDefinitions(TestCase):
         "Manager",
         "Reader",
         "Editor",
-        "Program URL",
         "Reference URL",
         "Code",
         "Effective Date",
@@ -144,6 +144,8 @@ class TestCustomAttributesDefinitions(TestCase):
         "Choose",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_names = element_names.union(mapping_names).union(unmapping_names)
     self.assertEqual(expected_names, display_names)
@@ -301,7 +303,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Manager",
         "Reader",
         "Editor",
-        "Program URL",
         "Reference URL",
         "Code",
         "Effective Date",
@@ -309,6 +310,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_fields = {
         "mandatory": {
@@ -344,7 +347,7 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Archived",
         "Delete",
         "Url",
-        "Evidence",
+        "Evidence"
     }
     expected_fields = {
         "mandatory": {
@@ -409,7 +412,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Creators",
         "Assignees",
         "Verifiers",
-        "Assessment URL",
         "Assessment Type",
         "Reference URL",
         "Evidence",
@@ -426,6 +428,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Send by default",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_fields = {
         "mandatory": {
@@ -455,7 +459,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Audit",
         "Remediation Plan",
         "Admin",
-        "Issue URL",
         "Reference URL",
         "Code",
         "Effective Date",
@@ -465,6 +468,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Url",
         "Evidence",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_fields = {
         "mandatory": {
@@ -490,7 +495,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "Policy URL",
         "Reference URL",
         "Kind/Type",
         "Code",
@@ -499,6 +503,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Policy, names, self.COMMON_EXPECTED)
 
@@ -509,7 +515,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Text of Clause",
         "Notes",
         "Admin",
-        "Clause URL",
         "Reference URL",
         "Code",
         "Effective Date",
@@ -517,6 +522,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Clause, names, self.COMMON_EXPECTED)
 
@@ -528,12 +535,13 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Notes",
         "Policy / Regulation / Standard / Contract",
         "Admin",
-        "Section URL",
         "Reference URL",
         "Code",
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Section, names, self.COMMON_EXPECTED)
 
@@ -545,7 +553,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Test Plan",
         "Notes",
         "Admin",
-        "Control URL",
         "Reference URL",
         "Code",
         "Kind/Nature",
@@ -562,6 +569,10 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Review State",
         "Evidence",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
+        "Principal Assignees",
+        "Secondary Assignees",
     }
     self._test_single_object(models.Control, names, self.COMMON_EXPECTED)
 
@@ -572,13 +583,14 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "Objective URL",
         "Reference URL",
         "Last Assessment Date",
         "Code",
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Objective, names, self.COMMON_EXPECTED)
 
@@ -607,7 +619,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "System URL",
         "Reference URL",
         "Code",
         "Network Zone",
@@ -616,6 +627,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.System, names, self.COMMON_EXPECTED)
 
@@ -626,7 +639,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "Process URL",
         "Reference URL",
         "Code",
         "Network Zone",
@@ -635,6 +647,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Process, names, self.COMMON_EXPECTED)
 
@@ -645,7 +659,6 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Description",
         "Notes",
         "Admin",
-        "Product URL",
         "Reference URL",
         "Code",
         "Kind/Type",
@@ -654,6 +667,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     self._test_single_object(models.Product, names, self.COMMON_EXPECTED)
 
@@ -671,7 +686,8 @@ class TestGetObjectColumnDefinitions(TestCase):
         "Review State",
         "Last Deprecated Date",
         "Title",
-        "Url",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
     expected_fields = {
         "mandatory": {
@@ -713,8 +729,9 @@ class TestGetObjectColumnDefinitions(TestCase):
         "State",
         "Review State",
         "Delete",
+        "Primary Contacts",
+        "Secondary Contacts",
     }
-    names.add("{} URL".format(model._inflector.title_singular.title()))
     self._test_single_object(model, names, self.COMMON_EXPECTED)
 
 

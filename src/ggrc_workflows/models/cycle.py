@@ -9,6 +9,7 @@ from sqlalchemy import orm, inspect
 
 from ggrc import db
 from ggrc.models import mixins
+from ggrc.models import reflection
 from ggrc.fulltext import attributes as ft_attributes
 from ggrc.fulltext import mixin as ft_mixin
 
@@ -54,12 +55,12 @@ class Cycle(mixins.WithContact,
   is_current = db.Column(db.Boolean, default=True, nullable=False)
   next_due_date = db.Column(db.Date)
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'workflow',
       'cycle_task_groups',
       'is_current',
       'next_due_date',
-  ]
+  )
 
   _aliases = {
       "cycle_workflow": {

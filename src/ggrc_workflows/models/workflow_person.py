@@ -8,6 +8,7 @@ from sqlalchemy.orm import backref
 
 from ggrc import db
 from ggrc.models.mixins import Base
+from ggrc.models import reflection
 
 
 class WorkflowPerson(Base, db.Model):
@@ -36,10 +37,10 @@ class WorkflowPerson(Base, db.Model):
         db.Index('ix_person_id', 'person_id'),
     )
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'workflow',
       'person',
-  ]
+  )
   _sanitize_html = []
 
   @classmethod

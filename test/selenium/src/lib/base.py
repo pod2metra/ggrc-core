@@ -4,16 +4,19 @@
 # pylint: disable=too-few-public-methods
 
 import re
+
+import pytest
+
 from selenium import webdriver
-from selenium.common import exceptions
 from selenium.webdriver.common import keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote import webelement
 
 from lib import constants, exception, mixin
-from lib.constants import url
+from lib.constants import url, messages
 from lib.constants.element import MappingStatusAttrs
-from lib.constants.test import batch
+from lib.constants.locator import CommonDropdownMenu
+from lib.entities.entity import Entity
 from lib.utils import selenium_utils
 
 
@@ -44,6 +47,33 @@ class CustomDriver(webdriver.Chrome):
 
 class Test(InstanceRepresentation):
   __metaclass__ = mixin.MetaTestDecorator
+
+  @staticmethod
+  def extended_assert(expected_objs, actual_objs, issue_msg,
+                      **exclude_attrs):
+    """Perform extended assert for expected and actual objects according to
+    dictionary of attributes to exclude and providing issue's message.
+    Initially, based on original objects prepare expected and actual
+    collections to performing of extended comparison procedure ('split_objs'),
+    where:
+    'exp_objs_wo_ex_attrs', 'act_objs_wo_ex_attrs' - list objects w/o excluding
+    attributes;
+    'exp_ex_attrs', 'act_ex_attrs' - list dictionaries w/ excluding attributes
+    (items which contain attributes' names and values);
+    'issue_msg' - issue message for pytest xfail procedure;
+    '**exclude_attrs' - excluding attributes.
+    Finally, make pytest assert for objects, then xfail assert for attributes.
+    """
+    split_objs = (Entity.prepare_entities_excluding_attrs(
+        expected_objs=expected_objs, actual_objs=actual_objs, **exclude_attrs))
+    assert (split_objs["exp_objs_wo_ex_attrs"] ==
+            split_objs["act_objs_wo_ex_attrs"]), (
+        messages.AssertionMessages.format_err_msg_equal(
+            split_objs["exp_objs_wo_ex_attrs"],
+            split_objs["act_objs_wo_ex_attrs"]))
+    assert (True if Entity.is_list_of_attrs_equal(
+        split_objs["exp_ex_attrs"], split_objs["act_ex_attrs"])
+        else pytest.xfail(reason=issue_msg))
 
 
 class TestUtil(InstanceRepresentation):
@@ -119,47 +149,6 @@ class RichTextInputField(Element):
 
 class TextInputField(RichTextInputField):
   """Generic model for text input field."""
-
-
-class TextFilterDropdown(Element):
-  """Model for elements which are using autocomplete in text field with
- dropdown list of found results and static dropdown list of text elements.
- """
-
-  def __init__(self, driver, textbox_locator, dropdown_locator):
-    super(TextFilterDropdown, self).__init__(driver, textbox_locator)
-    self._locator_dropdown = dropdown_locator
-    self._elements_dropdown = None
-    self.text_to_filter = None
-
-  def _filter_results(self, text):
-    """Insert text into textbox field."""
-    self.text_to_filter = text
-    self.element.click()
-    self.element.clear()
-    self._driver.find_element(*self.locator_or_element).send_keys(text)
-
-  def _select_first_result(self):
-    """Wait when dropdown elements appear and select first one."""
-    for _ in xrange(batch.TRY_COUNT):
-      try:
-        selenium_utils.get_when_visible(self._driver, self._locator_dropdown)
-        dropdown_elements = self._driver.find_elements(*self._locator_dropdown)
-        self.text = dropdown_elements[0].text
-        dropdown_elements[0].click()
-        break
-      except exceptions.StaleElementReferenceException:
-        pass
-
-  def filter_and_select_el_by_text(self, text):
-    """Make filtering and select first filtered text element in dropdown."""
-    self._filter_results(text)
-    self._select_first_result()
-
-  def find_and_select_el_by_text(self, text):
-    """Find and select text element in dropdown by text."""
-    self.text_to_filter = text
-    self.element.click()
 
 
 class Iframe(Element):
@@ -293,18 +282,12 @@ class Dropdown(Element):
 class DropdownStatic(Element):
   """Dropdown with predefined static elements."""
 
-  def __init__(self, driver, dropdown_locator, elements_locator):
-    """
-    Args: driver (CustomDriver)
-    """
-    super(DropdownStatic, self).__init__(driver, dropdown_locator)
-    self._locator_dropdown_elements = elements_locator
-    self.elements_dropdown = self._driver.find_elements(
-        *self._locator_dropdown_elements)
+  def find_options(self):
+    return self.element.find_elements(*CommonDropdownMenu.DROPDOWN_OPTIONS)
 
   def select(self, member_name):
     """Selects dropdown element based on dropdown element name."""
-    for element in self.elements_dropdown:
+    for element in self.find_options():
       if element.get_attribute("value") == member_name:
         element.click()
         break
@@ -462,6 +445,57 @@ class DropdownDynamic(AnimatedComponent):
 
 class Selectable(Element):
   """Representing list of elements that are selectable."""
+
+
+class MultiInputField(Element):
+  """Representing fields that added plus sign."""
+  _locators = constants.locator.MultiInputField
+
+  def __init__(self, driver, loc_or_el):
+    super(MultiInputField, self).__init__(driver, loc_or_el)
+    self._items = None
+    self.add_btn = Button(self.element, self._locators.ADD_BTN_CSS)
+
+  def _init_items(self):
+    """Init list of input items into multi input field."""
+    self._items = [
+        MultiInputItem(self._driver, el) for el in
+        selenium_utils.get_when_all_visible(
+            self._driver, self._locators.ITEMS)]
+
+  @property
+  def values(self):
+    """Return list of text w/o date from each multi input item field."""
+    self._init_items()
+    return [item.link.text for item in self._items]
+
+  def add_values(self, *values):
+    """Add values to multiple input field."""
+    for value in values:
+      self.add_btn.click()
+      TextInputField(self.element, self._locators.TXT_CSS).enter_text(value)
+      Button(self.element, self._locators.APPLY_BTN_CSS).click()
+
+  def del_values(self, *values):
+    """Remove values from multiple input field."""
+    raise NotImplementedError
+
+
+class MultiInputItem(Element):
+  """Representing single item in multi input field."""
+  _locators = constants.locator.MultiInputItem
+
+  @property
+  def link(self):
+    """Return link element of from multi input item field."""
+    return Element(self.element, self._locators.LINK_CSS)
+
+  @property
+  def date(self):
+    """Return date as string in mm/dd/yyyy format when input item was
+    entered.
+    """
+    return Element(self.element, self._locators.DATE).text
 
 
 class Widget(AbstractPage):

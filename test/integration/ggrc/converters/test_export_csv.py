@@ -140,6 +140,7 @@ class TestExportSingleObject(TestCase):
         self.assertNotIn(",Cat ipsum {},".format(i), response.data)
 
   def test_simple_relevant_query(self):
+    """Test simple relevant query"""
     res = self._import_file("data_for_export_testing_program_contract.csv")
     self._check_csv_response(res, {})
     data = [{
@@ -197,6 +198,7 @@ class TestExportSingleObject(TestCase):
         self.assertNotIn(",Audit {},".format(i), response.data)
 
   def test_section_policy_relevant_query(self):
+    """Test section policy relevant query"""
     response = self._import_file("data_for_export_testing_directives.csv")
     self._check_csv_response(response, {})
     data = [{  # sec-1
@@ -401,6 +403,7 @@ class TestExportMultipleObjects(TestCase):
         self.assertNotIn(regulations[i], response.data)
 
   def test_relevant_to_previous_export(self):
+    """Test relevant to previous export"""
     res = self._import_file("data_for_export_testing_relevant_previous.csv")
     self._check_csv_response(res, {})
     data = [{

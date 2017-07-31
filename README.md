@@ -41,7 +41,7 @@ have Docker up and running. Here are the steps:
 * clone the repo
 * cd to the project
 directory
-* run the following:
+* Run the following:
 
     ```
     ./bin/containers setup dev
@@ -84,7 +84,7 @@ launch_gae_ggrc
 ```
 
 This requires `src/app.yaml` with settings and `src/packages` with
-requirements. You can generate the yaml file with:
+requirements. You can generate the YAML file with:
 
 ```sh
 deploy_appengine extras/deploy_settings_local.sh
@@ -151,7 +151,7 @@ This will run the tests on each file update.
 cd test/unit; sniffer
 ```
 
-You can drop into ipdb debugger on failures by running:
+You can drop into the ipdb debugger on failures by running:
 
 ```sh
 run_pytests --ipdb-failures
@@ -199,7 +199,7 @@ _NOTE: that the "ggrccore" part of the name is due to the repository parent fold
 ## Quickstart Breakdown
 
 
-The quickstart above gives a glimpse into the GGRC development environment.
+The quick start above gives a glimpse into the GGRC development environment.
 It's worth noting where there is automation in GGRC, and where there isn't.
 Often the lack of automation support for a step is intentional. Let's explore
 each step in detail.
@@ -208,7 +208,7 @@ each step in detail.
 
 GGRC makes use of some external tools for [Sass](http://sass-lang.com/)
 templates and JavaScript form handling. In order to have the relevant
-repositories checked out as Git submodules the following command must be
+repositories checked out as Git sub modules the following command must be
 issued in the project directory:
 
 ```sh
@@ -219,11 +219,11 @@ git submodule update --init
 
 To reprovision a docker container run the following:
 
-Remove files that are not in the repository e.g. python cache:
+Remove files that are not in the repository e.g. Python cache:
 ```sh
 git clean -df
 ```
-Start reprovisioning:
+Start re-provisioning:
 ```sh
 docker-compose build --pull --no-cache
 ```
@@ -279,7 +279,7 @@ db_reset backup-file.sql
 
 ## Gotchas
 
-After sync'ing your local clone of GGRC-Core you may experience a failure when
+After syncing your local clone of GGRC-Core you may experience a failure when
 trying to run the application due to a change (usually an addition) to the
 prerequisites.
 
@@ -398,9 +398,7 @@ make appengine_packages
 
 ### Git Submodule Changes
 
-A change in the git submodules required by the project could also lead to
-errors, particularly in the front-end HTML portion of the application. The
-solution is to update the submodules:
+A change in the git sub modules required by the project could also lead to errors, particularly in the front-end HTML portion of the application. The solution is to update the submodules:
 
 ```sh
 git submodule update

@@ -12,6 +12,7 @@ from ggrc.builder import simple_property
 from ggrc.models.context import Context
 from ggrc.models.person import Person
 from ggrc.models.mixins import Base, Described
+from ggrc.models import reflection
 
 from ggrc_basic_permissions.contributed_roles import (
     DECLARED_ROLE,
@@ -63,13 +64,18 @@ class Role(Base, Described, db.Model):
   def permissions(self, value):
     self.permissions_json = json.dumps(value)
 
-  _publish_attrs = ['name', 'permissions', 'scope', 'role_order']
+  _api_attrs = reflection.ApiAttributes(
+      'name',
+      'permissions',
+      'scope',
+      'role_order',
+  )
 
   def _display_name(self):
     return self.name
 
 
-Person._publish_attrs.extend(['user_roles'])
+Person._api_attrs.add('user_roles')
 # FIXME: Cannot use `include_links`, because Memcache expiry doesn't handle
 #   sub-resources correctly
 # Person._include_links.extend(['user_roles'])
@@ -93,7 +99,7 @@ def _Person_eager_query(cls):
 Person.eager_query = classmethod(_Person_eager_query)
 
 
-Context._publish_attrs.extend(['user_roles'])
+Context._api_attrs.add('user_roles')
 _orig_Context_eager_query = Context.eager_query
 
 
@@ -124,7 +130,7 @@ class UserRole(Base, db.Model):
   def _extra_table_args(cls):
     return (db.Index('ix_user_roles_person', 'person_id'),)
 
-  _publish_attrs = ['role', 'person']
+  _api_attrs = reflection.ApiAttributes('role', 'person')
 
   @classmethod
   def role_assignments_for(cls, context):

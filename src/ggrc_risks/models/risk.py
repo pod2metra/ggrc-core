@@ -9,23 +9,17 @@ from ggrc.fulltext.mixin import Indexed
 from ggrc.models.associationproxy import association_proxy
 from ggrc.models import mixins
 from ggrc.models.deferred import deferred
-from ggrc.models.object_owner import Ownable
+from ggrc.models.object_document import PublicDocumentable
 from ggrc.models.object_person import Personable
-from ggrc.models.reflection import PublishOnly
+from ggrc.models import reflection
 from ggrc.models.relationship import Relatable
 from ggrc.models.track_object_state import HasObjectState
 
 
-class Risk(Roleable,
-           HasObjectState,
-           mixins.CustomAttributable,
-           Relatable,
-           Ownable,
-           Personable,
-           mixins.LastDeprecatedTimeboxed,
-           mixins.BusinessObject,
-           Indexed,
-           db.Model):
+class Risk(Roleable, HasObjectState, mixins.CustomAttributable, Relatable,
+           Personable, PublicDocumentable,
+           mixins.LastDeprecatedTimeboxed, mixins.BusinessObject,
+           Indexed, db.Model):
 
   __tablename__ = 'risks'
 
@@ -38,12 +32,14 @@ class Risk(Roleable,
       'RiskObject', backref='risk', cascade='all, delete-orphan')
   objects = association_proxy('risk_objects', 'object', 'RiskObject')
 
-  _publish_attrs = [
+  _api_attrs = reflection.ApiAttributes(
       'risk_objects',
-      PublishOnly('objects'),
-  ]
+      reflection.Attribute('objects', create=False, update=False),
+  )
 
   _aliases = {
+      "document_url": None,
+      "document_evidence": None,
       "status": {
           "display_name": "State",
           "mandatory": False,

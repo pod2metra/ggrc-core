@@ -13,7 +13,7 @@
       filter: {
         type: 'string',
         set: function (newValue) {
-          this.attr('options.filter', newValue || '');
+          this.attr('options.filter', newValue.replace(/\\/g, '\\\\') || '');
           this.onFilterChange(newValue);
           return newValue;
         }

@@ -7,7 +7,6 @@
   <related-people-access-control
     class="width-100"
     {updatable-group-id}="updatableGroupId"
-    {info-pane-mode}="infoPaneMode"
     {is-new-instance}="isNewInstance"
     {instance}="instance">
       <div class="people-groups">
@@ -16,6 +15,7 @@
             class="people-group"
             auto-update="true"
             (update-roles)="updateRoles(%event)"
+            {is-new-instance}="isNewInstance"
             {required}="required"
             {group-id}="groupId"
             {title}="title"
@@ -43,13 +43,13 @@
                   {{#if isUpdating}}
                     <spinner {toggle}="isUpdating"></spinner>
                   {{else}}
-                    {{#is_allowed 'update' instance}}
+                    {{#if canEdit}}
                       <autocomplete
                           search-items-type="Person"
                           (item-selected)="addPerson(%event.selectedItem, @groupId)"
                           placeholder="Add person">
                       </autocomplete>
-                    {{/is_allowed}}
+                    {{/if}}
                   {{/if}}
                 </div>
               </div>

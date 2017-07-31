@@ -135,7 +135,8 @@
     },
 
     keypress_submit: function (e) {
-      if (e.which === 13 && !$(e.target).is('textarea')) {
+      if (e.which === 13 && !$(e.target).is('textarea') &&
+        !$(e.target).hasClass('create-form__input')) {
         if (!e.isDefaultPrevented()) {
           e.preventDefault();
           this.$form().submit();
@@ -172,8 +173,8 @@
       // Same behavior if extra flag is sent
       if (e && $(e.target).is('.modal-backdrop,.fa-times') || verifyChanges) {
         if ($(e.target).is('.disabled')) {
-            // In the case of a disabled modal backdrop, treat it like any other disabled data-dismiss,
-            //  i.e. do nothing.
+          // In the case of a disabled modal backdrop, treat it like any other disabled data-dismiss,
+          //  i.e. do nothing.
           e.stopPropagation();
           return;
         }
@@ -187,7 +188,7 @@
           }
         }
         if (this.is_form_dirty() || changedInstance || hasPending) {
-            // Confirm that the user wants to lose the data prior to hiding
+          // Confirm that the user wants to lose the data prior to hiding
           GGRC.Controllers.Modals.confirm({
             modal_title: 'Discard Changes',
             modal_description: 'Are you sure that you want' +
@@ -361,6 +362,7 @@
         Running: 'progress',
         Pending: 'progress'
       };
+      var textContainer;
       var $html;
       var gotMessage = _.some(_.values(flash), function (msg) {
         return !!msg;
@@ -395,10 +397,27 @@
 
           $html = $('<div></div>');
           $html.addClass('alert').addClass('alert-' + flashClass);
+
           if (flashClass !== 'progress') {
+            textContainer = '<span></span>';
             $html.addClass('alert-autohide');
+          } else {
+            textContainer = '<h6></h6>';
+            $html.append(
+              can.view.mustache([
+                '<spinner ',
+                'toggle="true" ',
+                'extra-css-class="alert_spinner-left"',
+                '></spinner>'
+              ].join(''))
+            );
           }
-          $html.append('<a href="#" class="close" data-dismiss="alert">x</a>');
+
+          $html.append(
+            '<a href="#" class="close" data-dismiss="alert">' +
+              '<i class="fa fa-times" aria-hidden="true"></i>' +
+            '</a>'
+          );
 
           for (messageI in flash[type]) {
             if (!flash[type].hasOwnProperty(messageI)) {
@@ -410,7 +429,7 @@
             if (_.isString(message)) {
               addLink = message.indexOf('{reload_link}') > -1;
               message = message.replace('{reload_link}', '');
-              $html.append($('<span></span>').text(message));
+              $html.append($(textContainer).text(message));
               if (addLink) {
                 $html.removeClass('alert-autohide');
                 $link = $('<a href="javascript://">Show results</a>');

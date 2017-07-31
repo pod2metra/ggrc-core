@@ -4,6 +4,7 @@
 from ggrc import db
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base, Described
+from ggrc.models import reflection
 
 
 class Option(Described, Base, db.Model):
@@ -23,11 +24,7 @@ class Option(Described, Base, db.Model):
         db.Index('ix_options_role', 'role'),
     )
 
-  _publish_attrs = [
-      'role',
-      'title',
-      'required',
-  ]
+  _api_attrs = reflection.ApiAttributes('role', 'title', 'required')
   _sanitize_html = [
       'title',
   ]

@@ -62,7 +62,6 @@ permissions = {
         "Process",
         "SystemControl",
         "SystemSystem",
-        "ObjectOwner",
         "Person",
         "Program",
         "Revision",
@@ -118,14 +117,6 @@ permissions = {
         "SystemOrProcess",
         "System",
         "Process",
-        {
-            "type": "ObjectOwner",
-            "terms": {
-                "property_name": "ownable.modified_by",
-                "value": "$current_user"
-            },
-            "condition": "is"
-        },
         "Person",
         "Program",
         "Role",

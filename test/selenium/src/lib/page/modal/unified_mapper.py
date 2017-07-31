@@ -2,7 +2,7 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 """Modals for map objects."""
 
-from lib import base
+from lib import base, decorator
 from lib.constants import locator
 from lib.utils import filter_utils, selenium_utils
 
@@ -22,24 +22,25 @@ class CommonUnifiedMapperModal(base.Modal):
     self.filter_via_expression_text_box = base.TextInputField(
         driver, self._locators.FILTER_VIA_EXPRESSION_TEXT_BOX)
     self.filter_by_state_text_box = base.DropdownStatic(
-        driver, self._locators.FILTER_BY_STATE_DROPDOWN,
-        self._locators.FILTER_BY_STATE_DROPDOWN_OPTIONS)
+        driver, self._locators.FILTER_BY_STATE_DROPDOWN)
     self.tree_view = base.UnifiedMapperTreeView(driver, obj_name=obj_name)
 
-  def _select_dest_obj_type(self, obj_name, is_asmts_generation=False):
+  def get_available_to_map_obj_aliases(self):
+    """Return texts of all objects available to map via UnifiedMapper."""
+    # pylint: disable=invalid-name
+    return [opt.get_attribute("label")
+            for opt in self.obj_type_dropdown.find_options()]
+
+  @decorator.lazy_property
+  def obj_type_dropdown(self):
+    return base.DropdownStatic(self._driver, self._locators.OBJ_TYPE_DROPDOWN)
+
+  def _select_dest_obj_type(self, obj_name):
     """Open dropdown and select element according to destination object name.
     If is_asmts_generation then TextFilterDropdown, else DropdownStatic.
     """
     if obj_name:
-      obj_type_dropdown = base.DropdownStatic(
-          self._driver, self._locators.OBJ_TYPE_DROPDOWN,
-          self._locators.OBJ_TYPE_DROPDOWN_OPTIONS)
-      obj_type_dropdown.select(obj_name)
-      if is_asmts_generation:
-        asmt_tmpl_dropdown = base.TextFilterDropdown(
-            self._driver, self._locators.OBJ_TYPE_DROPDOWN,
-            self._locators.OBJ_TYPE_DROPDOWN_OPTIONS)
-        asmt_tmpl_dropdown.find_and_select_el_by_text(obj_name)
+      self.obj_type_dropdown.select(obj_name)
 
   def _filter_dest_objs_via_expression_by_titles(self, objs_titles):
     """Enter expression is like 'title=obj1_title or title=obj2_title' into
@@ -84,26 +85,22 @@ class CommonUnifiedMapperModal(base.Modal):
     selenium_utils.get_when_invisible(
         self._driver, locator.TreeView.NO_RESULTS_MESSAGE)
 
-  def search_dest_objs(self, dest_objs_type, dest_objs_titles,
-                       is_asmts_generation=False):
+  def search_dest_objs(self, dest_objs_type, dest_objs_titles):
     """Filter and search destination objects according to them type and titles.
     If is_asmts_generation then TextFilterDropdown is using.
     """
-    self._select_dest_obj_type(obj_name=dest_objs_type,
-                               is_asmts_generation=is_asmts_generation)
+    self._select_dest_obj_type(obj_name=dest_objs_type)
     self._filter_dest_objs_via_expression_by_titles(
         objs_titles=dest_objs_titles)
     self._select_search_dest_objs()
     return self.tree_view.get_list_members_as_list_scopes()
 
-  def map_dest_objs(self, dest_objs_type, dest_objs_titles,
-                    is_asmts_generation=False):
+  def map_dest_objs(self, dest_objs_type, dest_objs_titles):
     """Filter, search destination objects according to them type and titles.
     Map found destination objects to source object.
     If is_asmts_generation then TextFilterDropdown is using.
     """
-    self.search_dest_objs(dest_objs_type, dest_objs_titles,
-                          is_asmts_generation=is_asmts_generation)
+    self.search_dest_objs(dest_objs_type, dest_objs_titles)
     self._select_dest_objs_to_map(objs_titles=dest_objs_titles)
     self._confirm_map_selected()
 
@@ -112,16 +109,10 @@ class MapObjectsModal(CommonUnifiedMapperModal):
   """Modal for map objects."""
   _locators = locator.ModalMapObjects
 
-  def __init__(self, driver, obj_name):
-    super(MapObjectsModal, self).__init__(driver, obj_name)
-
 
 class SearchObjectsModal(CommonUnifiedMapperModal):
   """Modal for search objects."""
   _locators = locator.ModalMapObjects
-
-  def __init__(self, driver, obj_name):
-    super(SearchObjectsModal, self).__init__(driver, obj_name)
 
 
 class GenerateAssessmentsModal(CommonUnifiedMapperModal):
@@ -137,4 +128,4 @@ class GenerateAssessmentsModal(CommonUnifiedMapperModal):
     # pylint: disable=invalid-name
     self.map_dest_objs(
         dest_objs_type=asmt_tmpl_title,
-        dest_objs_titles=objs_under_asmt_titles, is_asmts_generation=True)
+        dest_objs_titles=objs_under_asmt_titles)
