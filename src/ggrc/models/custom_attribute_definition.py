@@ -4,6 +4,7 @@
 """Custom attribute definition module"""
 
 from cached_property import cached_property
+import enum
 import flask
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
@@ -31,6 +32,15 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
 
   definition_type = db.Column(db.String, nullable=False)
   definition_id = db.Column(db.Integer)
+
+  class Attributes(enum.Enum):
+      CHECKBOX = "Checkbox"
+      DATE = "Date"
+      DROPDOWN = "Dropdown"
+      PERSON = "Map:Person"
+      RICH_TEXT = "Rich Text"
+      TEXT = "Text"
+
   attribute_type = db.Column(db.String, nullable=False)
   multi_choice_options = db.Column(db.String)
   multi_choice_mandatory = db.Column(db.String)
@@ -47,6 +57,14 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
     from ggrc.models import all_models
     return {m._inflector.table_singular: m.__name__
             for m in all_models.all_models}
+
+  @property
+  def value_mapping(self):
+    return {
+        self.Attributes.CHECKBOX: {True: "Yes", False: "No"}
+    }.get(
+        self.attribute_type
+    ) or {}
 
   @property
   def definition_attr(self):

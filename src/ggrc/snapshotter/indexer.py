@@ -68,14 +68,9 @@ def _get_custom_attribute_dict():
   cadef_klass_names = {getattr(all_models, klass)._inflector.table_singular
                        for klass in Types.all}
 
-  cads = db.session.query(
-      models.CustomAttributeDefinition.id,
-      models.CustomAttributeDefinition.title,
-      models.CustomAttributeDefinition.attribute_type,
-  ).filter(
+  cads = models.CustomAttributeDefinition.query.filter(
       models.CustomAttributeDefinition.definition_type.in_(cadef_klass_names)
   )
-
   return {cad.id: cad for cad in cads}
 
 
@@ -98,11 +93,17 @@ def get_searchable_attributes(attributes, cad_dict, content):
 
   for cav in cav_list:
     cad = cad_dict.get(cav["custom_attribute_id"])
-    if cad:
-      if cad.attribute_type == "Map:Person":
-        searchable_values[cad.title] = cav.get("attribute_object")
-      else:
-        searchable_values[cad.title] = cav["attribute_value"]
+    if not cad:
+      continue
+    if cad.attribute_type == cad.Attributes.PERSON:
+      searchable_values[cad.title] = cav.get("attribute_object")
+      continue
+    value_mapping = cad.value_mapping
+    if value_mapping:
+      value = value_mapping.get(cav["attribute_value"])
+    else:
+      value = cav["attribute_value"]
+    searchable_values[cad.title] = value
   return searchable_values
 
 

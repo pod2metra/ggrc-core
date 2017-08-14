@@ -169,14 +169,20 @@ class RecordBuilder(object):
     # the value comes from the custom_attribute_value
     attribute_name = obj.custom_attribute.title
     properties = {}
-    if (obj.custom_attribute.attribute_type == "Map:Person" and
-            obj.attribute_object_id):
+    cad_type = obj.custom_attribute.attribute_type
+    person_mapping = obj.custom_attribute.Attributes.PERSON
+    if cad_type == person_mapping and obj.attribute_object_id:
       properties[attribute_name] = self.build_person_subprops(
           obj.attribute_object)
       properties[attribute_name].update(self.build_list_sort_subprop(
           [obj.attribute_object]))
     else:
-      properties[attribute_name] = {"": obj.attribute_value}
+      value_mapping = obj.custom_attribute.value_mapping
+      if value_mapping:
+        value = value_mapping.get(obj.attribute_value)
+      else:
+        value = obj.attribute_value
+      properties[attribute_name] = {"": value}
     return properties
 
   def as_record(self, obj):  # noqa  # pylint:disable=too-many-branches
