@@ -126,12 +126,38 @@ class Revision(Base, db.Model):
       result += ", via bulk action"
     return result
 
-  @builder.simple_property
-  def content(self):
-    """Property. Contains the revision content dict.
+  def populate_reference_url(self):
+    """Add reference_url info for older revisions."""
+    if 'url' not in self._content:
+      return {}
+    reference_url_list = []
+    for key in ('url', 'reference_url'):
+      link = self._content[key]
+      # link might exist, but can be an empty string - we treat those values
+      # as non-existing (empty) reference URLs
+      if not link:
+        continue
 
-    Updated by required values, generated from saved content dict."""
-    # pylint: disable=too-many-locals
+      # if creation/modification date is not available, we estimate it by
+      # using the corresponding information from the Revision itself
+      created_at = (self._content.get("created_at") or
+                    self.created_at.isoformat())
+      updated_at = (self._content.get("updated_at") or
+                    self.updated_at.isoformat())
+
+      reference_url_list.append({
+          "display_name": link,
+          "document_type": "REFERENCE_URL",
+          "link": link,
+          "title": link,
+          "id": None,
+          "created_at": created_at,
+          "updated_at": updated_at,
+      })
+    return {'reference_url': reference_url_list}
+
+  def populate_acl(self):
+    """Add access_control_list info for older revisions."""
     roles_dict = role.get_custom_roles_for(self.resource_type)
     reverted_roles_dict = {n: i for i, n in roles_dict.iteritems()}
     access_control_list = self._content.get("access_control_list") or []
@@ -174,41 +200,28 @@ class Revision(Base, db.Model):
             "modified_by": None,
             "id": None,
         })
-    populated_content = self._content.copy()
-
-    # Add person with id and type for old snapshots compatibility
     for acl in access_control_list:
       if "person" not in acl:
         acl["person"] = {"id": acl.get("person_id"), "type": "Person"}
-    populated_content["access_control_list"] = access_control_list
+    return {"access_control_list": access_control_list}
 
-    if 'url' in self._content:
-      reference_url_list = []
-      for key in ('url', 'reference_url'):
-        link = self._content[key]
-        # link might exist, but can be an empty string - we treat those values
-        # as non-existing (empty) reference URLs
-        if not link:
-          continue
+  def populate_folder(self):
+    """Add folder info for older revisions."""
+    if "folder" in self._content:
+      return {}
+    folders = self._content.get("folders") or [{"id": ""}]
+    return {"folder": folders[0]["id"]}
 
-        # if creation/modification date is not available, we estimate it by
-        # using the corresponding information from the Revision itself
-        created_at = (self._content.get("created_at") or
-                      self.created_at.isoformat())
-        updated_at = (self._content.get("updated_at") or
-                      self.updated_at.isoformat())
+  @builder.simple_property
+  def content(self):
+    """Property. Contains the revision content dict.
 
-        reference_url_list.append({
-            "display_name": link,
-            "document_type": "REFERENCE_URL",
-            "link": link,
-            "title": link,
-            "id": None,
-            "created_at": created_at,
-            "updated_at": updated_at,
-        })
-      populated_content['reference_url'] = reference_url_list
-
+    Updated by required values, generated from saved content dict."""
+    # pylint: disable=too-many-locals
+    populated_content = self._content.copy()
+    populated_content.update(self.populate_acl())
+    populated_content.update(self.populate_reference_url())
+    populated_content.update(self.populate_folder())
     return populated_content
 
   @content.setter

@@ -45,8 +45,7 @@ class TestCheckPopulatedContent(unittest.TestCase):
     content = {}
     if key:
       content[key] = {"id": self.user_id}
-    expected = content.copy()
-    expected["access_control_list"] = []
+    expected = {"access_control_list": []}
     role_dict = {}
     if role:
       role_name, role_id = role
@@ -77,7 +76,7 @@ class TestCheckPopulatedContent(unittest.TestCase):
 
     with mock.patch("ggrc.access_control.role.get_custom_roles_for",
                     return_value=role_dict) as get_roles:
-      self.assertEqual(revision.content, expected)
+      self.assertEqual(revision.populate_acl(), expected)
       get_roles.assert_called_once_with(self.object_type)
 
   @ddt.data(None, {}, {"id": None})
@@ -85,15 +84,14 @@ class TestCheckPopulatedContent(unittest.TestCase):
     """Test populated content for revision without user id."""
     content = {"principal_assessor": user_dict}
     role_dict = {1: "Principal Assignees"}
-    expected = content.copy()
-    expected["access_control_list"] = []
+    expected = {"access_control_list": []}
     obj = mock.Mock()
     obj.id = self.object_id
     obj.__class__.__name__ = self.object_type
     revision = all_models.Revision(obj, mock.Mock(), mock.Mock(), content)
     with mock.patch("ggrc.access_control.role.get_custom_roles_for",
                     return_value=role_dict) as get_roles:
-      self.assertEqual(revision.content, expected)
+      self.assertEqual(revision.populate_acl(), expected)
       get_roles.assert_called_once_with(self.object_type)
 
   @ddt.data(
@@ -105,15 +103,14 @@ class TestCheckPopulatedContent(unittest.TestCase):
   def test_populated_content_no_role(self, key):
     """Test populated content for revision without roles."""
     content = {key: {"id": self.user_id}}
-    expected = content.copy()
-    expected["access_control_list"] = []
+    expected = {"access_control_list": []}
     obj = mock.Mock()
     obj.id = self.object_id
     obj.__class__.__name__ = self.object_type
     revision = all_models.Revision(obj, mock.Mock(), mock.Mock(), content)
     with mock.patch("ggrc.access_control.role.get_custom_roles_for",
                     return_value={}) as get_roles:
-      self.assertEqual(revision.content, expected)
+      self.assertEqual(revision.populate_acl(), expected)
       get_roles.assert_called_once_with(self.object_type)
 
   @ddt.data({
@@ -161,4 +158,5 @@ class TestCheckPopulatedContent(unittest.TestCase):
 
     with mock.patch("ggrc.access_control.role.get_custom_roles_for",
                     return_value={}):
-      self.assertEqual(revision.content["reference_url"], expected)
+      self.assertEqual(revision.populate_reference_url()["reference_url"],
+                       expected)
