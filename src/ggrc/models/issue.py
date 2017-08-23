@@ -4,6 +4,7 @@
 """Issue Model."""
 
 from ggrc import db
+from ggrc import builder
 from ggrc.access_control.roleable import Roleable
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import (
@@ -33,7 +34,12 @@ class Issue(Roleable, HasObjectState, TestPlanned, CustomAttributable,
   VALID_STATES = BusinessObject.VALID_STATES + (FIXED, FIXED_AND_VERIFIED, )
 
   # REST properties
-  _api_attrs = reflection.ApiAttributes("audit")
+  _api_attrs = reflection.ApiAttributes(
+      "audit",
+      reflection.Attribute('folder', create=False, update=False),
+  )
+
+  _fulltext_attrs = ["folder"]
 
   _aliases = {
       "test_plan": {
@@ -49,3 +55,7 @@ class Issue(Roleable, HasObjectState, TestPlanned, CustomAttributable,
   audit_id = deferred(
       db.Column(db.Integer, db.ForeignKey('audits.id'), nullable=False),
       'Issue')
+
+  @builder.simple_property
+  def folder(self):
+    return self.audit.folder if self.audit else ""
