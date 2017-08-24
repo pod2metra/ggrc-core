@@ -272,49 +272,41 @@ def objects_via_assignable_query(user_id):
         db.session.query object that selects the following columns:
           | access_model | id | type | permissions |
   """
-  assignable_relations_destinations = db.session.query(
+  assignable_relations = db.session.query(
       sa.literal("RelationshipAttr").label("access_model"),
-      Relationship.source_id.label("id"),
-      Relationship.source_type.label("type"),
+      sa.case([(Relationship.destination_type == "Person",
+                Relationship.source_id)],
+              else_=Relationship.destination_id).label("id"),
+      sa.case([(Relationship.destination_type == "Person",
+                Relationship.source_type)],
+              else_=Relationship.destination_type).label("type"),
       sa.literal("RUD").label("permissions"),
   ).filter(
       RelationshipAttr.attr_name == "AssigneeType",
       RelationshipAttr.relationship_id == Relationship.id,
-      Relationship.destination_type == "Person",
-      Relationship.destination_id == user_id,
-  )
-  assignable_relations_source = db.session.query(
-      sa.literal("RelationshipAttr").label("access_model"),
-      Relationship.destination_id.label("id"),
-      Relationship.destination_type.label("type"),
-      sa.literal("RUD").label("permissions"),
-  ).filter(
-      RelationshipAttr.attr_name == "AssigneeType",
-      RelationshipAttr.relationship_id == Relationship.id,
-      Relationship.source_type == "Person",
-      Relationship.source_id == user_id,
-  )
-  assignable_relations = assignable_relations_source.union(
-      assignable_relations_destinations
+      sa.tuple_("Person", user_id).in_([
+          sa.tuple_(Relationship.source_type,
+                    Relationship.source_id),
+          sa.tuple_(Relationship.destination_type,
+                    Relationship.destination_id),
+      ])
   )
   sub = assignable_relations.subquery("assignable_relations")
-  source_relation_query = db.session.query(
-      Relationship.source_type.label("access_model"),
-      Relationship.destination_id.label("id"),
-      Relationship.destination_type.label("type"),
+  relations = db.session.query(
+      sub.c.type.label("access_model"),
+      sa.case([(Relationship.destination_type == sub.c.type,
+                Relationship.source_id)],
+              else_=Relationship.destination_id).label("id"),
+      sa.case([(Relationship.destination_type == sub.c.type,
+                Relationship.source_type)],
+              else_=Relationship.destination_type).label("type"),
       sa.literal("R").label("permissions"),
   ).filter(
-      Relationship.source_type == sub.c.type,
-      Relationship.source_id == sub.c.id,
+      sa.tuple_(sub.c.type, sub.c.id).in_([
+          sa.tuple_(Relationship.source_type,
+                    Relationship.source_id),
+          sa.tuple_(Relationship.destination_type,
+                    Relationship.destination_id),
+      ])
   )
-  destination_relation_query = db.session.query(
-      Relationship.destination_type.label("access_model"),
-      Relationship.source_id.label("id"),
-      Relationship.source_type.label("type"),
-      sa.literal("R").label("permissions"),
-  ).filter(
-      Relationship.destination_type == sub.c.type,
-      Relationship.destination_id == sub.c.id
-  )
-  relations = source_relation_query.union(destination_relation_query)
   return assignable_relations.union_all(relations)

@@ -554,7 +554,7 @@ def load_assignee_relationships(user, permissions):
   Returns:
       None
   """
-  query = relationship.objects_via_assignable_query(user.id)
+  query = relationship.objects_via_assignable_query(user.id).all()
   for access_model, id_, type_, role_name in query:
     if type_ in RUD_MAP.get(access_model, []):
       role_name = "RUD"
