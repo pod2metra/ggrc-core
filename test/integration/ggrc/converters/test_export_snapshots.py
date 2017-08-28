@@ -433,6 +433,7 @@ class TestExportSnapshots(TestCase):
           'Created Date': control.created_at.strftime("%Y-%m-%dT%H:%M:%S"),
           'Last Updated': control.updated_at.strftime("%Y-%m-%dT%H:%M:%S"),
           'Last Updated By': "",
+          "Folder": u"",
       }
       control_dicts[control.slug].update(**control_acr_people[control.slug])
 
