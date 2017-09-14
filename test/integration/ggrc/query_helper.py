@@ -4,10 +4,46 @@
 """Helper to use /query api endpoint."""
 
 import json
+import operator
 
 
 class WithQueryApi(object):
   """Used to construct and perform requests to /query endpoint."""
+
+  class SORTERS(object):
+
+    BY_ID = operator.itemgetter("id")
+    BY_EMAIL = operator.itemgetter("id")
+
+  @classmethod
+  def _sort_sublists(cls, data_list, key_function=None):
+    """Sort lists contained in result list.
+
+    This function is meant to sort sublists in a list of results. Those
+    sublists can only be a list of stubs from given objects. So when testing
+    an order for a list, if sub elements such as related_sources, don't have
+    the same order they must not raise an exception.
+    """
+    if key_function is None:
+      key_function = cls.SORTERS.BY_ID
+    for line in data_list:
+      for value in line.viewvalues():
+        if isinstance(value, list):
+          value.sort(key=key_function)
+    return data_list
+
+  def assertEqual(self,
+                  first,
+                  second,
+                  msg=None,
+                  sort_key_function=None):
+    """Assert Equality of 2 objects
+
+    with possibility of sorting values inside"""
+    if sort_key_function is not None:
+      first = self._sort_sublists(first, sort_key_function)
+      second = self._sort_sublists(second, sort_key_function)
+    super(WithQueryApi, self).assertEqual(first, second, msg)
 
   def _post(self, data):
     """Make a POST to /query endpoint."""
