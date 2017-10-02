@@ -256,7 +256,7 @@
   can.Model.Cacheable('CMS.Models.CycleTaskGroupObjectTask', {
     root_object: 'cycle_task_group_object_task',
     root_collection: 'cycle_task_group_object_tasks',
-    mixins: ['timeboxed', 'isOverdue'],
+    mixins: ['timeboxed', 'isOverdue', 'accessControlList', 'ca_update'],
     category: 'workflow',
     findAll: 'GET /api/cycle_task_group_object_tasks',
     findOne: 'GET /api/cycle_task_group_object_tasks/{id}',
@@ -269,7 +269,6 @@
       task_group_task: 'CMS.Models.TaskGroupTask.stub',
       cycle_task_entries: 'CMS.Models.CycleTaskEntry.stubs',
       modified_by: 'CMS.Models.Person.stub',
-      contact: 'CMS.Models.Person.stub',
       context: 'CMS.Models.Context.stub',
       cycle: 'CMS.Models.Cycle.stub'
     },
@@ -312,11 +311,6 @@
           attr_sort_field: 'task state'
         },
         {
-          attr_title: 'Task assignee',
-          attr_name: 'assignee',
-          attr_sort_field: 'task assignee'
-        },
-        {
           attr_title: 'Task start date',
           attr_name: 'start_date',
           attr_sort_field: 'task start date'
@@ -337,19 +331,36 @@
           attr_sort_field: 'task last updated by'
         }
       ],
-      display_attr_names: ['title', 'assignee', 'start_date', 'end_date'],
+      display_attr_names: ['title', 'Task Assignee', 'start_date', 'end_date'],
       mandatory_attr_name: ['title'],
       draw_children: true
     },
     init: function () {
       var that = this;
+      var assigneeRole = _.find(GGRC.access_control_roles, {
+        object_type: 'CycleTaskGroupObjectTask',
+        name: 'Task Assignee',
+      });
       this._super.apply(this, arguments);
       this.validateNonBlank('title');
       this.validateNonBlank('workflow');
       this.validateNonBlank('cycle');
-      this.validateContact(['_transient.contact', 'contact']);
       this.validateNonBlank('start_date');
       this.validateNonBlank('end_date');
+
+      // instance.attr('access_control_list')
+      //   .replace(...) doesn't raise change event
+      // that's why we subscribe on access_control_list.length
+      this.validate('access_control_list.length', function () {
+        var that = this;
+        var hasAssignee = assigneeRole && _.some(that.access_control_list, {
+          ac_role_id: assigneeRole.id
+        });
+
+        if (!hasAssignee) {
+          return 'No valid contact selected for assignee';
+        }
+      });
 
       this.bind('updated', function (ev, instance) {
         if (instance instanceof that) {
@@ -415,9 +426,6 @@
         cycle = form.cycle.reify();
         if (!_.isUndefined(cycle.workflow)) {
           form.attr('workflow', cycle.workflow.reify());
-        }
-        if (this.contact) {
-          this.attr('_transient.contact', this.contact);
         }
       }
     },

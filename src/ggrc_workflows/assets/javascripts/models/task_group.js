@@ -3,7 +3,7 @@
  Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
  */
 
-(function (can) {
+(function (can, GGRC) {
   'use strict';
 
   can.Model.Cacheable('CMS.Models.TaskGroup', {
@@ -88,7 +88,7 @@
     update: 'PUT /api/task_group_tasks/{id}',
     destroy: 'DELETE /api/task_group_tasks/{id}',
 
-    mixins: ['contactable', 'timeboxed'],
+    mixins: ['contactable', 'timeboxed', 'accessControlList'],
     permalink_options: {
       url: '<%= base.viewLink %>#task_group_widget/' +
       'task_group/<%= instance.task_group.id %>',
@@ -104,20 +104,36 @@
         '/task_group_tasks/tree-item-attr.mustache',
       mapper_attr_list: [
         {attr_title: 'Summary', attr_name: 'title'},
-        {attr_title: 'Assignee', attr_name: 'assignee',
-          attr_sort_field: 'contact'}
       ],
-      disable_columns_configuration: true
+      disable_columns_configuration: true,
+      assigneeRoleName: 'Task Assignee',
     },
 
     init: function () {
       var that = this;
+      var assigneeRole = _.find(GGRC.access_control_roles, {
+        object_type: 'TaskGroupTask',
+        name: 'Task Assignee',
+      });
+
       if (this._super) {
         this._super.apply(this, arguments);
       }
       this.validateNonBlank('title');
-      this.validateNonBlank('contact');
-      this.validateContact(['_transient.contact', 'contact']);
+
+      // instance.attr('access_control_list')
+      //   .replace(...) doesn't raise change event
+      // that's why we subscribe on access_control_list.length
+      this.validate('access_control_list.length', function () {
+        var that = this;
+        var hasAssignee = assigneeRole && _.some(that.access_control_list, {
+          ac_role_id: assigneeRole.id
+        });
+
+        if (!hasAssignee) {
+          return 'No valid contact selected for assignee';
+        }
+      });
 
       this.validate(['start_date', 'end_date'], function () {
         var that = this;
@@ -224,4 +240,4 @@
       }
     }
   });
-})(window.can);
+})(window.can, window.GGRC);

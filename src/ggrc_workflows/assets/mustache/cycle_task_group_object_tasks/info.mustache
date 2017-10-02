@@ -52,21 +52,8 @@
         <tab-panel {(panels)}="panels" title-text="Cycle Task">
           {{>'/static/mustache/base_objects/object-review.mustache'}}
             <div class="row-fluid wrap-row">
-              <div class="span6">
-                <h6>{{modifyFieldTitle instance.type 'Assignee'}}</h6>
-                {{#if_cycle_assignee_privileges instance}}
-                <div data-force-refresh="true" {{#instance}}{{data 'model'}}{{/instance}} {{ (el) -> el.ggrc_controllers_quick_form({ instance : el.data('model')}); }}>
-                  {{#using contact=instance.contact}}
-                    <div class="objective-selector">
-                      <input type="text" name="contact.name" data-lookup="Person" class="search-icon input-block-level" {{#if_equals instance.status 'Verified'}}disabled="disabled"{{/if}} placeholder="Choose Assignee" value="{{firstnonempty contact.email ''}}">
-                    </div>
-                  {{/using}}
-                </div>
-                {{else}}
-                  {{#using contact=instance.contact}}
-                  <div>{{firstnonempty contact.email ''}}</div>
-                  {{/using}}
-                {{/if_cycle_assignee_privileges}}
+              <div class="span3">
+                <custom-roles {instance}="instance"></custom-roles>
               </div>
               <div class="span3">
                 <h6>{{modifyFieldTitle instance.type 'Start date'}}</h6>
@@ -91,7 +78,7 @@
               </div>
             </div>
             <div class="row-fluid wrap-row">
-              <div class="span6">
+              <div class="span3">
               </div>
               <div class="span3">
                 <h6>Actual Finish Date</h6>

@@ -21,12 +21,14 @@
     </div>
 
     <div class="task_group_tasks__list-item-column">
-      {{#using assignee=instance.contact}}
-        <span class="inline-data-content inline-data-content-small">
-          {{firstnonempty assignee.name assignee.email ''}}
-        </span>
-      {{/using}}
+        <tree-people-with-role-list-field
+                class="people-list"
+                {source}="instance"
+                {role}="instance.class.tree_view_options.assigneeRoleName">
+            {{peopleStr}}
+        </tree-people-with-role-list-field>
     </div>
+
 
     <div class="task_group_tasks__list-item-column">
       <span class="inline-data-content inline-data-content-small">
