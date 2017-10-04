@@ -1,0 +1,60 @@
+
+.autocomplete-results {
+  position: absolute;
+  top: 29px;
+  background-color: $white;
+  border: 1px solid $midGray;
+  padding: 2px;
+  width: 300px;
+  z-index: 1000;
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    font-size: 12px;
+  }
+
+  &__list-item {
+    &:not(:last-child) {
+      border-bottom: 1px solid #ddd;
+    }
+    padding: .2em .4em;
+    line-height: 1.5;
+    a {
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+      color: $link;
+    }
+    &:hover{
+      background:$link;
+      .autocomplete-results__list-item-info {
+        color: $lightGray;
+      }
+      a {
+        color:$white;
+      }
+    }
+    &--no-results {
+      &:hover {
+        background: $white;
+        cursor: default;
+      }
+    }
+  }
+
+  &__list-item-info {
+    color: $stateText;
+    font-size: 11px;
+    font-family: Verdana,Arial,sans-serif;
+  }
+
+  &__spinner {
+    display: flex;
+    justify-content: center;
+  }
+}

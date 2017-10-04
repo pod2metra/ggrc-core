@@ -1,0 +1,29 @@
+{{!
+    Copyright (C) 2017 Google Inc.
+    Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
+}}
+
+<input
+    type="text"
+    class="input-block-level {{extraCssClass}}"
+    ($input)="setSearchCriteria($element)"
+    {($value)}="searchCriteria"
+    ($focus)="openResults"
+    ($blur)="closeResults"
+    placeholder="{{placeholder}}">
+</input>
+<spinner {extra-css-class}="'saving'" {toggle}="saving"></spinner>
+
+{{#if renderResults}}
+<external-data-provider
+    {type}="type"
+    {search-criteria}="searchCriteria">
+    <autocomplete-results
+        {title-field-path}="'name'"
+        {info-field-path}="'email'"
+        {loading}="loading"
+        {values}="values"
+        (item-picked)="onItemPicked(%event.data)">
+    </autocomplete-results>
+</external-data-provider>
+{{/if}}
