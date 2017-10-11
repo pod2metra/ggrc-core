@@ -55,6 +55,23 @@
         <div class="objective-selector">
           {{#using contact=instance.contact}}
             <input data-id="audit_lead" tabindex="3" type="text" name="contact.email" data-lookup="Person" class="span10 audit-selector search-icon" placeholder="Enter text to search for Audit Captain" value="{{firstnonempty contact.email ''}}">
+            <inline-autocomplete-wrapper
+              class="inline-block"
+              {instance}="instance"
+              {path}="'contact'"
+              {display-prop}="'email'"
+              {text-value}="contact.email">
+              <external-data-autocomplete
+                {type}="'Person'"
+                {extra-css-class}="'audit-selector search-icon'"
+                {placeholder}="'Enter text to search for Audit Captain'"
+                (item-selected)="setItem(%event.selectedItem)"
+                (criteria-changed)="updateTransient(%event.value)"
+                {auto-clean}="false"
+                {min-length}="2"
+                {search-criteria}="textValue">
+              </external-data-autocomplete>
+            </inline-autocomplete-wrapper>
           {{/using}}
         </div>
       </div>
@@ -167,6 +184,17 @@
                   </div>
                   <input type="hidden" name="role_name" value="Auditor" />
                   {{/prune_context}}
+                  <div class="autocomplete-field">
+                    <external-data-autocomplete
+                      {type}="'Person'"
+                      {extra-css-class}="'search-icon'"
+                      {placeholder}="'Enter text to search for Auditor'"
+                      {auto-clean}="false"
+                      {min-length}="2"
+                      (item-selected)="controller.autocomplete_select(null,null, {item=%event.selectedItem})">
+                    </external-data-autocomplete>
+                    <a class="remove-field" href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
+                  </div>
               {{else}}
                 <a data-id="add_auditor" href="javascript://" class="btn btn-small btn-white" tabindex="11" {{toggle_button}}>Add Auditor</a>
 

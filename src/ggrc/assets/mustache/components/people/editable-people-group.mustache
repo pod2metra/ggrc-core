@@ -55,6 +55,12 @@
                   (item-selected)="personSelected(%event.selectedItem)"
                   placeholder="Add person">
               </autocomplete>
+              <external-data-autocomplete
+                {type}="'Person'"
+                {placeholder}="'Add person'"
+                {min-length}="2"
+                (item-selected)="personSelected(%event.selectedItem)">
+              </external-data-autocomplete>
             {{/if}}
             </div>
             <ul class="inline-edit__controls inline-edit__controls--edit-mode">

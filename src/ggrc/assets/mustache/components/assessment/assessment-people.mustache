@@ -80,6 +80,12 @@
                       (item-selected)="addRole(%event.selectedItem, @type)"
                       placeholder="Add person">
                   </autocomplete>
+                  <external-data-autocomplete
+                    {type}="'Person'"
+                    {placeholder}="'Add person'"
+                    {min-length}="2"
+                    (item-selected)="addRole(%event.selectedItem, @type)">
+                  </external-data-autocomplete>
                 {{/is_allowed}}
               {{/if}}
             </div>

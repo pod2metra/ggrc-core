@@ -228,7 +228,7 @@
       autocomplete_select: function(el, event, ui) {
         var that = this;
         setTimeout(function() {
-          that.scope.attr(el.attr("name"), ui.item);
+          that.scope.attr('instance', ui.item);
         });
       },
       "input[null-if-empty] change" : function(el) {

@@ -27,6 +27,12 @@
               (item-selected)="grantRole(%event.selectedItem, %context.role.id)"
               placeholder="Select person"
             ></autocomplete>
+            <external-data-autocomplete
+                {type}="'Person'"
+                {placeholder}="'Select person'"
+                {min-length}="2"
+                (item-selected)="grantRole(%event.selectedItem, %context.role.id)">
+            </external-data-autocomplete>
 
             <i class="fa fa-trash hide-input"
                title="Hide"

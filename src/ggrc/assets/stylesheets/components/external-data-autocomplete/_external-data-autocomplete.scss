@@ -12,3 +12,9 @@ external-data-autocomplete {
     right: 6px;
   }
 }
+
+.autocomplete-field {
+  external-data-autocomplete {
+    width: 50%;
+  }
+}

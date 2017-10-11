@@ -128,23 +128,37 @@
               {{#toggle show_new_object_form}}
                 {{#with_page_object_as 'page_instance'}}
                 <ggrc-quick-add parent_instance="instance" join_model="UserRole">
+                <div class="autocomplete-field">
+                  <inline-autocomplete-wrapper
+                    {display-prop}="'email'"
+                    {text-value}="instance.email">
+                    <external-data-autocomplete
+                        {type}="'Person'"
+                        {placeholder}="'Add Auditor'"
+                        {auto-clean}="false"
+                        (item-selected)="controller.autocomplete_select(null, null, {item=%event.selectedItem})"
+                        {min-length}="2"
+                        {search-criteria}="textValue">
+                    </external-data-autocomplete>
+                  </inline-autocomplete-wrapper>
+                  <a href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
+                </div>
                   {{#prune_context}}
                   <div class="objective-selector field-wrap">
                     <input tabindex="3" type="text" name="instance" data-lookup="Person" null-if-empty="true" class="search-icon" placeholder="Add Auditor" {{autocomplete_select}} value="{{instance.email}}">
                     <a href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
-
-                    {{#with_mapping 'auditor_authorizations' parent_instance}}
-                      <a
-                        href="javascript://"
-                        class="btn btn-small btn-green {{^instance}}disabled{{/instance}} no-float"
-                        data-toggle="submit" {{toggle_button "modal:success"}}
-                        {{#isInAuthList instance auditor_authorizations}}
-                          disabled
-                          title="User already set as an Auditor"
-                        {{/userExists}}
-                        >Add</a>
-                    {{/with_mapping}}
                   </div>
+                  {{#with_mapping 'auditor_authorizations' parent_instance}}
+                  <a
+                    href="javascript://"
+                    class="btn btn-small btn-green {{^instance}}disabled{{/instance}} no-float"
+                    data-toggle="submit" {{toggle_button "modal:success"}}
+                    {{#isInAuthList instance auditor_authorizations}}
+                      disabled
+                      title="User already set as an Auditor"
+                    {{/userExists}}
+                    >Add</a>
+                    {{/with_mapping}}
                   <input type="hidden" name="role_name" value="Auditor" />
                   {{/prune_context}}
                 </ggrc-quick-add>

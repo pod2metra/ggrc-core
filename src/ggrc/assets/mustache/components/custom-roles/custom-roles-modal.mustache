@@ -49,6 +49,12 @@
                           (item-selected)="addPerson(%event.selectedItem, @groupId)"
                           placeholder="Add person">
                       </autocomplete>
+                      <external-data-autocomplete
+                        {type}="'Person'"
+                        {placeholder}="'Add person'"
+                        {min-length}="2"
+                        (item-selected)="addPerson(%event.selectedItem, @groupId)">
+                      </external-data-autocomplete>
                     {{/if}}
                   {{/if}}
                 </div>

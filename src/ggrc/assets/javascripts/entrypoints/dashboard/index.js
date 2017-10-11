@@ -169,6 +169,7 @@ import '../../components/issue/issue-unmap-item';
 import '../../components/issue/issue-unmap-dropdown-item';
 import '../../components/issue/issue-unmap';
 import '../../components/external-data-autocomplete/external-data-autocomplete';
+import '../../components/external-data-autocomplete/inline-autocomplete-wrapper';
 
 // This modal should be loaded here as it requires some components
 import '../../bootstrap/modal-ajax';

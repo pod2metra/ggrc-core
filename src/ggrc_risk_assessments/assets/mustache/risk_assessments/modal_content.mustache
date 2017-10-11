@@ -42,6 +42,21 @@
         <a href="javascript://" class="field-hide" tabindex="-1">hide</a>
       </label>
       <input tabindex="4" class="input-block-level" name="ra_manager.email" data-lookup="Person" placeholder="Enter email address" type="text" value="{{firstexist manager.email ''}}" />
+      <inline-autocomplete-wrapper
+        {instance}="instance"
+        {path}="'ra_manager'"
+        {display-prop}="'email'"
+        {text-value}="manager.email">
+        <external-data-autocomplete
+          {type}="'Person'"
+          {placeholder}="'Enter email address'"
+          (item-selected)="setItem(%event.selectedItem)"
+          (criteria-changed)="setItem(%event.value)"
+          {auto-clean}="false"
+          {min-length}="2"
+          {search-criteria}="textValue">
+        </external-data-autocomplete>
+      </inline-autocomplete-wrapper>
       {{/using}}
       <br>
     </div>
@@ -53,6 +68,21 @@
         <a href="javascript://" class="field-hide" tabindex="-1">hide</a>
       </label>
       <input tabindex="5" class="input-block-level" name="ra_counsel.email" data-lookup="Person" placeholder="Enter email address" type="text" value="{{firstexist counsel.email ''}}" />
+      <inline-autocomplete-wrapper
+        {instance}="instance"
+        {path}="'ra_counsel'"
+        {display-prop}="'email'"
+        {text-value}="counsel.email">
+        <external-data-autocomplete
+          {type}="'Person'"
+          {placeholder}="'Enter email address'"
+          (item-selected)="setItem(%event.selectedItem)"
+          (criteria-changed)="setItem(%event.value)"
+          {auto-clean}="false"
+          {min-length}="2"
+          {search-criteria}="textValue">
+        </external-data-autocomplete>
+      </inline-autocomplete-wrapper>
       {{/using}}
       <br>
     </div>

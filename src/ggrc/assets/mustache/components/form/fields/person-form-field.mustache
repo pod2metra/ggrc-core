@@ -18,5 +18,11 @@
       (item-selected)="setPerson(%event)"
       placeholder="Select person"
     ></autocomplete>
+    <external-data-autocomplete
+      {type}="'Person'"
+      {placeholder}="'Select person'"
+      {min-length}="2"
+      (item-selected)="setPerson(%event)">
+    </external-data-autocomplete>
   {{/if}}
 </div>

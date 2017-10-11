@@ -23,6 +23,21 @@
       </label>
       <div class="people-autocomplete">
         <input tabindex="2" type="text" name="contact.email" null-if-empty="true" class="span11 search-icon required" value="{{firstnonempty instance.contact.email}}" placeholder="Find reviewer" data-lookup="Person">
+        <inline-autocomplete-wrapper
+          {instance}="instance"
+          {path}="'contact'"
+          {display-prop}="'email'"
+          {text-value}="instance.contact.email">
+          <external-data-autocomplete
+            {type}="'Person'"
+            {placeholder}="'Find reviewer'"
+            (item-selected)="setItem(%event.selectedItem)"
+            (criteria-changed)="setItem(%event.value)"
+            {auto-clean}="false"
+            {min-length}="2"
+            {search-criteria}="textValue">
+          </external-data-autocomplete>
+        </inline-autocomplete-wrapper>
       </div>
     </div>
     <div class="span4">

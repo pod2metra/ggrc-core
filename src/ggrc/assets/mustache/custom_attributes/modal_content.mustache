@@ -87,6 +87,22 @@
                    type="text"
                    value="{{person.email}}" />
             {{/using}}
+            {{#using person=cav.attribute_object}}
+            <inline-autocomplete-wrapper
+              {instance}="instance"
+              {text-value}="person.email"
+              {display-prop}="'email'">
+              <external-data-autocomplete
+                {type}="'Person'"
+                {placeholder}="'Enter email address'"
+                (item-selected)="setCustomAttribute(%event.selectedItem, cad.id)"
+                (criteria-changed)="setCustomAttribute(%event.value, cad.id)"
+                {auto-clean}="false"
+                {min-length}="2"
+                {search-criteria}="textValue">
+              </external-data-autocomplete>
+            </inline-autocomplete-wrapper>
+            {{/using}}
           {{/case}}
           {{/switch}}
 
