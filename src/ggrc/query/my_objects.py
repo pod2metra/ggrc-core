@@ -2,6 +2,7 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """This module helper query builder for my dashboard page."""
+import sqlalchemy as sa
 from sqlalchemy import and_
 from sqlalchemy import literal
 from sqlalchemy import or_
@@ -148,9 +149,20 @@ def get_myobjects_query(types=None, contact_id=None, is_creator=False):  # noqa
     ).join(
         Cycle,
         Cycle.id == model.cycle_id
+    ).join(
+        all_models.AccessControlList,
+        sa.and_(
+            all_models.AccessControlList.object_type == "CycleTaskGroupObjectTask",
+            all_models.AccessControlList.object_id == all_models.CycleTaskGroupObjectTask.id
+        ),
+    ).join(
+        all_models.AccessControlRole,
+        sa.and_(
+            all_models.AccessControlRole.id == all_models.AccessControlList.ac_role_id,
+            all_models.AccessControlRole.object_type == "CycleTaskGroupObjectTask",
+        )
     ).filter(
         Cycle.is_current == true(),
-        model.contact_id == contact_id
     )
     return task_query.filter(
         Cycle.is_verification_needed == true(),
