@@ -9,6 +9,7 @@ from datetime import date
 
 from ggrc import db
 from ggrc import builder
+from ggrc.access_control import role
 from ggrc_workflows.models import Cycle
 from ggrc_workflows.models import TaskGroup
 from ggrc_workflows.models import TaskGroupObject
@@ -83,18 +84,24 @@ class WorkflowsGenerator(Generator):
     default_start = self.random_date()
     default_end = self.random_date(default_start, date.today())
     obj_name = "task_group_task"
-
+    cycle_task_role_id = {
+        v: k for (k, v) in
+        role.get_custom_roles_for("TaskGroupTask").iteritems()
+    }['Assignee']
     tgt = TaskGroupTask(
         task_group_id=task_group.id,
         context_id=task_group.context.id,
         title="tgt " + factories.random_str(),
         start_date=default_start,
         end_date=default_end,
-        contact_id=1
     )
     obj_dict = self.obj_to_dict(tgt, obj_name)
+    if "access_control_list" not in data:
+      data["access_control_list"] = [{
+          "ac_role_id": cycle_task_role_id,
+          "person": {"id": 1},
+      }]
     obj_dict[obj_name].update(data)
-
     return self.generate(TaskGroupTask, obj_name, obj_dict)
 
   def generate_task_group_object(self, task_group=None, obj=None):

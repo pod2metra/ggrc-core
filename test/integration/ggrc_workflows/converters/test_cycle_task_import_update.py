@@ -484,6 +484,8 @@ class TestCycleTaskImportUpdate(BaseTestCycleTaskImportUpdate):
       name = CycleTaskGroupObjectTask._aliases.get(field_name, field_name)
       if isinstance(name, dict):
         name = name['display_name']
+      if name.startswith("__acl__:"):
+          name = name[8:]
       importable_column_names.append(name)
     self.expected_warnings = self.generate_expected_warning(
         *importable_column_names)
@@ -585,14 +587,18 @@ class TestCycleTaskImportUpdateAssignee(BaseTestCycleTaskImportUpdate):
   )
   def test_update_assignee(self, alias):
     """Test update assignee"""
-    self.assertIsNone(self.query.first().contact)
+    assignees = list(
+        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    self.assertFalse(assignees)
     response = self.import_data(OrderedDict([
         ("object_type", alias),
         ("Code*", self.instance.slug),
         ("Assignee*", self.user.email),
     ]))
-    self.assertEqual(self.user.email, self.query.first().contact.email)
     self._check_csv_response(response, {})
+    assignees = list(
+        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    self.assertEqual([self.user.email], [u.email for u in assignees])
 
   @ddt.data(
       "CycleTask",
@@ -604,13 +610,17 @@ class TestCycleTaskImportUpdateAssignee(BaseTestCycleTaskImportUpdate):
   )
   def test_update_assignee_with_non_importable(self, alias):
     """Test update assignee with non importable field"""
-    self.assertIsNone(self.query.first().contact)
+    assignees = list(
+        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    self.assertFalse(assignees)
     response = self.import_data(OrderedDict([
         ("object_type", alias),
         ("Code*", self.instance.slug),
         ("Assignee*", self.user.email),
         ("State", "some data"),
     ]))
-    self.assertEqual(self.user.email, self.query.first().contact.email)
+    assignees = list(
+        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    self.assertEqual([self.user.email], [u.email for u in assignees])
     self._check_csv_response(response,
                              self.generate_expected_warning('Assignee'))

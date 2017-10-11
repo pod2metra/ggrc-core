@@ -12,6 +12,7 @@ from ggrc.app import db
 from ggrc.models import Notification
 from ggrc.models import NotificationType
 from ggrc.models import Person
+from ggrc.models import all_models
 from ggrc.notifications import common
 from ggrc_workflows.models import Cycle
 from ggrc_workflows.models import CycleTaskGroupObjectTask
@@ -277,6 +278,10 @@ class TestCycleTaskStatusChange(TestCase):
           "type": "Person"
       }
 
+    role_id = all_models.AccessControlRole.query.filter(
+        all_models.AccessControlRole.name == "Assignee",
+        all_models.AccessControlRole.object_type == "TaskGroupTask",
+    ).one().id
     self.one_time_workflow_1 = {
         "title": "one time test workflow",
         "notify_on_change": True,
@@ -288,7 +293,10 @@ class TestCycleTaskStatusChange(TestCase):
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "single task in a wf",
-                "contact": person_dict(self.user.id),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }],
@@ -306,13 +314,19 @@ class TestCycleTaskStatusChange(TestCase):
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "two taks in wf with different objects",
-                "contact": person_dict(self.user.id),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }, {
                 "title": "task 2",
                 "description": "two taks in wf with different objects",
-                "contact": person_dict(self.user.id),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }],

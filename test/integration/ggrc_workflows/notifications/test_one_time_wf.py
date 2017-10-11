@@ -9,6 +9,7 @@ from ggrc.app import db
 from ggrc.notifications import common
 from ggrc.models import Notification
 from ggrc.models import Person
+from ggrc.models import all_models
 from ggrc_workflows.models import Cycle
 from integration.ggrc import TestCase
 from integration.ggrc.api_helper import Api
@@ -57,6 +58,7 @@ class TestOneTimeWorkflowNotification(TestCase):
 
     with freeze_time("2015-04-11"):
       _, notif_data = common.get_daily_notifications()
+      self.assertIn(person_1.email, notif_data)
       self.assertIn("cycle_started", notif_data[person_1.email])
       self.assertIn(cycle.id, notif_data[person_1.email]["cycle_started"])
       self.assertIn("my_tasks",
@@ -131,6 +133,10 @@ class TestOneTimeWorkflowNotification(TestCase):
           "type": "Person"
       }
 
+    role_id = all_models.AccessControlRole.query.filter(
+        all_models.AccessControlRole.name == "Assignee",
+        all_models.AccessControlRole.object_type == "TaskGroupTask",
+    ).one().id
     self.one_time_workflow_1 = {
         "title": "one time test workflow",
         "description": "some test workflow",
@@ -142,13 +148,19 @@ class TestOneTimeWorkflowNotification(TestCase):
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "some task",
-                "contact": person_dict(self.random_people[0].id),
+                "access_control_list": [{
+                    "person": {"id": self.random_people[0].id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }, {
                 "title": "task 2",
                 "description": "some task",
-                "contact": person_dict(self.random_people[1].id),
+                "access_control_list": [{
+                    "person": {"id": self.random_people[1].id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 4),
                 "end_date": date(2015, 5, 7),
             }],
@@ -159,13 +171,19 @@ class TestOneTimeWorkflowNotification(TestCase):
             "task_group_tasks": [{
                 "title": "task 1 in tg 2",
                 "description": "some task",
-                "contact": person_dict(self.random_people[0].id),
+                "access_control_list": [{
+                    "person": {"id": self.random_people[0].id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 8),  # friday
                 "end_date": date(2015, 5, 12),
             }, {
                 "title": "task 2 in tg 2",
                 "description": "some task",
-                "contact": person_dict(self.random_people[2].id),
+                "access_control_list": [{
+                    "person": {"id": self.random_people[2].id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }],
@@ -186,13 +204,19 @@ class TestOneTimeWorkflowNotification(TestCase):
             "task_group_tasks": [{
                 "title": u"task 1 \u2062 WITH AN UMBRELLA ELLA ELLA. \u2062",
                 "description": "some task. ",
-                "contact": person_dict(user),
+                "access_control_list": [{
+                    "person": {"id": user},
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }, {
                 "title": "task 2",
                 "description": "some task",
-                "contact": person_dict(user),
+                "access_control_list": [{
+                    "person": {"id": user},
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 4),
                 "end_date": date(2015, 5, 7),
             }],
@@ -203,13 +227,19 @@ class TestOneTimeWorkflowNotification(TestCase):
             "task_group_tasks": [{
                 "title": u"task 1 \u2062 WITH AN UMBRELLA ELLA ELLA. \u2062",
                 "description": "some task",
-                "contact": person_dict(user),
+                "access_control_list": [{
+                    "person": {"id": user},
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 8),  # friday
                 "end_date": date(2015, 5, 12),
             }, {
                 "title": "task 2 in tg 2",
                 "description": "some task",
-                "contact": person_dict(user),
+                "access_control_list": [{
+                    "person": {"id": user},
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
             }],

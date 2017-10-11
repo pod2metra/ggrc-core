@@ -8,6 +8,7 @@ from mock import patch
 
 from ggrc.app import db
 from ggrc.models import Notification, Person
+from ggrc.models import all_models
 from ggrc.notifications import common
 from ggrc_workflows.models import Cycle, CycleTaskGroupObjectTask
 from integration.ggrc import TestCase
@@ -78,6 +79,7 @@ class TestOneTimeWfEndDateChange(TestCase):
     with freeze_time("2015-05-04 03:21:34"):  # one day before due date
       _, notif_data = common.get_daily_notifications()
       user = get_person(self.user.id)
+      self.assertIn(user.email, notif_data)
       self.assertIn("due_in", notif_data[user.email])
       self.assertEqual(len(notif_data[user.email]["due_in"]), 2)
 
@@ -286,7 +288,10 @@ class TestOneTimeWfEndDateChange(TestCase):
           "id": person_id,
           "type": "Person"
       }
-
+    role_id = all_models.AccessControlRole.query.filter(
+        all_models.AccessControlRole.name == "Assignee",
+        all_models.AccessControlRole.object_type == "TaskGroupTask",
+    ).one().id
     self.one_time_workflow_1 = {
         "title": "one time test workflow",
         "notify_on_change": True,
@@ -298,15 +303,21 @@ class TestOneTimeWfEndDateChange(TestCase):
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "some task",
-                "contact": person_dict(self.user.id),
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
             }, {
                 "title": "task 2",
                 "description": "some task 2",
-                "contact": person_dict(self.user.id),
                 "start_date": date(2015, 5, 1),  # friday
                 "end_date": date(2015, 5, 5),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
             }],
             "task_group_objects": self.random_objects
         }]

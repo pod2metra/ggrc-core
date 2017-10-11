@@ -63,49 +63,73 @@ class TestTaskDueNotifications(TestCase):
     _, self.user = self.object_generator.generate_person(
         user_role="Administrator")
 
-    person_dict = {
-        "href": "/api/people/{}".format(self.user.id),
-        "id": self.user.id,
-        "type": "Person",
-    }
+    role_id = models.all_models.AccessControlRole.query.filter(
+        models.all_models.AccessControlRole.name == "Assignee",
+        models.all_models.AccessControlRole.object_type == "TaskGroupTask",
+    ).one().id
 
     self.one_time_workflow = {
         "title": "one time test workflow",
         "notify_on_change": True,
         "description": "some test workflow",
         "is_verification_needed": False,
-        "owners": [person_dict.copy()],
+        "owners": [
+            {
+                "href": "/api/people/{}".format(self.user.id),
+                "id": self.user.id,
+                "type": "Person",
+            },
+        ],
         "task_groups": [{
             "title": "one time task group",
-            "contact": person_dict.copy(),
+            "contact": {
+                "href": "/api/people/{}".format(self.user.id),
+                "id": self.user.id,
+                "type": "Person",
+            },
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "some task",
-                "contact": person_dict.copy(),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2017, 5, 15),
                 "end_date": date(2017, 6, 11),
             }, {
                 "title": "task 2",
                 "description": "some task 2",
-                "contact": person_dict.copy(),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2017, 5, 8),
                 "end_date": date(2017, 6, 12),
             }, {
                 "title": "task 3",
                 "description": "some task 3",
-                "contact": person_dict.copy(),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2017, 5, 31),
                 "end_date": date(2017, 6, 13),
             }, {
                 "title": "task 4",
                 "description": "some task 4",
-                "contact": person_dict.copy(),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2017, 6, 2),
                 "end_date": date(2017, 6, 14),
             }, {
                 "title": "task 5",
                 "description": "some task 5",
-                "contact": person_dict.copy(),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
                 "start_date": date(2017, 6, 8),
                 "end_date": date(2017, 6, 15),
             }],

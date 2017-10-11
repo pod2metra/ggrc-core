@@ -66,6 +66,21 @@ class TestCase(BaseTestCase, object):
 
   maxDiff = None
 
+  def get_role_id_for_obj(self, obj, role_name):
+    """Retrun role_id for sent instance and role_name."""
+    from ggrc.access_control import role as ac_role
+    for role_id, role_name in ac_role.get_custom_roles_for(
+            obj.type).iteritems():
+      if role_name == role_name:
+        return role_id
+
+  def get_persons_for_obj_by_role_name(self, obj, role_name):
+    """Generator. Return person related to obj and role_name."""
+    role_id = self.get_role_id_for_obj(obj, role_name)
+    for acl in obj.access_control_list:
+      if acl.ac_role_id == role_id:
+        yield acl.person
+
   @contextlib.contextmanager
   def custom_headers(self, headers=None):
     """Context manager that allowed to add some custom headers in request."""

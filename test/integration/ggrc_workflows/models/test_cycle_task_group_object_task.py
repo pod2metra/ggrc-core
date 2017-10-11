@@ -46,10 +46,19 @@ class TestCTGOT(BaseTestCase):
 
       workflow = wf_factories.WorkflowFactory()
       taskgroup = wf_factories.TaskGroupFactory(workflow=workflow)
-      wf_factories.TaskGroupTaskFactory(task_group=taskgroup,
-                                        contact=assignee_1)
-      wf_factories.TaskGroupTaskFactory(task_group=taskgroup,
-                                        contact=assignee_2)
+      task_1 = wf_factories.TaskGroupTaskFactory(task_group=taskgroup)
+      task_2 = wf_factories.TaskGroupTaskFactory(task_group=taskgroup)
+      role = all_models.AccessControlRole.query.filter(
+          all_models.AccessControlRole.name == "Assignee",
+          all_models.AccessControlRole.object_type == task_1.type,
+      ).one()
+      factories.AccessControlListFactory(ac_role=role,
+                                         object=task_1,
+                                         person=assignee_1)
+      factories.AccessControlListFactory(ac_role=role,
+                                         object=task_2,
+                                         person=assignee_2)
+
       bp_factories.UserRoleFactory(person=workflow_owner,
                                    role=workflow_owner_role,
                                    context=workflow.context)

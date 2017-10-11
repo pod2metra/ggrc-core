@@ -9,11 +9,10 @@ from collections import defaultdict
 from ddt import data, unpack, ddt
 
 from integration.ggrc_workflows.models import factories
-from integration.ggrc.models.factories import PersonFactory
 from integration.ggrc import TestCase
-from integration.ggrc.models.factories import single_commit
+from integration.ggrc.models import factories as ggrc_factories
 
-from ggrc.models.all_models import CycleTaskGroupObjectTask
+from ggrc.models import all_models
 
 
 @ddt
@@ -33,26 +32,42 @@ class TestExportTasks(TestCase):
   def generate_tasks_for_cycle(cycle_count, task_count):
     """generate seceted number of cycles and tasks"""
     results = {}
-    with single_commit():
+    with ggrc_factories.single_commit():
       for _ in range(cycle_count):
         workflow = factories.WorkflowFactory()
         cycle = factories.CycleFactory(
             workflow=workflow,
         )
-        cycle.contact = PersonFactory(
+        cycle.contact = ggrc_factories.PersonFactory(
             name="user for cycle {}".format(cycle.id)
         )
-        person = PersonFactory(name="user for cycle tasks {}".format(cycle.id))
+        person = ggrc_factories.PersonFactory(
+            name="user for cycle tasks {}".format(cycle.id)
+        )
         task_group = factories.TaskGroupFactory(workflow=workflow)
         for _ in range(task_count):
           task_group_task = factories.TaskGroupTaskFactory(
-              task_group=task_group, contact=person)
+              task_group=task_group)
+          role = all_models.AccessControlRole.query.filter(
+              all_models.AccessControlRole.name == "Assignee",
+              all_models.AccessControlRole.object_type == task_group_task.type,
+          ).one()
+          ggrc_factories.AccessControlListFactory(ac_role=role,
+                                                  object=task_group_task,
+                                                  person=person)
           cycle_task_group = factories.CycleTaskGroupFactory(
               cycle=cycle, contact=person)
+
           task = factories.CycleTaskFactory(cycle=cycle,
                                             cycle_task_group=cycle_task_group,
-                                            contact=person,
                                             task_group_task=task_group_task)
+          role = all_models.AccessControlRole.query.filter(
+              all_models.AccessControlRole.name == "Assignee",
+              all_models.AccessControlRole.object_type == task.type,
+          ).one()
+          ggrc_factories.AccessControlListFactory(ac_role=role,
+                                                  object=task,
+                                                  person=person)
           results[task.id] = cycle.slug
     return results
 
@@ -89,8 +104,8 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       self.assertCycles("task title", task.title, [slug])
 
@@ -108,8 +123,8 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       self.assertCycles("group title", task.cycle_task_group.title, [slug])
 
@@ -128,8 +143,8 @@ class TestExportTasks(TestCase):
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     due_date_dict = defaultdict(set)
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       due_date_dict[str(task.end_date)].add(slug)
 
@@ -151,8 +166,8 @@ class TestExportTasks(TestCase):
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     due_date_dict = defaultdict(set)
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       due_date_dict[str(task.cycle_task_group.next_due_date)].add(slug)
 
@@ -173,8 +188,8 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       self.assertCycles(
           "group assignee", task.cycle_task_group.contact.email, [slug])
@@ -195,11 +210,13 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
-      self.assertCycles("task assignee", task.contact.email, [slug])
-      self.assertCycles("task assignee", task.contact.name, [slug])
+      assignees = list(self.get_persons_for_obj_by_role_name(task, "Assignee"))
+      self.assertEqual(1, len(assignees))
+      self.assertCycles("task assignee", assignees[0].email, [slug])
+      self.assertCycles("task assignee", assignees[0].name, [slug])
 
   @data(
       #  (Cycle count, tasks in cycle)
@@ -216,8 +233,8 @@ class TestExportTasks(TestCase):
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     due_date_dict = defaultdict(set)
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       key = (task.end_date.year, task.end_date.month, task.end_date.day)
       due_date_dict[key].add(slug)
@@ -242,8 +259,8 @@ class TestExportTasks(TestCase):
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     due_date_dict = defaultdict(set)
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       due_date_dict[(task.end_date.year, task.end_date.month)].add(slug)
 
@@ -266,8 +283,8 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     self.assertEqual(bool(cycle_count), bool(task_cycle_filter))
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       self.assertCycles("cycle assignee", task.cycle.contact.email, [slug])
       self.assertCycles("cycle assignee", task.cycle.contact.name, [slug])
@@ -282,8 +299,8 @@ class TestExportTasks(TestCase):
     task_cycle_filter = self.generate_tasks_for_cycle(cycle_count, task_count)
     filter_params = {}
     for task_id, slug in task_cycle_filter.iteritems():
-      task = CycleTaskGroupObjectTask.query.filter(
-          CycleTaskGroupObjectTask.id == task_id
+      task = all_models.CycleTaskGroupObjectTask.query.filter(
+          all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       comment = "comment for task # {}".format(task_id)
       factories.CycleTaskEntryFactory(

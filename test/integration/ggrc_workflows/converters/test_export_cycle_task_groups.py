@@ -9,6 +9,7 @@ from collections import defaultdict
 from ddt import data, unpack, ddt
 
 from integration.ggrc_workflows.models import factories
+from integration.ggrc.models import factories as ggrc_factories
 from integration.ggrc.models.factories import PersonFactory, single_commit
 from integration.ggrc import TestCase
 
@@ -30,8 +31,7 @@ class TestExportTasks(TestCase):
         "X-export-view": "blocks",
     }
 
-  @staticmethod
-  def generate_tasks_for_cycle(group_count, task_count):
+  def generate_tasks_for_cycle(self, group_count, task_count):
     """generate number of task groups and task for current task group"""
     results = {}
     with single_commit():
@@ -44,11 +44,20 @@ class TestExportTasks(TestCase):
                                                            contact=person)
         for _ in range(task_count):
           task_group_task = factories.TaskGroupTaskFactory(
-              task_group=task_group, contact=person)
+              task_group=task_group)
+          ggrc_factories.AccessControlListFactory(
+              object=task_group_task,
+              person=person,
+              ac_role_id=self.get_role_id_for_obj(task_group_task, "Assignee")
+          )
           task = factories.CycleTaskFactory(cycle=cycle,
                                             cycle_task_group=cycle_task_group,
-                                            contact=person,
                                             task_group_task=task_group_task)
+          ggrc_factories.AccessControlListFactory(
+              object=task,
+              person=person,
+              ac_role_id=self.get_role_id_for_obj(task, "Assignee")
+          )
           results[task.id] = cycle_task_group.slug
     return results
 
@@ -175,8 +184,10 @@ class TestExportTasks(TestCase):
       task = CycleTaskGroupObjectTask.query.filter(
           CycleTaskGroupObjectTask.id == task_id
       ).one()
-      self.assert_slugs("task assignee", task.contact.email, [slug])
-      self.assert_slugs("task assignee", task.contact.name, [slug])
+      assignees = list(self.get_persons_for_obj_by_role_name(task, "Assignee"))
+      self.assertEqual(1, len(assignees))
+      self.assert_slugs("task assignee", assignees[0].email, [slug])
+      self.assert_slugs("task assignee", assignees[0].name, [slug])
 
   @data(
       #  (Cycle count, tasks in cycle)

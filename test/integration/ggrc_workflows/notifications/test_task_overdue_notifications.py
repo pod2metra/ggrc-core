@@ -272,7 +272,10 @@ class TestTaskOverdueNotificationsUsingAPI(TestTaskOverdueNotifications):
           "id": person_id,
           "type": "Person"
       }
-
+    role_id = models.all_models.AccessControlRole.query.filter(
+        models.all_models.AccessControlRole.name == "Assignee",
+        models.all_models.AccessControlRole.object_type == "TaskGroupTask",
+    ).one().id
     self.one_time_workflow = {
         "title": "one time test workflow",
         "notify_on_change": True,
@@ -284,15 +287,21 @@ class TestTaskOverdueNotificationsUsingAPI(TestTaskOverdueNotifications):
             "task_group_tasks": [{
                 "title": "task 1",
                 "description": "some task",
-                "contact": person_dict(self.user.id),
                 "start_date": date(2017, 5, 5),  # Friday
                 "end_date": date(2017, 5, 15),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
             }, {
                 "title": "task 2",
                 "description": "some task 2",
-                "contact": person_dict(self.user.id),
                 "start_date": date(2017, 5, 5),  # Friday
                 "end_date": date(2017, 5, 16),
+                "access_control_list": [{
+                    "person": {"id": self.user.id, },
+                    "ac_role_id": role_id,
+                }],
             }],
             "task_group_objects": self.random_objects
         }]
