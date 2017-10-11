@@ -119,7 +119,7 @@ class RecordBuilder(object):
       ac_role_id = ac_list["ac_role_id"]
       ac_person_id = ac_list["person_id"]
     else:
-      ac_role_id = ac_list.role_id
+      ac_role_id = ac_list.ac_role_id
       ac_person_id = ac_list.person_id
     if ac_role_id not in self.indexer.cache['ac_role_map']:
       ac_role = db.session.query(all_models.AccessControlRole).get(ac_role_id)
