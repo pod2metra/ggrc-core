@@ -11,9 +11,10 @@ from sqlalchemy.ext.declarative import declared_attr
 
 from ggrc import builder
 from ggrc import db
+from ggrc import login
+from ggrc.access_control import roleable
 from ggrc.fulltext import attributes as ft_attributes
 from ggrc.fulltext import mixin as ft_mixin
-from ggrc import login
 from ggrc.models import mixins
 from ggrc.models import reflection
 from ggrc.models import relationship
@@ -23,7 +24,7 @@ from ggrc_workflows.models.cycle_task_group import CycleTaskGroup
 from ggrc_workflows.models import mixins as wf_mixins
 
 
-class CycleTaskGroupObjectTask(mixins.WithContact,
+class CycleTaskGroupObjectTask(roleable.Roleable,
                                wf_mixins.CycleTaskStatusValidatedMixin,
                                mixins.Stateful,
                                mixins.Timeboxed,
@@ -46,7 +47,7 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
   IMPORTABLE_FIELDS = (
       'slug', 'title', 'description', 'start_date',
       'end_date', 'finished_date', 'verified_date',
-      'contact',
+      '__acl__:Assignee',
   )
 
   @classmethod
@@ -60,7 +61,6 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
 
   _fulltext_attrs = [
       ft_attributes.DateFullTextAttr("end_date", 'end_date',),
-      ft_attributes.FullTextAttr("assignee", 'contact', ['name', 'email']),
       ft_attributes.FullTextAttr("group title",
                                  'cycle_task_group',
                                  ['title'],
@@ -154,11 +154,6 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
   _aliases = {
       "title": "Summary",
       "description": "Task Details",
-      "contact": {
-          "display_name": "Assignee",
-          "mandatory": True,
-      },
-      "secondary_contact": None,
       "finished_date": "Actual Finish Date",
       "verified_date": "Actual Verified Date",
       "cycle": {
@@ -225,11 +220,9 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
 
   def current_user_wfo_or_assignee(self):
     """Current user is Workflow owner or Assignee for self."""
-    current_user_id = login.get_current_user_id()
-
-    # pylint: disable=not-an-iterable
-    return (current_user_id == self.contact_id or
-            current_user_id in [ur.person_id for ur in self.wfo_roles])
+    wfo_person_ids = {ur.person_id for ur in self.wfo_roles}
+    assignees_ids = {p.id for p in self.get_persons_for_rolename("Assignee")}
+    return login.get_current_user_id() in (wfo_person_ids | assignees_ids)
 
   @classmethod
   def _filter_by_cycle(cls, predicate):
@@ -321,11 +314,6 @@ class CycleTaskGroupObjectTask(mixins.WithContact,
         ),
         orm.Load(cls).subqueryload("cycle_task_entries").load_only(
             "description",
-            "id"
-        ),
-        orm.Load(cls).joinedload("contact").load_only(
-            "email",
-            "name",
             "id"
         ),
     )
