@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from ggrc.access_control.list import AccessControlList
+from ggrc.access_control import role
 from ggrc.fulltext.attributes import CustomRoleAttr
 from ggrc.models import reflection
 from ggrc import db
@@ -52,7 +53,6 @@ class Roleable(object):
     """
     if values is None:
       return
-
     new_values = {
         (value['ac_role_id'], value['person']['id'])
         for value in values
@@ -61,7 +61,6 @@ class Roleable(object):
         (acl.ac_role_id, acl.person_id)
         for acl in self.access_control_list
     }
-
     self._remove_values(old_values - new_values)
     self._add_values(new_values - old_values)
 
@@ -112,3 +111,21 @@ class Roleable(object):
     res["access_control_list"] = [
         value.log_json() for value in self.access_control_list]
     return res
+
+  def get_persons_for_rolename(self, role_name):
+    """Return list of persons that are valid for send role_name."""
+    for role_id, role_name in role.get_custom_roles_for(self.type).iteritems():
+      if not role_name == role_name:
+        continue
+      return [i.person for i in self.access_control_list
+              if i.ac_role_id == role_id]
+    return []
+
+  def get_person_ids_for_rolename(self, role_name):
+    """Return list of persons that are valid for send role_name."""
+    for role_id, role_name in role.get_custom_roles_for(self.type).iteritems():
+      if not role_name == role_name:
+        continue
+      return [i.person_id for i in self.access_control_list
+              if i.ac_role_id == role_id]
+    return []
