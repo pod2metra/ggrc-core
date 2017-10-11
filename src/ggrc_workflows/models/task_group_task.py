@@ -10,6 +10,7 @@ from sqlalchemy import orm
 from sqlalchemy import schema
 
 from ggrc import db
+from ggrc.access_control import roleable, role
 from ggrc.builder import simple_property
 from ggrc.fulltext.mixin import Indexed
 from ggrc.login import get_current_user
@@ -19,7 +20,7 @@ from ggrc.models import reflection
 from ggrc_workflows.models.task_group import TaskGroup
 
 
-class TaskGroupTask(mixins.WithContact,
+class TaskGroupTask(roleable.Roleable,
                     mixins.Titled,
                     mixins.Described,
                     mixins.Slugged,
@@ -107,11 +108,6 @@ class TaskGroupTask(mixins.WithContact,
           "display_name": "Task Description",
           "handler_key": "task_description",
       },
-      "contact": {
-          "display_name": "Assignee",
-          "mandatory": True,
-      },
-      "secondary_contact": None,
       "start_date": {
           "display_name": "Start Date",
           "mandatory": True,
@@ -171,21 +167,30 @@ class TaskGroupTask(mixins.WithContact,
     return self.title + '<->' + self.task_group.display_name
 
   def copy(self, _other=None, **kwargs):
-    columns = [
-        'title', 'description',
-        'task_group', 'sort_index',
-        'start_date', 'end_date',
-        'contact', 'modified_by',
-        'task_type', 'response_options',
-    ]
+    columns = ['title',
+               'description',
+               'task_group',
+               'sort_index',
+               'start_date',
+               'end_date',
+               'access_control_list',
+               'modified_by',
+               'task_type',
+               'response_options']
 
-    contact = None
     if kwargs.get('clone_people', False):
-      contact = self.contact
+      access_control_list = [
+          {"ac_role_id": i.role_id, "person": {"id": i.person_id}}
+          for i in self.access_control_list]
     else:
-      contact = get_current_user()
-
+      role_id = {
+          v: k for (k, v) in
+          role.get_custom_roles_for(self.type).iteritems()
+      }['Assignee']
+      access_control_list = [{"ac_role_id": role_id,
+                              "person": {"id": get_current_user().id}}]
     kwargs['modified_by'] = get_current_user()
-
-    target = self.copy_into(_other, columns, contact=contact, **kwargs)
-    return target
+    return self.copy_into(_other,
+                          columns,
+                          access_control_list=access_control_list,
+                          **kwargs)
