@@ -85,8 +85,7 @@ class CycleTaskGroup(mixins.WithContact,
       ),
       attributes.MultipleSubpropertyFullTextAttr(
           "task assignee",
-          lambda instance: [t.contact for t in
-                            instance.cycle_task_group_tasks],
+          "_task_assignees",
           ["email", "name"],
           False
       ),
@@ -112,6 +111,14 @@ class CycleTaskGroup(mixins.WithContact,
           False
       ),
   ]
+
+  @property
+  def _task_assignees(self):
+    persons = {}
+    for task in self.cycle_task_group_tasks:
+      for person in task.get_persons_for_rolename("Assignee"):
+        persons[person.id] = person
+    return persons.values()
 
   AUTO_REINDEX_RULES = [
       index_mixin.ReindexRule(
@@ -158,13 +165,6 @@ class CycleTaskGroup(mixins.WithContact,
             "id",
             "title",
             "next_due_date"
-        ),
-        orm.Load(cls).subqueryload("cycle_task_group_tasks").joinedload(
-            "contact"
-        ).load_only(
-            "email",
-            "name",
-            "id"
         ),
         orm.Load(cls).subqueryload("cycle_task_group_tasks").joinedload(
             "cycle_task_entries"
