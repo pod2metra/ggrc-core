@@ -22,7 +22,9 @@
         <i class="fa fa-question-circle" rel="tooltip" title="Reviewer to assign"></i>
       </label>
       <div class="people-autocomplete">
+        {{^if_config_exist 'external_services.Person'}}
         <input tabindex="2" type="text" name="contact.email" null-if-empty="true" class="span11 search-icon required" value="{{firstnonempty instance.contact.email}}" placeholder="Find reviewer" data-lookup="Person">
+        {{else}}
         <inline-autocomplete-wrapper
           {instance}="instance"
           {path}="'contact'"
@@ -38,6 +40,7 @@
             {search-criteria}="textValue">
           </external-data-autocomplete>
         </inline-autocomplete-wrapper>
+        {{/if_config_exist}}
       </div>
     </div>
     <div class="span4">

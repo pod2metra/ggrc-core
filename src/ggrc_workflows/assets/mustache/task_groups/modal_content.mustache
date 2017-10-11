@@ -24,7 +24,9 @@
       </label>
         {{#using assignee=instance.contact model_singular=model.model_singular}}
         <div class="objective-selector">
+          {{^if_config_exist 'external_services.Person'}}
           <input id="task_group_assignee" tabindex="2" type="text" name="contact.email" class="span10 search-icon" data-lookup="Person" placeholder="Enter text to search for Assignee" value="{{firstnonempty assignee.email ''}}">
+          {{else}}
           <inline-autocomplete-wrapper
             {instance}="instance"
             {path}="'contact'"
@@ -41,6 +43,7 @@
               {search-criteria}="textValue">
             </external-data-autocomplete>
           </inline-autocomplete-wrapper>
+          {{/if_config_exist}}
         </div>
         {{/using}}
 

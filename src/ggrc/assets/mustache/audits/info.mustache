@@ -128,6 +128,7 @@
               {{#toggle show_new_object_form}}
                 {{#with_page_object_as 'page_instance'}}
                 <ggrc-quick-add parent_instance="instance" join_model="UserRole">
+                {{#if_config_exist 'external_services.Person'}}
                 <div class="autocomplete-field">
                   <inline-autocomplete-wrapper
                     {display-prop}="'email'"
@@ -143,11 +144,14 @@
                   </inline-autocomplete-wrapper>
                   <a href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
                 </div>
+                {{/if_config_exist}}
                   {{#prune_context}}
+                  {{^if_config_exist 'external_services.Person'}}
                   <div class="objective-selector field-wrap">
                     <input tabindex="3" type="text" name="instance" data-lookup="Person" null-if-empty="true" class="search-icon" placeholder="Add Auditor" {{autocomplete_select}} value="{{instance.email}}">
                     <a href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
                   </div>
+                  {{/if_config_exist}}
                   {{#with_mapping 'auditor_authorizations' parent_instance}}
                   <a
                     href="javascript://"

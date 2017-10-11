@@ -54,7 +54,9 @@
         <i class="fa fa-person green pull-left icon-field"></i>
         <div class="objective-selector">
           {{#using contact=instance.contact}}
+            {{^if_config_exist 'external_services.Person'}}
             <input data-id="audit_lead" tabindex="3" type="text" name="contact.email" data-lookup="Person" class="span10 audit-selector search-icon" placeholder="Enter text to search for Audit Captain" value="{{firstnonempty contact.email ''}}">
+            {{else}}
             <inline-autocomplete-wrapper
               class="inline-block"
               {instance}="instance"
@@ -72,6 +74,7 @@
                 {search-criteria}="textValue">
               </external-data-autocomplete>
             </inline-autocomplete-wrapper>
+            {{/if_config_exist}}
           {{/using}}
         </div>
       </div>
@@ -176,14 +179,15 @@
                   <p>No auditor assigned</p>
                 {{/if}}
               {{#toggle show_new_object_form}}
-                {{#prune_context}}
+                {{^if_config_exist 'external_services.Person'}}
+                  {{#prune_context}}
                   <div class="span12 objective-selector field-wrap">
                     <input tabindex="11" type="text" data-lookup="Person" null-if-empty="true" class="search-icon" placeholder="Enter text to search for Auditor" {{autocomplete_select}} value="{{instance.email}}">
                     <a class="remove-field" href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
 
                   </div>
-                  <input type="hidden" name="role_name" value="Auditor" />
                   {{/prune_context}}
+                {{else}}
                   <div class="autocomplete-field">
                     <external-data-autocomplete
                       {type}="'Person'"
@@ -195,6 +199,8 @@
                     </external-data-autocomplete>
                     <a class="remove-field" href="javascript://" {{toggle_button}}><i class="fa fa-trash"></i></a>
                   </div>
+                {{/if_config_exist}}
+                <input type="hidden" name="role_name" value="Auditor" />
               {{else}}
                 <a data-id="add_auditor" href="javascript://" class="btn btn-small btn-white" tabindex="11" {{toggle_button}}>Add Auditor</a>
 

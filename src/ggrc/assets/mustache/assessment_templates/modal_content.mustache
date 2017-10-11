@@ -137,18 +137,21 @@
           <div class="span6{{#instance.computed_errors.assessorsList}} field-failure{{/instance.computed_errors.assessorsList}}">
             <label>&nbsp;</label>
             {{#if_equals instance.default_people.assessors 'other'}}
+              {{^if_config_exist 'external_services.Person'}}
               <autocomplete
                 search-items-type="Person"
                 can-item-selected="instance.assessorAdded"
                 disable="instance.assessorsListDisable"
                 placeholder="Enter text to search for Assignees"
               ></autocomplete>
+              {{else}}
               <external-data-autocomplete
                 {type}="'Person'"
                 {placeholder}="'Enter text to search for Assignees'"
                 {min-length}="2"
                 (item-selected)="instance.assessorAdded">
               </external-data-autocomplete>
+              {{/if_config_exist}}
 
               {{#instance.computed_errors.assessorsList}}
                 <label class="help-inline warning">{{this}}</label>
@@ -183,18 +186,21 @@
             <label>&nbsp;</label>
 
             {{#if_equals instance.default_people.verifiers 'other'}}
+              {{^if_config_exist 'external_services.Person'}}
               <autocomplete
                 search-items-type="Person"
                 can-item-selected="instance.verifierAdded"
                 disable="instance.verifiersListDisable"
                 placeholder="Enter text to search for Verifiers"
               ></autocomplete>
+              {{else}}
               <external-data-autocomplete
                 {type}="'Person'"
                 {placeholder}="'Enter text to search for Verifiers'"
                 {min-length}="2"
                 (item-selected)="instance.verifierAdded">
               </external-data-autocomplete>
+              {{/if_config_exist}}
 
               {{#instance.computed_errors.verifiersList}}
                 <label class="help-inline warning">{{this}}</label>

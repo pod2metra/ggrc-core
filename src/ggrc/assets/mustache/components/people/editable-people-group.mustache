@@ -50,17 +50,20 @@
             {{#if isLoading}}
               <spinner {toggle}="isLoading"></spinner>
             {{else}}
+              {{^if_config_exist 'external_services.Person'}}
               <autocomplete
                   search-items-type="Person"
                   (item-selected)="personSelected(%event.selectedItem)"
                   placeholder="Add person">
               </autocomplete>
+              {{else}}
               <external-data-autocomplete
                 {type}="'Person'"
                 {placeholder}="'Add person'"
                 {min-length}="2"
                 (item-selected)="personSelected(%event.selectedItem)">
               </external-data-autocomplete>
+              {{/if_config_exist}}
             {{/if}}
             </div>
             <ul class="inline-edit__controls inline-edit__controls--edit-mode">

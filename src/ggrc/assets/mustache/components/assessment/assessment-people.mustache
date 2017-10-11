@@ -75,17 +75,20 @@
                 <spinner {toggle}="isLoading"></spinner>
               {{else}}
                 {{#is_allowed 'update' instance}}
+                  {{^if_config_exist 'external_services.Person'}}
                   <autocomplete
                       search-items-type="Person"
                       (item-selected)="addRole(%event.selectedItem, @type)"
                       placeholder="Add person">
                   </autocomplete>
+                  {{else}}
                   <external-data-autocomplete
                     {type}="'Person'"
                     {placeholder}="'Add person'"
                     {min-length}="2"
                     (item-selected)="addRole(%event.selectedItem, @type)">
                   </external-data-autocomplete>
+                  {{/if_config_exist}}
                 {{/is_allowed}}
               {{/if}}
             </div>

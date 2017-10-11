@@ -12,17 +12,20 @@
       <person-list-item {person-id}="_value" {with-Details}="withDetails"></person-list-item>
     </div>
   {{else}}
+    {{^if_config_exist 'external_services.Person'}}
     <autocomplete
       {{#if disabled}}disabled{{/if}}
       search-items-type="Person"
       (item-selected)="setPerson(%event)"
       placeholder="Select person"
     ></autocomplete>
+    {{else}}
     <external-data-autocomplete
       {type}="'Person'"
       {placeholder}="'Select person'"
       {min-length}="2"
       (item-selected)="setPerson(%event)">
     </external-data-autocomplete>
+    {{/if_config_exist}}
   {{/if}}
 </div>

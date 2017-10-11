@@ -44,17 +44,20 @@
                     <spinner {toggle}="isUpdating"></spinner>
                   {{else}}
                     {{#if canEdit}}
+                      {{^if_config_exist 'external_services.Person'}}
                       <autocomplete
                           search-items-type="Person"
                           (item-selected)="addPerson(%event.selectedItem, @groupId)"
                           placeholder="Add person">
                       </autocomplete>
+                      {{else}}
                       <external-data-autocomplete
                         {type}="'Person'"
                         {placeholder}="'Add person'"
                         {min-length}="2"
                         (item-selected)="addPerson(%event.selectedItem, @groupId)">
                       </external-data-autocomplete>
+                      {{/if_config_exist}}
                     {{/if}}
                   {{/if}}
                 </div>
