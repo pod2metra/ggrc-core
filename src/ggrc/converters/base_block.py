@@ -390,12 +390,11 @@ class BlockConverter(object):
     Returns:
       Ordered Dictionary containing all valid headers
     """
-
-    headers = [self._sanitize_header(val) for val in raw_headers]
     clean_headers = OrderedDict()
     header_names = self.get_header_names()
     removed_count = 0
-    for index, header in enumerate(headers):
+    for index, raw_header in enumerate(raw_headers):
+      header = self._sanitize_header(raw_header)
       if header in header_names:
         field_name = header_names[header]
         if (self.operation == 'import' and
