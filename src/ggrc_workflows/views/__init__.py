@@ -3,6 +3,7 @@
 
 """Ggrc workflow module views."""
 
+import sqlalchemy as sa
 from datetime import date
 from logging import getLogger
 
@@ -11,6 +12,7 @@ from flask import render_template
 from flask import url_for
 
 from ggrc import db
+from ggrc.models import all_models
 from ggrc.app import app
 from ggrc.login import login_required
 from ggrc.login import get_current_user
@@ -36,8 +38,19 @@ def get_user_task_count():
         CycleTaskGroupObjectTask.end_date
     ).join(
         Cycle
+    ).join(
+        all_models.AccessControlList,
+        sa.and_(
+            all_models.AccessControlList.object_type == "CycleTaskGroupObjectTask",
+            all_models.AccessControlList.object_id == CycleTaskGroupObjectTask.id
+        ),
+    ).join(
+        all_models.AccessControlRole,
+        sa.and_(
+            all_models.AccessControlRole.id == all_models.AccessControlList.ac_role_id,
+            all_models.AccessControlRole.object_type == "CycleTaskGroupObjectTask",
+        )
     ).filter(
-        CycleTaskGroupObjectTask.contact_id == current_user.id,
         CycleTaskGroupObjectTask.status.in_(
             ["Assigned", "InProgress", "Finished", "Declined"]),
         Cycle.is_current == True  # noqa # pylint: disable=singleton-comparison
