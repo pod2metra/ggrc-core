@@ -41,7 +41,7 @@ class TestExportTasks(TestCase):
         )
         task = factories.CycleTaskFactory()
         role = all_models.AccessControlRole.query.filter(
-            all_models.AccessControlRole.name == "Assignee",
+            all_models.AccessControlRole.name == "Task Assignee",
             all_models.AccessControlRole.object_type == task.type,
         ).one()
         ggrc_factories.AccessControlListFactory(
@@ -85,7 +85,7 @@ class TestExportTasks(TestCase):
           all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
       role = all_models.AccessControlRole.query.filter(
-          all_models.AccessControlRole.name == "Assignee",
+          all_models.AccessControlRole.name == "Task Assignee",
           all_models.AccessControlRole.object_type == task.type,
       ).one()
       assignees = [i.person for i in task.access_control_list

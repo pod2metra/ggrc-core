@@ -163,18 +163,12 @@ class CustomRoleAttr(FullTextAttr):
     super(CustomRoleAttr, self).__init__(alias, alias)
     self.with_template = with_template
 
-  def get_property_tmpl(self, instance):
-    if isinstance(instance, Indexed) and self.with_template:
-      return instance.PROPERTY_TEMPLATE
-    return u"{}"
-
   def get_property_for(self, instance):
     """Returns index properties of all custom roles for a given instance"""
     results = {}
     sorted_roles = defaultdict(list)
-    tmpl = self.get_property_tmpl(instance)
     for acl in getattr(instance, self.alias, []):
-      ac_role = tmpl.format(acl.ac_role.name).lower()
+      ac_role = acl.ac_role.name
       person_id = acl.person.id
       if not results.get(ac_role, None):
         results[ac_role] = {}

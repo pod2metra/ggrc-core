@@ -87,7 +87,7 @@ class WorkflowsGenerator(Generator):
     cycle_task_role_id = {
         v: k for (k, v) in
         role.get_custom_roles_for("TaskGroupTask").iteritems()
-    }['Assignee']
+    }['Task Assignee']
     tgt = TaskGroupTask(
         task_group_id=task_group.id,
         context_id=task_group.context.id,

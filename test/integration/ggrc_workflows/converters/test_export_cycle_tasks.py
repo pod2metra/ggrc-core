@@ -49,7 +49,7 @@ class TestExportTasks(TestCase):
           task_group_task = factories.TaskGroupTaskFactory(
               task_group=task_group)
           role = all_models.AccessControlRole.query.filter(
-              all_models.AccessControlRole.name == "Assignee",
+              all_models.AccessControlRole.name == "Task Assignee",
               all_models.AccessControlRole.object_type == task_group_task.type,
           ).one()
           ggrc_factories.AccessControlListFactory(ac_role=role,
@@ -62,7 +62,7 @@ class TestExportTasks(TestCase):
                                             cycle_task_group=cycle_task_group,
                                             task_group_task=task_group_task)
           role = all_models.AccessControlRole.query.filter(
-              all_models.AccessControlRole.name == "Assignee",
+              all_models.AccessControlRole.name == "Task Assignee",
               all_models.AccessControlRole.object_type == task.type,
           ).one()
           ggrc_factories.AccessControlListFactory(ac_role=role,
@@ -213,7 +213,8 @@ class TestExportTasks(TestCase):
       task = all_models.CycleTaskGroupObjectTask.query.filter(
           all_models.CycleTaskGroupObjectTask.id == task_id
       ).one()
-      assignees = list(self.get_persons_for_obj_by_role_name(task, "Assignee"))
+      assignees = list(self.get_persons_for_obj_by_role_name(
+          task, "Task Assignee"))
       self.assertEqual(1, len(assignees))
       self.assertCycles("task assignee", assignees[0].email, [slug])
       self.assertCycles("task assignee", assignees[0].name, [slug])

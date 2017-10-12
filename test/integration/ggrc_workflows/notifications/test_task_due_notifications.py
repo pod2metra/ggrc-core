@@ -64,7 +64,7 @@ class TestTaskDueNotifications(TestCase):
         user_role="Administrator")
 
     role_id = models.all_models.AccessControlRole.query.filter(
-        models.all_models.AccessControlRole.name == "Assignee",
+        models.all_models.AccessControlRole.name == "Task Assignee",
         models.all_models.AccessControlRole.object_type == "TaskGroupTask",
     ).one().id
 

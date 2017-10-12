@@ -96,7 +96,7 @@ class TestWorkflowObjectColumnDefinitions(TestCase):
     expected_names = {
         "Summary",
         "Task Type",
-        "Assignee",
+        "Task Assignee",
         "Task Description",
         "Start Date",
         "End Date",
@@ -110,7 +110,7 @@ class TestWorkflowObjectColumnDefinitions(TestCase):
     self.assertEqual(expected_names, display_names)
     vals = {val["display_name"]: val for val in definitions.itervalues()}
     self.assertTrue(vals["Summary"]["mandatory"])
-    self.assertTrue(vals["Assignee"]["mandatory"])
+    self.assertTrue(vals["Task Assignee"]["mandatory"])
 
   def test_cycle_task_definitions(self):
     """ test default headers for Cycle Task Group Object Task """
@@ -126,7 +126,7 @@ class TestWorkflowObjectColumnDefinitions(TestCase):
         "Cycle",
         "Summary",
         "Task Type",
-        "Assignee",
+        "Task Assignee",
         "Task Details",
         "Start Date",
         "Due Date",
@@ -143,4 +143,4 @@ class TestWorkflowObjectColumnDefinitions(TestCase):
     self.assertEqual(expected_names, display_names)
     vals = {val["display_name"]: val for val in definitions.itervalues()}
     self.assertTrue(vals["Summary"]["mandatory"])
-    self.assertTrue(vals["Assignee"]["mandatory"])
+    self.assertTrue(vals["Task Assignee"]["mandatory"])

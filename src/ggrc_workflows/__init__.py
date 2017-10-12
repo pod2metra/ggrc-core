@@ -226,9 +226,10 @@ def _create_cycle_task(task_group_task, cycle, cycle_task_group, current_user):
   cycle_task_role_id = {
       v: k for (k, v) in
       role.get_custom_roles_for("CycleTaskGroupObjectTask").iteritems()
-  }['Assignee']
+  }['Task Assignee']
   access_control_list = []
-  for person_id in task_group_task.get_person_ids_for_rolename("Assignee"):
+  for person_id in task_group_task.get_person_ids_for_rolename(
+          "Task Assignee"):
     access_control_list.append(
         {"ac_role_id": cycle_task_role_id, "person": {"id": person_id}}
     )
@@ -516,7 +517,7 @@ def calculate_new_next_cycle_start_date(workflow):
 def handle_task_group_task_put_post(sender, obj=None, src=None, service=None):  # noqa pylint: disable=unused-argument
   start_end_date_validator(obj)
   if inspect(obj).attrs._access_control_list.history.has_changes():
-    for person_id in obj.get_person_ids_for_rolename("Assignee"):
+    for person_id in obj.get_person_ids_for_rolename("Task Assignee"):
       ensure_assignee_is_workflow_member(obj.task_group.workflow,
                                          None,
                                          person_id)
@@ -581,7 +582,7 @@ def handle_cycle_task_group_object_task_put(
         sender, obj=None, src=None, service=None):  # noqa pylint: disable=unused-argument
 
   if inspect(obj).attrs._access_control_list.history.has_changes():
-    for person_id in obj.get_person_ids_for_rolename("Assignee"):
+    for person_id in obj.get_person_ids_for_rolename("Task Assignee"):
       ensure_assignee_is_workflow_member(obj.cycle.workflow, None, person_id)
 
   if any([inspect(obj).attrs.start_date.history.has_changes(),

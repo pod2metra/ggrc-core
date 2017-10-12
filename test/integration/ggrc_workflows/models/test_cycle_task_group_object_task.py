@@ -49,7 +49,7 @@ class TestCTGOT(BaseTestCase):
       task_1 = wf_factories.TaskGroupTaskFactory(task_group=taskgroup)
       task_2 = wf_factories.TaskGroupTaskFactory(task_group=taskgroup)
       role = all_models.AccessControlRole.query.filter(
-          all_models.AccessControlRole.name == "Assignee",
+          all_models.AccessControlRole.name == "Task Assignee",
           all_models.AccessControlRole.object_type == task_1.type,
       ).one()
       factories.AccessControlListFactory(ac_role=role,

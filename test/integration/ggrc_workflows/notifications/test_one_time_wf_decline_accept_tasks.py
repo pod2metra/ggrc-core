@@ -279,7 +279,7 @@ class TestCycleTaskStatusChange(TestCase):
       }
 
     role_id = all_models.AccessControlRole.query.filter(
-        all_models.AccessControlRole.name == "Assignee",
+        all_models.AccessControlRole.name == "Task Assignee",
         all_models.AccessControlRole.object_type == "TaskGroupTask",
     ).one().id
     self.one_time_workflow_1 = {

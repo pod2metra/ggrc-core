@@ -273,7 +273,7 @@ class TestTaskOverdueNotificationsUsingAPI(TestTaskOverdueNotifications):
           "type": "Person"
       }
     role_id = models.all_models.AccessControlRole.query.filter(
-        models.all_models.AccessControlRole.name == "Assignee",
+        models.all_models.AccessControlRole.name == "Task Assignee",
         models.all_models.AccessControlRole.object_type == "TaskGroupTask",
     ).one().id
     self.one_time_workflow = {

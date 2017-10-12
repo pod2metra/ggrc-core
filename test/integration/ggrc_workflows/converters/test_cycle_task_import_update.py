@@ -587,17 +587,17 @@ class TestCycleTaskImportUpdateAssignee(BaseTestCycleTaskImportUpdate):
   )
   def test_update_assignee(self, alias):
     """Test update assignee"""
-    assignees = list(
-        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    assignees = list(self.get_persons_for_obj_by_role_name(
+        self.query.first(), "Task Assignee"))
     self.assertFalse(assignees)
     response = self.import_data(OrderedDict([
         ("object_type", alias),
         ("Code*", self.instance.slug),
-        ("Assignee*", self.user.email),
+        ("Task Assignee*", self.user.email),
     ]))
     self._check_csv_response(response, {})
-    assignees = list(
-        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+    assignees = list(self.get_persons_for_obj_by_role_name(
+        self.query.first(), "Task Assignee"))
     self.assertEqual([self.user.email], [u.email for u in assignees])
 
   @ddt.data(
@@ -611,16 +611,18 @@ class TestCycleTaskImportUpdateAssignee(BaseTestCycleTaskImportUpdate):
   def test_update_assignee_with_non_importable(self, alias):
     """Test update assignee with non importable field"""
     assignees = list(
-        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+        self.get_persons_for_obj_by_role_name(self.query.first(),
+                                              "Task Assignee"))
     self.assertFalse(assignees)
     response = self.import_data(OrderedDict([
         ("object_type", alias),
         ("Code*", self.instance.slug),
-        ("Assignee*", self.user.email),
+        ("Task Assignee*", self.user.email),
         ("State", "some data"),
     ]))
     assignees = list(
-        self.get_persons_for_obj_by_role_name(self.query.first(), "Assignee"))
+        self.get_persons_for_obj_by_role_name(self.query.first(),
+                                              "Task Assignee"))
     self.assertEqual([self.user.email], [u.email for u in assignees])
     self._check_csv_response(response,
-                             self.generate_expected_warning('Assignee'))
+                             self.generate_expected_warning('Task Assignee'))
