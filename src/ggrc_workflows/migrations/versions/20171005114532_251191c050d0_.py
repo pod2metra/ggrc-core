@@ -21,11 +21,11 @@ INSERT_TASK_ASSIGNEE = (
     """
        INSERT INTO access_control_roles
        (name, object_type, created_at, updated_at, mandatory, non_editable)
-       SELECT 'Assignee', 'TaskGroupTask', NOW(), NOW(), 1, 1
+       SELECT 'Task Assignee', 'TaskGroupTask', NOW(), NOW(), 1, 1
        FROM access_control_roles
        WHERE NOT EXISTS(
           SELECT id FROM access_control_roles
-          WHERE name = 'Assignee' AND object_type = 'TaskGroupTask'
+          WHERE name = 'Task Assignee' AND object_type = 'TaskGroupTask'
        )
        LIMIT 1;
     """
@@ -34,11 +34,11 @@ INSERT_CYCLE_TASK_ASSIGNEE = (
     """
        INSERT INTO access_control_roles
        (name, object_type, created_at, updated_at, mandatory, non_editable)
-       SELECT 'Assignee', 'CycleTaskGroupObjectTask', NOW(), NOW(), 1, 1
+       SELECT 'Task Assignee', 'CycleTaskGroupObjectTask', NOW(), NOW(), 1, 1
        FROM access_control_roles
        WHERE NOT EXISTS(
           SELECT id FROM access_control_roles
-          WHERE name = 'Assignee'
+          WHERE name = 'Task Assignee'
             AND object_type = 'CycleTaskGroupObjectTask')
        LIMIT 1;
     """
