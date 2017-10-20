@@ -101,5 +101,11 @@ describe('GGRC Utils Snapshots', function () {
         expect(item.person.id).toEqual(item.person_id);
       });
     });
+
+    it('sets original link to snapshot object', function () {
+      var result = toObject(snapshot);
+
+      expect(result.attr('originalLink')).toEqual('/controls/42');
+    });
   });
 });

@@ -679,11 +679,10 @@
       var object;
       var model = CMS.Models[instance.child_type];
       var content = instance.revision.content;
-      var type = model.root_collection;
       var audit;
 
       content.isLatestRevision = instance.is_latest_revision;
-      content.originalLink = '/' + type + '/' + content.id;
+      content.originalLink = getParentUrl(instance);
       content.snapshot = new can.Map(instance);
       content.related_sources = [];
       content.related_destinations = [];
@@ -694,11 +693,11 @@
       content.originalObjectDeleted = instance.original_object_deleted;
       content.canRead = Permission.is_allowed_for('read', {
         type: instance.child_type,
-        id: instance.child_id
+        id: instance.child_id,
       });
       content.canUpdate = Permission.is_allowed_for('update', {
         type: instance.child_type,
-        id: instance.child_id
+        id: instance.child_id,
       });
 
       if (content.access_control_list === undefined) {
@@ -731,7 +730,7 @@
           object.snapshot.attr('archived', newValue);
         });
       }
-      model.removeFromCacheById(content.id);  /* removes snapshot object from cache */
+      model.removeFromCacheById(content.id); /* removes snapshot object from cache */
 
       return object;
     }
