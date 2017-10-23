@@ -4,10 +4,12 @@
 """Module containing Cycle tasks.
 """
 
+from logging import getLogger
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
+from werkzeug.exceptions import BadRequest
 
 from ggrc import builder
 from ggrc import db
@@ -22,6 +24,9 @@ from ggrc.models import types
 from ggrc_workflows.models.cycle import Cycle
 from ggrc_workflows.models.cycle_task_group import CycleTaskGroup
 from ggrc_workflows.models import mixins as wf_mixins
+
+
+LOGGER = getLogger(__name__)
 
 
 class CycleTaskGroupObjectTask(roleable.Roleable,
@@ -318,6 +323,54 @@ class CycleTaskGroupObjectTask(roleable.Roleable,
             "id"
         ),
     )
+
+  @classmethod
+  def bulk_update(cls, src):
+    """Update statuses for bunch of tasks in a bulk.
+
+    Args:
+        src: input json with next structure:
+          [{"status": "Assigned", "id": 1}, {"status": "InProgress", "id": 2}]
+
+    Returns:
+        Two lists: updated_ids, skipped_ids.
+        First one contains object's ids that were updated successfully.
+        Second one contains object's ids that were skipped.
+    """
+    new_prv_state_map = {
+        cls.IN_PROGRESS: cls.ASSIGNED,
+        cls.FINISHED: cls.IN_PROGRESS,
+        cls.VERIFIED: cls.FINISHED,
+        cls.DECLINED: cls.FINISHED
+    }
+    uniq_states = set([item['state'] for item in src])
+    if len(list(uniq_states)) != 1:
+      raise BadRequest("Request's JSON contains multiple statuses for "
+                       "CycleTasks")
+    new_state = uniq_states.pop()
+    LOGGER.info("Do bulk update CycleTasks with '%s' status", new_state)
+    if new_state not in cls.VALID_STATES:
+      raise BadRequest("Request's JSON contains invalid statuses for "
+                       "CycleTasks")
+    prv_state = new_prv_state_map[new_state]
+    all_ids = {item['id'] for item in src}
+    # Eagerly loading is needed to get user permissions for CycleTask faster
+    updatable_objects = cls.eager_query().filter(
+        cls.id.in_(list(all_ids)),
+        cls.status == prv_state)
+    if new_state in (cls.VERIFIED, cls.DECLINED):
+      updatable_objects = [obj for obj in updatable_objects
+                           if obj.cycle.is_verification_needed]
+    # Bulk update works only on MyTasks page. Don't need to check for
+    # WorkflowMembers' permissions here. User should update only his own tasks.
+    updatable_objects = [obj for obj in updatable_objects
+                         if obj.current_user_wfo_or_assignee()]
+    # Queries count is constant because we are using eager query for objects.
+    for obj in updatable_objects:
+      obj.status = new_state
+      obj.modified_by_id = login.get_current_user_id()
+    updated_ids = {obj.id for obj in updatable_objects}
+    return list(updated_ids), list(all_ids - updated_ids)
 
 
 class CycleTaskable(object):

@@ -676,7 +676,7 @@ class ModelView(View):
 
 
 # View base class for Views handling
-#   - /resources (GET, POST)
+#   - /resources (GET, POST, PATCH)
 #   - /resources/<pk:pk_type> (GET, PUT, POST, DELETE)
 class Resource(ModelView):
   """View base class for Views handling.  Will typically be registered with an
@@ -715,6 +715,8 @@ class Resource(ModelView):
               return self.collection_post()
           elif method == 'PUT':
             return self.put(*args, **kwargs)
+          elif method == 'PATCH':
+            return self.patch()
           elif method == 'DELETE':
             return self.delete(*args, **kwargs)
           else:
@@ -804,6 +806,10 @@ class Resource(ModelView):
 
   def json_update(self, obj, src):
     ggrc.builder.json.update(obj, src)
+
+  def patch(self):
+    """PATCH operation handler."""
+    raise NotImplementedError()
 
   def _check_put_permissions(self, obj, new_context):
     """Check context and resource permissions for PUT."""
@@ -1386,7 +1392,7 @@ class Resource(ModelView):
         url,
         defaults={cls.pk: None},
         view_func=view_func,
-        methods=['GET', 'POST'])
+        methods=['GET', 'POST', 'PATCH'])
     app.add_url_rule(
         '{url}/<{type}:{pk}>'.format(url=url, type=cls.pk_type, pk=cls.pk),
         view_func=view_func,
