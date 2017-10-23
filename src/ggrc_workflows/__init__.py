@@ -18,8 +18,8 @@ from ggrc.rbac.permissions import is_allowed_update
 from ggrc.access_control import role
 from ggrc.services import signals
 from ggrc.services.common import log_event
-from ggrc.services.registry import service
 from ggrc_workflows import models, notification
+from ggrc_workflows import services
 from ggrc_workflows.models import relationship_helper
 from ggrc_workflows.models import WORKFLOW_OBJECT_TYPES
 from ggrc_workflows.notification import pusher
@@ -65,22 +65,10 @@ def get_public_config(current_user):  # noqa
   """
   return {}
 
+
 # Initialize service endpoints
-
-
 def contributed_services():
-  return [
-      service('workflows', models.Workflow),
-      service('workflow_people', models.WorkflowPerson),
-      service('task_groups', models.TaskGroup),
-      service('task_group_tasks', models.TaskGroupTask),
-      service('task_group_objects', models.TaskGroupObject),
-
-      service('cycles', models.Cycle),
-      service('cycle_task_entries', models.CycleTaskEntry),
-      service('cycle_task_groups', models.CycleTaskGroup),
-      service('cycle_task_group_object_tasks', models.CycleTaskGroupObjectTask)
-  ]
+  return services.contributed_services()
 
 
 def contributed_object_views():
