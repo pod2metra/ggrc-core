@@ -3,6 +3,7 @@
 
 import datetime
 import unittest
+from mock import MagicMock
 
 import ddt
 import freezegun
@@ -531,3 +532,123 @@ class TestCloneWorkflow(TestCase):
         all_models.Workflow, {"title": "WF - copy 1", "clone": workflow.id})
     self.assertEqual(unit, clone_wf.unit)
     self.assertEqual(repeat_every, clone_wf.repeat_every)
+
+
+@ddt.ddt
+class TestStatusApiPatch(TestCase):
+  """Test CycleTask's statuses change via PATCH operation."""
+  ASSIGNED = all_models.CycleTaskGroupObjectTask.ASSIGNED
+  IN_PROGRESS = all_models.CycleTaskGroupObjectTask.IN_PROGRESS
+  FINISHED = all_models.CycleTaskGroupObjectTask.FINISHED
+
+  def setUp(self):
+    super(TestStatusApiPatch, self).setUp()
+    self.api = Api()
+    with factories.single_commit():
+      self.assignee = factories.PersonFactory(email="assignee@example.com")
+      self.workflow = wf_factories.WorkflowFactory()
+      self.cycle = wf_factories.CycleFactory(workflow=self.workflow)
+      self.group = wf_factories.CycleTaskGroupFactory(
+          cycle=self.cycle,
+          context=self.cycle.workflow.context
+      )
+      self.tasks = []
+      for ind in xrange(3):
+        self.tasks.append(wf_factories.CycleTaskFactory(
+            title='task{}'.format(ind),
+            cycle=self.cycle,
+            cycle_task_group=self.group,
+            context=self.cycle.workflow.context
+        ))
+    # Emulate that current user is assignee for all test CycleTasks.
+    all_models.CycleTaskGroupObjectTask.current_user_wfo_or_assignee = (
+        MagicMock(return_value=True))
+
+  def _update_ct_via_patch(self, new_states):
+    """Update CycleTasks' state via PATCH.
+
+    Args:
+        new_states: List of states to which CTs should be moved via PATCH.
+
+    Returns:
+        JSON response which was returned by back-end.
+    """
+    data = [{"state": state, "id": self.tasks[ind].id}
+            for ind, state in enumerate(new_states)]
+    resp = self.api.patch(all_models.CycleTaskGroupObjectTask, data)
+    return resp.json
+
+  def _get_exp_response(self, exp_res):
+    """Format expected response from CycleTasks' test data indexes.
+
+    Args:
+        exp_res: Expected results dict: {test_ctask_index: response_status}
+
+    Returns:
+        [{'id': updated_task_id, 'status': 'success|skipped|error'}, ...]
+    """
+    return [{'id': self.tasks[ind].id, 'status': status}
+            for ind, status in exp_res.iteritems()]
+
+  @ddt.data(
+      (
+          # New statuses which we try to set during the test
+          [IN_PROGRESS, IN_PROGRESS, IN_PROGRESS],
+          # Expected results: {test_ctask_index: response_status}
+          {0: 'updated', 1: 'updated', 2: 'updated'},
+          # Expected states after update
+          [IN_PROGRESS, IN_PROGRESS, IN_PROGRESS]
+      ),
+      (
+          [FINISHED, FINISHED, FINISHED],
+          {0: 'skipped', 1: 'skipped', 2: 'skipped'},
+          [ASSIGNED, ASSIGNED, ASSIGNED]
+      )
+  )
+  @ddt.unpack
+  def test_ct_status_bulk_update_ok(self, new_states, exp_res, exp_states):
+    """Check CycleTasks' state update with valid data via PATCH."""
+    self.assertItemsEqual(self._get_exp_response(exp_res),
+                          self._update_ct_via_patch(new_states))
+    self.assertItemsEqual(
+        exp_states,
+        [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
+
+  def test_ct_status_bulk_update_json_error(self):  # noqa pylint: disable=invalid-name
+    """Check CycleTasks' state update with invalid data via PATCH."""
+    exp_resp = {
+        "message": "Request's JSON contains multiple statuses for CycleTasks",
+        "code": 400
+    }
+    self.assertEqual(exp_resp, self._update_ct_via_patch([self.IN_PROGRESS,
+                                                          self.FINISHED,
+                                                          self.IN_PROGRESS]))
+    self.assertItemsEqual(
+        [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
+        [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
+
+  def test_ct_status_bulk_update_without_permissions(self):  # noqa pylint: disable=invalid-name
+    """Check CycleTasks' state update without permissions via PATCH."""
+    # Emulate that current user is not assignee for all test CycleTasks.
+    all_models.CycleTaskGroupObjectTask.current_user_wfo_or_assignee = (
+        MagicMock(return_value=False))
+    self.assertItemsEqual(
+        self._get_exp_response({0: 'skipped', 1: 'skipped', 2: 'skipped'}),
+        self._update_ct_via_patch([self.IN_PROGRESS,
+                                   self.IN_PROGRESS,
+                                   self.IN_PROGRESS]))
+    self.assertItemsEqual(
+        [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
+        [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
+
+  def test_ct_status_bulk_update_invalid_state(self):  # noqa pylint: disable=invalid-name
+    """Check CycleTasks' state update with invalid statuses via PATCH."""
+    exp_resp = {
+        "message": "Request's JSON contains invalid statuses for CycleTasks",
+        "code": 400
+    }
+    self.assertItemsEqual(exp_resp,
+                          self._update_ct_via_patch(['InVaLiD', 'InVaLiD']))
+    self.assertItemsEqual(
+        [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
+        [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])

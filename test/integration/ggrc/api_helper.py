@@ -121,6 +121,10 @@ class Api(object):
   def post(self, obj, data):
     return self.send_request(self.client.post, obj, data)
 
+  def patch(self, model, data):
+    return self.send_request(self.client.patch, data=data,
+                             api_link=self.api_link(model))
+
   def get(self, obj, id_):
     return self.data_to_json(self.client.get(self.api_link(obj, id_)))
 

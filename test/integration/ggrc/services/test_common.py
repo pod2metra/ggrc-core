@@ -18,7 +18,7 @@ from ggrc.models import all_models
 from ggrc import db
 
 
-COLLECTION_ALLOWED = ["HEAD", "GET", "POST", "OPTIONS"]
+COLLECTION_ALLOWED = ["HEAD", "GET", "POST", "OPTIONS", "PATCH"]
 RESOURCE_ALLOWED = ["HEAD", "GET", "PUT", "DELETE", "OPTIONS"]
 
 
