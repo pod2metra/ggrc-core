@@ -15,13 +15,6 @@ import ggrc_risks.views
 # Initialize signal handler for status changes
 from blinker import Namespace
 signals = Namespace()
-status_change = signals.signal(
-    'Status Changed',
-    """
-    This is used to signal any listeners of any changes in model object status
-    attribute
-    """)
-
 # Initialize Flask Blueprint for extension
 blueprint = Blueprint(
     'ggrc_risks',
@@ -92,6 +85,8 @@ class RiskRoleContributions(RoleContributions):
       },
   }
 
+
 ROLE_CONTRIBUTIONS = RiskRoleContributions()
+
 
 contributed_importables = IMPORTABLE

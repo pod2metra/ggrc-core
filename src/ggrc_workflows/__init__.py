@@ -5,6 +5,7 @@
 
 """Workflows module"""
 
+import collections
 from datetime import datetime, date
 from logging import getLogger
 from flask import Blueprint
@@ -360,10 +361,11 @@ def update_cycle_task_child_state(obj):
             child.status = status
             Signals.status_change.send(
                 child.__class__,
-                obj=child,
-                new_status=child.status,
-                old_status=old_status
-            )
+                objs=[
+                    Signals.StatusChangeSignalObjectContext(
+                        instance=child,
+                        new_status=child.status,
+                        old_status=old_status)])
           update_cycle_task_child_state(child)
 
 
@@ -385,54 +387,80 @@ def _update_parent_state(parent, child_statuses):
   parent.status = new_status
   Signals.status_change.send(
       parent.__class__,
-      obj=parent,
-      old_status=old_status,
-      new_status=new_status,
-  )
+      objs=[
+          Signals.StatusChangeSignalObjectContext(
+              instance=parent,
+              old_status=old_status,
+              new_status=new_status)])
 
 
-def update_cycle_task_object_task_parent_state(obj, is_put=False):
+def update_cycle_task_object_task_parent_state(objs, is_put=False):
   """Update cycle task group status for sent cycle task"""
-  if obj.cycle.workflow.kind == "Backlog":
+  objs = objs or []
+  work_obj = []
+  for obj in objs:
+    if obj.cycle.workflow.kind != "Backlog":
+      work_obj.append(obj)
+  if not work_obj:
     return
-  if is_put:
-    # On CycleTask status change via PUT request new status is not in DB yet,
-    # but old status is in DB. They should be swapped.
-    child_statuses = set(i[0] for i in db.session.query(
-        models.CycleTaskGroupObjectTask.status
-    ).filter(
-        models.CycleTaskGroupObjectTask.cycle_task_group_id ==
-        obj.cycle_task_group_id,
-        models.CycleTaskGroupObjectTask.id != obj.id
-    ).distinct().with_for_update()) | {obj.status}
-  else:
-    child_statuses = set(i[0] for i in db.session.query(
-        models.CycleTaskGroupObjectTask.status
-    ).filter(
-        models.CycleTaskGroupObjectTask.cycle_task_group_id ==
-        obj.cycle_task_group_id
-    ).distinct().with_for_update())
-  _update_parent_state(
-      obj.cycle_task_group,
-      child_statuses
+  query = db.session.query(
+      models.CycleTaskGroupObjectTask.cycle_task_group_id,
+      models.CycleTaskGroupObjectTask.status
+  ).filter(
+      models.CycleTaskGroupObjectTask.cycle_task_group_id.in_(
+          [o.cycle_task_group_id for o in work_obj]
+      )
   )
-  update_cycle_task_group_parent_state(obj.cycle_task_group)
+  if is_put:
+    query = query.filter(models.CycleTaskGroupObjectTask.id.notin_(
+        [o.id for o in work_obj if o.id]
+    ))
+  query = query.distinct().with_for_update()
+  query_statuses = collections.defaultdict(set)
+  for group_id, task_status in query:
+    query_statuses[group_id].add(task_status)
+  if is_put:
+    for obj in work_obj:
+      query_statuses[obj.cycle_task_group_id].add(obj.status)
+  groups = models.CycleTaskGroup.query.filter(
+      models.CycleTaskGroup.id.in_(query_statuses.keys())
+  )
+  updated_groups = []
+  for group in groups:
+    old_status = group.status
+    _update_parent_state(group, query_statuses[group.id])
+    new_status = group.status
+    if old_status != new_status:
+      updated_groups.append(group)
+  update_cycle_task_group_parent_state(updated_groups)
 
 
-def update_cycle_task_group_parent_state(obj):
+def update_cycle_task_group_parent_state(objs):
   """Update cycle status for sent cycle task group"""
-  if obj.cycle.workflow.kind == "Backlog":
+  objs = objs or []
+  objs = [obj for obj in objs if obj.cycle.workflow.kind != "Backlog"]
+  if not objs:
     return
-  child_statuses = set(i[0] for i in db.session.query(
-      models.CycleTaskGroup.status
+  cycle_statuses_dict = collections.defaultdict(set)
+  group_ids = []
+  for obj in objs:
+    cycle_statuses_dict[obj.cycle_id].add(obj.status)
+    group_ids.append(obj.id)
+  child_statuses = set(i for i in db.session.query(
+      models.CycleTaskGroup.cycle_id,
+      models.CycleTaskGroup.status,
   ).filter(
       models.CycleTaskGroup.cycle_id == obj.cycle_id,
-      models.CycleTaskGroup.id != obj.id
-  ).distinct().with_for_update()) | {obj.status}
-  _update_parent_state(
-      obj.cycle,
-      child_statuses
-  )
+      models.CycleTaskGroup.id.notin_([obj.id for obj in objs])
+  ).distinct().with_for_update())
+  for cycle_id, status in child_statuses:
+    cycle_statuses_dict[cycle_id].add(status)
+  cycles_dict = {
+      c.id: c for c in models.Cycle.query.filter(
+          models.Cycle.id.in_(cycle_statuses_dict.keys()))
+  }
+  for cycle_id, statuses in cycle_statuses_dict.iteritems():
+    _update_parent_state(cycles_dict[cycle_id], statuses)
 
 
 def ensure_assignee_is_workflow_member(workflow, assignee, assignee_id=None):
@@ -585,11 +613,14 @@ def handle_cycle_task_group_object_task_put(
     # workaround because of that.
     Signals.status_change.send(
         obj.__class__,
-        obj=obj,
-        new_status=obj.status,
-        old_status=inspect(obj).attrs.status.history.deleted.pop(),
+        objs=[
+            Signals.StatusChangeSignalObjectContext(
+                instance=obj,
+                new_status=obj.status,
+                old_status=inspect(obj).attrs.status.history.deleted[0])
+        ]
     )
-    update_cycle_task_object_task_parent_state(obj, is_put=True)
+    update_cycle_task_object_task_parent_state([obj], is_put=True)
 
   # Doing this regardless of status.history.has_changes() is important in order
   # to update objects that have been declined. It updates the os_last_updated
@@ -610,13 +641,12 @@ def handle_cycle_task_group_object_task_put(
 def handle_cycle_object_status(
         sender, obj=None, src=None, service=None, event=None):
   """Calculate status of cycle and cycle task group"""
-  update_cycle_task_object_task_parent_state(obj)
+  update_cycle_task_object_task_parent_state([obj])
 
 
 @signals.Restful.model_posted.connect_via(models.CycleTaskGroupObjectTask)
 def handle_cycle_task_group_object_task_post(
         sender, obj=None, src=None, service=None):  # noqa pylint: disable=unused-argument
-
   if obj.cycle.workflow.kind != "Backlog":
     for person_id in obj.get_person_ids_for_rolename("Task Assignees"):
       ensure_assignee_is_workflow_member(obj.cycle.workflow, None, person_id)
@@ -624,10 +654,11 @@ def handle_cycle_task_group_object_task_post(
 
   Signals.status_change.send(
       obj.__class__,
-      obj=obj,
-      new_status=obj.status,
-      old_status=None,
-  )
+      objs=[
+          Signals.StatusChangeSignalObjectContext(
+              instance=obj,
+              new_status=obj.status,
+              old_status=None)])
   db.session.flush()
 
 
@@ -635,7 +666,7 @@ def handle_cycle_task_group_object_task_post(
 def handle_cycle_task_group_put(
         sender, obj=None, src=None, service=None):  # noqa pylint: disable=unused-argument
   if inspect(obj).attrs.status.history.has_changes():
-    update_cycle_task_group_parent_state(obj)
+    update_cycle_task_group_parent_state([obj])
     update_cycle_task_child_state(obj)
 
 
@@ -706,26 +737,33 @@ def handle_cycle_task_entry_post(sender, obj=None, src=None, service=None):
 
 # noqa pylint: disable=unused-argument
 @Signals.status_change.connect_via(models.Cycle)
-def handle_cycle_status_change(sender, obj=None, new_status=None,
-                               old_status=None):
-  if inspect(obj).attrs.status.history.has_changes():
-    obj.is_current = not obj.is_done
-    update_workflow_state(obj.workflow)
+def handle_cycle_status_change(sender, objs=None):
+  objs = objs or []
+  workflow_ids = set([])
+  for obj in objs:
+    if obj.old_status == obj.new_status:
+      continue
+    obj.instance.is_current = not obj.instance.is_done
+    if obj.instance.workflow.id not in workflow_ids:
+      update_workflow_state(obj.instance.workflow)
+    workflow_ids.add(obj.instance.workflow.id)
 
 
 # noqa pylint: disable=unused-argument
 @Signals.status_change.connect_via(models.CycleTaskGroupObjectTask)
-def handle_cycle_task_status_change(sender, obj=None, new_status=None,
-                                    old_status=None):
-  if inspect(obj).attrs.status.history.has_changes():
-    if new_status == obj.VERIFIED:
-      obj.verified_date = datetime.now()
-    elif new_status == obj.FINISHED:
-      obj.finished_date = datetime.now()
-      obj.verified_date = None
+def handle_cycle_task_status_change(sender, objs=None):
+  objs = objs or []
+  for obj in objs:
+    if obj.old_status == obj.new_status:
+      continue
+    if obj.new_status == obj.instance.VERIFIED:
+      obj.instance.verified_date = datetime.now()
+    elif obj.new_status == obj.instance.FINISHED:
+      obj.instance.finished_date = datetime.now()
+      obj.instance.verified_date = None
     else:
-      obj.finished_date = None
-      obj.verified_date = None
+      obj.instance.finished_date = None
+      obj.instance.verified_date = None
 
 
 def _get_or_create_personal_context(user):
