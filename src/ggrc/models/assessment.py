@@ -24,6 +24,7 @@ from ggrc.models.mixins import Timeboxed
 from ggrc.models.mixins import VerifiedDate
 from ggrc.models.mixins import reminderable
 from ggrc.models.mixins import statusable
+from ggrc.models import label
 from ggrc.models.mixins.assignable import Assignable
 from ggrc.models.mixins.autostatuschangeable import AutoStatusChangeable
 from ggrc.models.mixins.validate_on_complete import ValidateOnComplete
@@ -62,8 +63,8 @@ class Assessment(Roleable, statusable.Statusable, AuditRelationship,
                  CustomAttributable, PublicDocumentable, Commentable,
                  Personable, reminderable.Reminderable, Timeboxed, Relatable,
                  WithSimilarityScore, FinishedDate, VerifiedDate,
-                 ValidateOnComplete, Notifiable, WithAction, BusinessObject,
-                 Indexed, db.Model):
+                 ValidateOnComplete, Notifiable, WithAction, label.Labeled,
+                 BusinessObject, Indexed, db.Model):
   """Class representing Assessment.
 
   Assessment is an object representing an individual assessment performed on

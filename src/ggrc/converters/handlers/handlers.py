@@ -796,6 +796,32 @@ class DocumentsColumnHandler(ColumnHandler):
     self.dry_run = True
 
 
+class LabelsColumnHandler(ColumnHandler):
+
+  def get_value(self):
+    return u"\n".join(l.name for l in self.row_converter.obj.labels)
+
+  def parse_item(self):
+    lines = [line.strip() for line in self.raw_value.splitlines()]
+    all_releated_labels = all_models.Label.query.filter(
+        all_models.Label.object_type == self.type
+    )
+    label_names_dict = {label.name: label for label in all_releated_labels}
+    labels = []
+    for line in lines:
+      label = label_names_dict.get(line)
+      if label:
+        labels.append(label)
+      else:
+        self.add_warning(errors.WRONG_VALUE, column_name=self.display_name)
+    return labels
+
+  def insert_object(self):
+    if self.dry_run or not self.value:
+      return
+    self.row_converter.obj.labels = [{"id": l.id} for l in self.value]
+
+
 class ExportOnlyColumnHandler(ColumnHandler):
 
   def __init__(self, *args, **kwargs):

@@ -65,6 +65,7 @@ from ggrc.models.system import Process
 from ggrc.models.system import System
 from ggrc.models.system import SystemOrProcess
 from ggrc.models.vendor import Vendor
+from ggrc.models.label import Label
 
 all_models = [  # pylint: disable=invalid-name
     # data platform models
@@ -129,6 +130,7 @@ all_models = [  # pylint: disable=invalid-name
     Notification,
     Issue,
     Snapshot,
+    Label,
 ]
 
 __all__ = [m.__name__ for m in all_models]
