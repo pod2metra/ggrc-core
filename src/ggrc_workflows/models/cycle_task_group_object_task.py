@@ -338,10 +338,12 @@ class CycleTaskGroupObjectTask(roleable.Roleable,
         Second one contains object's ids that were skipped.
     """
     new_prv_state_map = {
-        cls.IN_PROGRESS: cls.ASSIGNED,
-        cls.FINISHED: cls.IN_PROGRESS,
-        cls.VERIFIED: cls.FINISHED,
-        cls.DECLINED: cls.FINISHED
+        cls.DEPRECATED: (cls.ASSIGNED, cls.IN_PROGRESS, cls.FINISHED,
+                         cls.VERIFIED, cls.DECLINED),
+        cls.IN_PROGRESS: (cls.ASSIGNED, ),
+        cls.FINISHED: (cls.IN_PROGRESS, ),
+        cls.VERIFIED: (cls.FINISHED, ),
+        cls.DECLINED: (cls.FINISHED, )
     }
     uniq_states = set([item['state'] for item in src])
     if len(list(uniq_states)) != 1:
@@ -352,12 +354,12 @@ class CycleTaskGroupObjectTask(roleable.Roleable,
     if new_state not in cls.VALID_STATES:
       raise BadRequest("Request's JSON contains invalid statuses for "
                        "CycleTasks")
-    prv_state = new_prv_state_map[new_state]
+    prv_states = new_prv_state_map[new_state]
     all_ids = {item['id'] for item in src}
     # Eagerly loading is needed to get user permissions for CycleTask faster
     updatable_objects = cls.eager_query().filter(
         cls.id.in_(list(all_ids)),
-        cls.status == prv_state)
+        cls.status.in_(prv_states))
     if new_state in (cls.VERIFIED, cls.DECLINED):
       updatable_objects = [obj for obj in updatable_objects
                            if obj.cycle.is_verification_needed]

@@ -540,6 +540,7 @@ class TestStatusApiPatch(TestCase):
   ASSIGNED = all_models.CycleTaskGroupObjectTask.ASSIGNED
   IN_PROGRESS = all_models.CycleTaskGroupObjectTask.IN_PROGRESS
   FINISHED = all_models.CycleTaskGroupObjectTask.FINISHED
+  DEPRECATED = all_models.CycleTaskGroupObjectTask.DEPRECATED
 
   def setUp(self):
     super(TestStatusApiPatch, self).setUp()
@@ -598,6 +599,11 @@ class TestStatusApiPatch(TestCase):
           {0: 'updated', 1: 'updated', 2: 'updated'},
           # Expected states after update
           [IN_PROGRESS, IN_PROGRESS, IN_PROGRESS]
+      ),
+      (
+          [DEPRECATED, DEPRECATED, DEPRECATED],
+          {0: 'updated', 1: 'updated', 2: 'updated'},
+          [DEPRECATED, DEPRECATED, DEPRECATED]
       ),
       (
           [FINISHED, FINISHED, FINISHED],
