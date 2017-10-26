@@ -6,8 +6,8 @@
 """Workflows module"""
 
 from datetime import datetime, date
-from flask import Blueprint
 from logging import getLogger
+from flask import Blueprint
 from sqlalchemy import inspect, and_, orm
 
 from ggrc import db
@@ -903,6 +903,7 @@ def init_extra_views(app):
 
 
 def start_recurring_cycles():
+  """Start recurring cycles by cron job."""
   today = date.today()
   workflows = models.Workflow.query.filter(
       models.Workflow.next_cycle_start_date <= today,

@@ -511,6 +511,7 @@ class TestStatusApiPost(TestCase):
 
 @ddt.ddt
 class TestCloneWorkflow(TestCase):
+  """Test clone Workflow operation."""
 
   def setUp(self):
     super(TestCloneWorkflow, self).setUp()
