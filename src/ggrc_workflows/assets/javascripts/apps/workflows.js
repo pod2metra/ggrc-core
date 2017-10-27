@@ -627,6 +627,7 @@
           sort_property: null,
           sort_function: _taskSortFunction,
           draw_children: true,
+          showBulkUpdate: true,
           events: {
             'show-history': function (el, ev) {
               this.options.attr('mapping', el.attr('mapping'));

@@ -76,6 +76,11 @@
           {{#if showGenerateAssessments}}
             <assessment-generator-button audit="parent_instance"></assessment-generator-button>
           {{/if}}
+          {{#if showBulkUpdate}}
+            <li>
+              <bulk-update-button></bulk-update-button>
+            </li>
+          {{/if}}
         </ul>
       </div>
       {{/if}}

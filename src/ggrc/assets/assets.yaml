@@ -133,6 +133,7 @@ dashboard-js-template-files:
   - issues/remediation_plan.mustache
   - issues/tree_add_item.mustache
   - components/autocomplete/autocomplete.mustache
+  - components/bulk-update-button/bulk-update-button.mustache
   - components/object-mapper/object-mapper.mustache
   - components/object-generator/object-generator.mustache
   - components/object-search/object-search.mustache

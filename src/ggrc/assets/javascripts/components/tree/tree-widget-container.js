@@ -24,6 +24,7 @@ import './tree-people-list-field';
 import './tree-people-with-role-list-field';
 import '../advanced-search/advanced-search-filter-container';
 import '../advanced-search/advanced-search-mapping-container';
+import '../bulk-update-button/bulk-update-button';
 import template from './templates/tree-widget-container.mustache';
 
 (function (can, GGRC) {
@@ -198,6 +199,12 @@ import template from './templates/tree-widget-container.mustache';
 
           return parentInstance.type === 'Audit' &&
             model.shortName === 'Assessment';
+        },
+      },
+      showBulkUpdate: {
+        type: 'boolean',
+        get: function () {
+          return this.attr('options.showBulkUpdate');
         },
       },
       show3bbs: {
