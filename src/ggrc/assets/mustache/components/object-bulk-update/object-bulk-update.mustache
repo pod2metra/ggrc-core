@@ -1,0 +1,95 @@
+{{!
+    Copyright (C) 2017 Google Inc.
+    Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
+}}
+
+<div class="modal-header">
+  <a class="modal-dismiss pull-right" href="javascript://" data-dismiss="modal">
+    <i class="fa fa-times black"></i>
+  </a>
+  <h2>
+    Bulk Update
+  </h2>
+</div>
+<div class="modal-filter modal-body">
+  <collapsible-panel {soft-mode}="true" {title-text}="'filter'" {(expanded)}="showSearch">
+    <advanced-search-wrapper
+      {model-name}="model.singular"
+      {model-display-name}="model.name"
+      {^filter-items}="*filterItems"
+      {^status-item}="*statusItem"
+      ($enter)="onSubmit()">
+      <div class="object-controls">
+        <div class="object-controls__row">
+          <div class="object-controls__state">
+            <advanced-search-filter-state
+              {model-name}="modelName"
+              {(state-model)}="statusItem.value"
+              {show-operator}="false">
+            </advanced-search-filter-state>
+          </div>
+        </div>
+        <div class="object-controls__filters">
+          <advanced-search-filter-container
+            {(items)}="filterItems"
+            {available-attributes}="availableAttributes"
+            {model-name}="modelName"
+            {default-status-filter}="false"
+            {show-add-button}="mappingItems.length">
+          </advanced-search-filter-container>
+        </div>
+        <div class="object-controls__actions">
+          <div class="object-controls__actions--left">
+            <button class="btn btn-small btn-white" ($click)="addFilterAttribute">Add Attribute</button>
+          </div>
+          <div class="object-controls__actions--right">
+            <button type="reset" class="btn btn-small btn-white" {{#if is_loading}}disabled="disabled"{{/if}} ($click)="resetFilters()">Reset</button>
+           <button type="submit" class="btn btn-small btn-lightBlue" {{#if is_loading}}disabled="disabled"{{/if}} ($click)="onSubmit()">Search</button>
+          </div>
+        </div>
+      </div>
+    </advanced-search-wrapper>
+  </collapsible-panel>
+</div>
+
+<div class="modal-footer {{#if showResults}}expanded{{/if}}">
+  <collapsible-panel {soft-mode}="true" {title-text}="'Search Results ({{*totalObjects}})'" {(expanded)}="showResults">
+    <div class="search-results">
+      <mapper-results
+        base-instance="parentInstance"
+        {(is-loading)}="is_loading"
+        object="object"
+        type="type"
+        selected="selected"
+        submit-cbs="submitCbs"
+        {^paging.total}="*totalObjects"
+        {(entries)}="entries"
+        {filter-items}="*filterItems"
+        {status-item}="*statusItem">
+      </mapper-results>
+    </div>
+    <div class="control-buttons row-fluid">
+      <div class="span5">
+        <div class="deny-buttons"></div>
+      </div>
+      <div class="span7">
+        <div class="confirm-buttons">
+          <span>
+          {{selected.length}}
+          assessment(s) will be generated for each selection
+          </span>
+
+          <button class="btn-map btn btn-small btn-green preventdoubleclick"
+                  {{^if selected.length}}disabled="disabled"{{/if}}>
+            {{#if is_saving}}
+              Saving, please wait...
+            {{else}}
+              Generate Assessments
+            {{/if}}
+          </button>
+          <spinner toggle="is_saving"></spinner>
+        </div>
+      </div>
+    </div>
+  </collapsible-panel>
+</div>

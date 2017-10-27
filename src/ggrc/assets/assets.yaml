@@ -134,6 +134,7 @@ dashboard-js-template-files:
   - issues/tree_add_item.mustache
   - components/autocomplete/autocomplete.mustache
   - components/bulk-update-button/bulk-update-button.mustache
+  - components/object-bulk-update/object-bulk-update.mustache
   - components/object-mapper/object-mapper.mustache
   - components/object-generator/object-generator.mustache
   - components/object-search/object-search.mustache
@@ -227,6 +228,7 @@ dashboard-js-template-files:
   - modals/save_cancel_buttons.mustache
   - modals/save_cancel_delete_buttons.mustache
   - modals/unmap_cancel_buttons.mustache
+  - modals/mapper/object-bulk-update-modal.mustache
   - modals/mapper/object-mapper-modal.mustache
   - modals/mapper/object-generator-modal.mustache
   - modals/mapper/object-search-modal.mustache

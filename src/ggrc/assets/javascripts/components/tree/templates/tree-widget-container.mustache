@@ -78,7 +78,8 @@
           {{/if}}
           {{#if showBulkUpdate}}
             <li>
-              <bulk-update-button></bulk-update-button>
+              <bulk-update-button {model}="model">
+              </bulk-update-button>
             </li>
           {{/if}}
         </ul>

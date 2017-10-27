@@ -5,6 +5,7 @@
 
 import '../components/view-models/object-operations-base-vm';
 import '../components/advanced-search/advanced-search-wrapper';
+import '../components/object-bulk-update/object-bulk-update';
 import '../components/object-mapper/object-mapper';
 import '../components/object-generator/object-generator';
 import '../components/object-search/object-search';
@@ -197,6 +198,12 @@ import '../components/unified-mapper/mapper-results';
     defaults: {
       component: GGRC.mustache_path +
         '/modals/mapper/object-generator-modal.mustache',
+    },
+  }, {});
+  GGRC.Controllers.ObjectMapper.extend('GGRC.Controllers.ObjectBulkUpdate', {
+    defaults: {
+      component: GGRC.mustache_path +
+        '/modals/mapper/object-bulk-update-modal.mustache',
     },
   }, {});
 

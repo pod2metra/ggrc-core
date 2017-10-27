@@ -109,6 +109,16 @@
       return groups;
     },
     /**
+     * Return allowed for mapping type in appropriate group.
+     * @param {String} type - base model type
+     * @return {Array} - object with one allowed for mapping Model
+     */
+    getMappingType: function (type) {
+      var groups = this.getTypeGroups();
+      this._addFormattedType(type, groups);
+      return groups;
+    },
+    /**
      * Returns cmsModel fields in required format.
      * @param {can.Model} cmsModel - cms model
      * @return {object} - cms model in required format

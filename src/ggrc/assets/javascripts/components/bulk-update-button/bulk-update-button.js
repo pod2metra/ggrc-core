@@ -10,5 +10,16 @@ export default can.Component.extend({
   tag: 'bulk-update-button',
   template: template,
   viewModel: {
+    model: null,
+  },
+  events: {
+    'a click': function (el) {
+      var model = this.viewModel.attr('model');
+      var type = model.model_singular;
+      GGRC.Controllers.ObjectBulkUpdate.launch(el, {
+        object: type,
+        type: type,
+      });
+    },
   },
 });
