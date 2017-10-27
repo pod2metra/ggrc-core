@@ -542,13 +542,15 @@ class TestStatusApiPatch(TestCase):
   IN_PROGRESS = all_models.CycleTaskGroupObjectTask.IN_PROGRESS
   FINISHED = all_models.CycleTaskGroupObjectTask.FINISHED
   DEPRECATED = all_models.CycleTaskGroupObjectTask.DEPRECATED
+  VERIFIED = all_models.CycleTaskGroupObjectTask.VERIFIED
 
   def setUp(self):
     super(TestStatusApiPatch, self).setUp()
     self.api = Api()
     with factories.single_commit():
       self.assignee = factories.PersonFactory(email="assignee@example.com")
-      self.workflow = wf_factories.WorkflowFactory()
+      self.workflow = wf_factories.WorkflowFactory(
+          status=all_models.Workflow.ACTIVE)
       self.cycle = wf_factories.CycleFactory(workflow=self.workflow)
       self.group = wf_factories.CycleTaskGroupFactory(
           cycle=self.cycle,
@@ -659,3 +661,58 @@ class TestStatusApiPatch(TestCase):
     self.assertItemsEqual(
         [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
         [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
+
+  def test_group_status_over_task_update(self):
+
+    # all tasks in assigned state
+    self.assertEqual([self.ASSIGNED] * 3, [t.status for t in self.tasks])
+    self._update_ct_via_patch([self.IN_PROGRESS] * 3)
+    # all tasks in progress state
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
+    self.assertItemsEqual([self.IN_PROGRESS] * 3,
+                          [obj.status for obj in self.tasks])
+    group = all_models.CycleTaskGroup.query.one()
+    # group in progress too
+    self.assertEqual(self.IN_PROGRESS, group.status)
+    # cycle in progress too
+    self.assertEqual(self.IN_PROGRESS, group.cycle.status)
+    # workflow is active
+    self.assertEqual(group.cycle.workflow.ACTIVE, group.cycle.workflow.status)
+    # update 1 task to finished
+    self._update_ct_via_patch([self.FINISHED])
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
+    self.assertItemsEqual([self.FINISHED, self.IN_PROGRESS, self.IN_PROGRESS],
+                          [obj.status for obj in self.tasks])
+    # group should be in progress, 2 other tasks are still in progress
+    group = all_models.CycleTaskGroup.query.one()
+    self.assertEqual(self.IN_PROGRESS, group.status)
+    # cycle in progress too
+    self.assertEqual(self.IN_PROGRESS, group.cycle.status)
+    # workflow is active
+    self.assertEqual(group.cycle.workflow.ACTIVE, group.cycle.workflow.status)
+    # all tasks moved to finished
+    self._update_ct_via_patch([self.FINISHED] * 3)
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
+    self.assertItemsEqual([self.FINISHED] * 3,
+                          [obj.status for obj in self.tasks])
+    # group should be finished too
+    group = all_models.CycleTaskGroup.query.one()
+    self.assertEqual(self.FINISHED, group.status)
+    # cycle finished too
+    self.assertEqual(self.FINISHED, group.cycle.status)
+    # workflow is inactive
+    self.assertEqual(group.cycle.workflow.ACTIVE,
+                     group.cycle.workflow.status)
+    # all tasks moved to finished
+    self._update_ct_via_patch([self.VERIFIED] * 3)
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
+    self.assertItemsEqual([self.VERIFIED] * 3,
+                          [obj.status for obj in self.tasks])
+    # group should be finished too
+    group = all_models.CycleTaskGroup.query.one()
+    self.assertEqual(self.VERIFIED, group.status)
+    # cycle finished too
+    self.assertEqual(self.VERIFIED, group.cycle.status)
+    # workflow is inactive
+    self.assertEqual(group.cycle.workflow.INACTIVE,
+                     group.cycle.workflow.status)
