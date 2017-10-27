@@ -6,12 +6,12 @@
 <div class="flex-box sub-item-content {{cssClasses}}">
   <tree-item-actions {instance}="instance"
                      (expand)="onExpand()"
-                     (preview)="onPreview(%event)"
+                     (preview)="select($element)"
                      {expanded}="expanded"
                      {child-models-list}="childModelsList"
                      {deep-limit}="limitDepthTree"
   ></tree-item-actions>
-  <div class="flex-box columns" ($click)="select($element)">
+  <div class="flex-box columns" ($click)="onClick($element)">
     <span class="title">
       <i class="fa fa-{{instance.class.table_singular}}"></i>
       {{title}}

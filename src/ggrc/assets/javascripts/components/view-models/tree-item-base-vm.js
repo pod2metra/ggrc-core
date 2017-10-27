@@ -58,8 +58,28 @@
         this.attr('expanded', !isExpanded);
       }
     },
-    onPreview: function (event) {
-      this.select(event.element);
+    onClick: function ($element) {
+      var instance = this.attr('instance');
+
+      switch (instance.attr('type')) {
+        case 'Person':
+          if (!this.attr('result')) {
+            this.attr('resultDfd').then(()=> {
+              this.select($element);
+            });
+            return;
+          }
+          break;
+        case 'Cycle':
+        case 'CycleTaskGroup':
+          if (GGRC.Utils.CurrentPage.getPageType() === 'Workflow') {
+            this.attr('expanded', !this.attr('expanded'));
+            return;
+          }
+          break;
+      }
+
+      this.select($element);
     },
     select: function ($element) {
       var instance = this.attr('instance');
@@ -67,14 +87,7 @@
 
       $element = $element.closest(itemSelector);
 
-      if (instance instanceof CMS.Models.Person && !this.attr('result')) {
-        // for Person instances we need to build ResultMapping object before open the info panel
-        this.attr('resultDfd').then(function () {
-          can.trigger($element, 'selectTreeItem', [$element, instance]);
-        });
-      } else {
-        can.trigger($element, 'selectTreeItem', [$element, instance]);
-      }
+      can.trigger($element, 'selectTreeItem', [$element, instance]);
     },
   });
 })(window.can, window.GGRC);

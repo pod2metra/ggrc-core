@@ -1,4 +1,4 @@
-/*!
+/*
  Copyright (C) 2017 Google Inc.
  Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
  */
@@ -76,47 +76,150 @@ describe('GGRC.VM.BaseTreeItemVM', function () {
     });
   });
 
-  describe('onPreview() method', function () {
+  describe('onClick() method', function () {
     beforeEach(function () {
       spyOn(vm, 'select');
     });
 
-    it('calls the select method woth the element from event', function () {
-      var event = {
-        element: 'fakeElement',
-      };
-      vm.onPreview(event);
+    describe('if instance is Person', ()=> {
+      let dfd;
+      beforeEach(()=> {
+        vm.attr('instance', new can.Map({
+          type: 'Person',
+        }));
+        dfd = can.Deferred();
+        vm.attr('resultDfd', dfd);
+      });
 
-      expect(vm.select).toHaveBeenCalledWith('fakeElement');
+      it('call select() if there is result', ()=> {
+        vm.attr('result', true);
+
+        vm.onClick('element');
+
+        expect(vm.select).toHaveBeenCalledWith('element');
+      });
+
+      it(`call waiting for deferred and call select()
+          if there is no result`, (done)=> {
+        vm.attr('result', false);
+
+        vm.onClick('element');
+        expect(vm.select).not.toHaveBeenCalled();
+
+        dfd.resolve().then(()=> {
+          done();
+          expect(vm.select).toHaveBeenCalledWith('element');
+        });
+      });
+    });
+
+    describe('if instance is Cycle', ()=> {
+      beforeEach(()=> {
+        vm.attr('instance', new can.Map({
+          type: 'Cycle',
+        }));
+      });
+
+      describe('toggle "expanded" option if page is "Workflow"', ()=> {
+        beforeEach(()=> {
+          spyOn(GGRC.Utils.CurrentPage, 'getPageType')
+            .and.returnValue('Workflow');
+        });
+        it('when option was false', ()=> {
+          vm.attr('expanded', false);
+
+          vm.onClick('element');
+
+          expect(vm.attr('expanded')).toBe(true);
+        });
+
+        it('when option was true', ()=> {
+          vm.attr('expanded', true);
+
+          vm.onClick('element');
+
+          expect(vm.attr('expanded')).toBe(false);
+        });
+      });
+
+      it('call select() if page is not Workflow', ()=> {
+        spyOn(GGRC.Utils.CurrentPage, 'getPageType')
+          .and.returnValue('AnotherType');
+        vm.attr('result', true);
+
+        vm.onClick('element');
+
+        expect(vm.select).toHaveBeenCalledWith('element');
+      });
+    });
+
+    describe('if instance is CycleTaskGroup', ()=> {
+      beforeEach(()=> {
+        vm.attr('instance', new can.Map({
+          type: 'CycleTaskGroup',
+        }));
+      });
+
+      describe('toggle "expanded" option if page is "Workflow"', ()=> {
+        beforeEach(()=> {
+          spyOn(GGRC.Utils.CurrentPage, 'getPageType')
+            .and.returnValue('Workflow');
+        });
+
+        it('when option was false', ()=> {
+          vm.attr('expanded', false);
+
+          vm.onClick('element');
+
+          expect(vm.attr('expanded')).toBe(true);
+        });
+
+        it('when option was true', ()=> {
+          vm.attr('expanded', true);
+
+          vm.onClick('element');
+
+          expect(vm.attr('expanded')).toBe(false);
+        });
+      });
+
+      it('call select() if page is not Workflow', ()=> {
+        spyOn(GGRC.Utils.CurrentPage, 'getPageType')
+          .and.returnValue('AnotherType');
+        vm.attr('result', true);
+
+        vm.onClick('element');
+
+        expect(vm.select).toHaveBeenCalledWith('element');
+      });
     });
   });
 
-  describe('select() method', function () {
-    var fakeElement;
+  describe('select() method', ()=> {
+    let fakeElement;
 
-    beforeEach(function () {
+    beforeEach(()=> {
       fakeElement = {
-        closest: jasmine.createSpy(),
+        closest: jasmine.createSpy().and.returnValue('closest'),
       };
-
       spyOn(can, 'trigger');
+      vm.attr('instance', 'fakeInstance');
+      vm.attr('itemSelector', 'fakeSelector');
     });
 
-    describe('for not Person instances', function () {
-      beforeEach(function () {
-        vm.attr('instance', 'fakeInstance');
-        vm.attr('itemSelector', 'fakeSelector');
-      });
+    it('looks for correct element', ()=> {
+      vm.select(fakeElement);
 
-      it('triggers event immediately', function () {
-        vm.select(fakeElement);
-
-        expect(can.trigger).toHaveBeenCalled();
-      });
+      expect(fakeElement.closest).toHaveBeenCalledWith('fakeSelector');
     });
 
-    describe('for Person instances', function () {
-      //
+    it('triggers "selectTreeItem" event', ()=> {
+      vm.select(fakeElement);
+
+      expect(can.trigger).toHaveBeenCalledWith(
+        'closest',
+        'selectTreeItem',
+        ['closest', 'fakeInstance']);
     });
   });
 });

@@ -7,12 +7,12 @@
   <div class="flex-box tree-item-content">
     <tree-item-actions {instance}="instance"
                        (expand)="onExpand()"
-                       (preview)="onPreview(%event)"
+                       (preview)="select($element)"
                        {expanded}="expanded"
                        {child-models-list}="childModelsList"
                        {deep-limit}="limitDepthTree"
     ></tree-item-actions>
-    <div class="flex-box selectable-attrs width-100" ($click)="select($element)">
+    <div class="flex-box selectable-attrs width-100" ($click)="onClick($element)">
         {{#selectedColumns}}
           {{! add alias because "this" is changed inside the switch-case block}}
           {{#add_to_current_scope thisColumn=this}}
