@@ -11,76 +11,82 @@
     </a>
     <ul>
       <lazy-render trigger="activated">
-      <!---->
-      {{#if instance.viewLink}}
         <!-- Link for open instance on info panel at bottom -->
-          <li>
-            <a href="javascript://" ($click)="maximizeObject">
-              <i class="fa fa-info-circle"></i>
-              View Info
-            </a>
-          </li>
-          {{#unless isSnapshot}}
-            <!-- Link for open instance on new Browser tab -->
-            <li>
-              <a href="{{instance.viewLink}}" target="_blank" ($click)="openObject">
-                <i class="fa fa-long-arrow-right"></i>
-                Open in a new tab
-              </a>
-            </li>
-          {{/unless}}
-      {{/if}}
-
-
-      {{#if isAllowedToMap}}
         <li>
-          <tree-item-map {instance}="instance"></tree-item-map>
-        </li>
-      {{/if}}
-      {{#if isAllowedToEdit}}
-        {{#is_allowed 'update' instance context='for'}}
-          <li>
-            <a href="javascript://"
-              data-link-purpose="open-edit-modal"
-              data-toggle="modal-ajax-form"
-              data-modal-reset="reset"
-              data-modal-class="modal-wide"
-              data-object-singular="{{instance.class.model_singular}}"
-              data-object-plural="{{instance.class.table_plural}}"
-              data-object-id="{{instance.id}}">
-              <i class="fa fa-pencil-square-o"></i>
-              Edit object
-            </a>
-          </li>
-        {{/is_allowed}}
-      {{/if}}
-
-      <li>
-        <show-related-assessments-button {instance}="instance"
-                                        {reset-styles}="true"
-                                        {show-title}="false"
-                                        {show-icon}="true"
-                                        text="Show related assessments"
-        ></show-related-assessments-button>
-      </li>
-
-      <li class="splitter"></li>
-
-      {{#unless isSnapshot}}
-        {{#if canExpand}}
-          <li>
-            <sub-tree-models {models-list}="childModelsList"
-                            {title}="instance.title"
-            ></sub-tree-models>
-          </li>
-        <li>
-          <a href="javascript://" ($click)="expand">
-            <i class="fa fa-{{expandIcon}}"></i>
-            {{expanderTitle}}
+          <a href="javascript://" ($click)="maximizeObject">
+            <i class="fa fa-info-circle"></i>
+            View Info
           </a>
         </li>
+
+        {{^if showReducedOptions}}
+
+          {{#if instance.viewLink}}
+            {{#unless isSnapshot}}
+              <!-- Link for open instance on new Browser tab -->
+              <li>
+                <a href="{{instance.viewLink}}" target="_blank" ($click)="openObject">
+                  <i class="fa fa-long-arrow-right"></i>
+                  Open in a new tab
+                </a>
+              </li>
+            {{/unless}}
+          {{/if}}
+
+          {{#if isAllowedToMap}}
+            <li>
+              <tree-item-map {instance}="instance"></tree-item-map>
+            </li>
+          {{/if}}
+
+          {{#if isAllowedToEdit}}
+            {{#is_allowed 'update' instance context='for'}}
+              <li>
+                <a href="javascript://"
+                  data-link-purpose="open-edit-modal"
+                  data-toggle="modal-ajax-form"
+                  data-modal-reset="reset"
+                  data-modal-class="modal-wide"
+                  data-object-singular="{{instance.class.model_singular}}"
+                  data-object-plural="{{instance.class.table_plural}}"
+                  data-object-id="{{instance.id}}">
+                  <i class="fa fa-pencil-square-o"></i>
+                  Edit object
+                </a>
+              </li>
+            {{/is_allowed}}
+          {{/if}}
+
+          <li>
+            <show-related-assessments-button
+              {instance}="instance"
+              {reset-styles}="true"
+              {show-title}="false"
+              {show-icon}="true"
+              text="Show related assessments">
+            </show-related-assessments-button>
+          </li>
+
+          <li class="splitter"></li>
+
+          {{#unless isSnapshot}}
+            {{#if canExpand}}
+              <li>
+                <sub-tree-models
+                  {models-list}="childModelsList"
+                  {title}="instance.title">
+                </sub-tree-models>
+              </li>
+            <li>
+              <a href="javascript://" ($click)="expand">
+                <i class="fa fa-{{expandIcon}}"></i>
+                {{expanderTitle}}
+              </a>
+            </li>
+            {{/if}}
+          {{/unless}}
+
         {{/if}}
-      {{/unless}}
       </lazy-render>
     </ul>
   </div>

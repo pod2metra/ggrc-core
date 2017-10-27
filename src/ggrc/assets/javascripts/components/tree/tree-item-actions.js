@@ -97,6 +97,15 @@ import template from './templates/tree-item-actions.mustache';
       ];
       return _.contains(pages, GGRC.Utils.CurrentPage.getPageType()) &&
         _.contains(instanceTypes, this.attr('instance').type);
+    },
+    showReducedOptions: function () {
+      var pages = ['Workflow'];
+      var instanceTypes = [
+        'Cycle',
+        'CycleTaskGroup',
+      ];
+      return _.contains(pages, GGRC.Utils.CurrentPage.getPageType()) &&
+        _.contains(instanceTypes, this.attr('instance').type);
     }
   });
 
