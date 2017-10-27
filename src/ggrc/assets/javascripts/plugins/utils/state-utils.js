@@ -123,8 +123,8 @@
      */
     function statusFilter(statuses, filterString, modelName) {
       var filter = modelName === 'Assessment' ?
-        buildAssessmentFilter(statuses, buildStatusesFilterString) :
-        buildStatusesFilterString(statuses);
+        buildAssessmentFilter(statuses, buildStatusesFilterString, modelName) :
+        buildStatusesFilterString(statuses, modelName);
 
       filterString = filterString || '';
       if (filter !== '') {
@@ -154,30 +154,47 @@
      */
     function buildStatusFilter(statuses, builder, modelName) {
       var filter = modelName === 'Assessment' ?
-        buildAssessmentFilter(statuses, builder) :
-        builder(statuses);
+        buildAssessmentFilter(statuses, builder, modelName) :
+        builder(statuses, modelName);
       return filter;
     }
 
     /**
      * Build statuses filter string
      * @param {Array} statuses - array of active statuses
+     * @param {String} modelName - model name
      * @return {String} statuses filter
      */
-    function buildStatusesFilterString(statuses) {
+    function buildStatusesFilterString(statuses, modelName) {
+      var fieldName = getStatusFieldName(modelName);
+
       return statuses.map(function (item) {
         // wrap in quotes
-        return '"Status"="' + item + '"';
+        return '"' + fieldName + '"="' + item + '"';
       }).join(' Or ');
     }
+    /**
+     * Return status field name for model
+     * @param {String} modelName - model name
+     * @return {String} status field name
+     */
+    function getStatusFieldName(modelName) {
+      var modelToStateFieldMap = {
+        CycleTaskGroupObjectTask: 'Task State',
+      };
+      var fieldName = modelToStateFieldMap[modelName] ||
+        'Status';
 
+      return fieldName;
+    }
     /**
      * Build statuses filter for Assessment model
      * @param {Array} statuses - array of active statuses
      * @param {function} builder - function building a query
+     * @param {String} modelName - model name
      * @return {String} statuses filter
      */
-    function buildAssessmentFilter(statuses, builder) {
+    function buildAssessmentFilter(statuses, builder, modelName) {
       var verifiedIndex = statuses.indexOf('Completed and Verified');
       var completedIndex = statuses.indexOf('Completed (no verification)');
       var isVerified = false;
@@ -188,7 +205,7 @@
 
       // do not update statuses
       if (verifiedIndex === -1 && completedIndex === -1) {
-        return builder(statuses);
+        return builder(statuses, modelName);
       }
 
       if (verifiedIndex > -1 && completedIndex > -1) {
@@ -200,7 +217,7 @@
         // remove it
         statuses.splice(verifiedIndex, 1);
 
-        return builder(statuses);
+        return builder(statuses, modelName);
       }
 
       if (completedIndex > -1 && verifiedIndex === -1) {
@@ -211,7 +228,7 @@
         statuses.push('Completed');
       }
 
-      filter = builder(statuses);
+      filter = builder(statuses, modelName);
       return filter + ' AND verified=' + isVerified;
     }
 
@@ -234,7 +251,8 @@
       unlockedFilter: unlockedFilter,
       getStatesForModel: getStatesForModel,
       getDefaultStatesForModel: getDefaultStatesForModel,
-      buildStatusFilter: buildStatusFilter
+      buildStatusFilter: buildStatusFilter,
+      getStatusFieldName: getStatusFieldName,
     };
   })();
 })(window.GGRC);

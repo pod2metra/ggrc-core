@@ -68,28 +68,5 @@
         {status-item}="*statusItem">
       </mapper-results>
     </div>
-    <div class="control-buttons row-fluid">
-      <div class="span5">
-        <div class="deny-buttons"></div>
-      </div>
-      <div class="span7">
-        <div class="confirm-buttons">
-          <span>
-          {{selected.length}}
-          assessment(s) will be generated for each selection
-          </span>
-
-          <button class="btn-map btn btn-small btn-green preventdoubleclick"
-                  {{^if selected.length}}disabled="disabled"{{/if}}>
-            {{#if is_saving}}
-              Saving, please wait...
-            {{else}}
-              Generate Assessments
-            {{/if}}
-          </button>
-          <spinner toggle="is_saving"></spinner>
-        </div>
-      </div>
-    </div>
   </collapsible-panel>
 </div>
