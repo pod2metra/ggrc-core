@@ -48,6 +48,8 @@ export default can.Component.extend({
             modelShortName: modelShortName,
             modelShortNamePl: modelShortNamePl,
           }));
+
+          can.trigger($('tree-widget-container'), 'refreshTree');
         });
     },
   },
