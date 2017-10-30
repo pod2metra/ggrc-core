@@ -2,6 +2,8 @@
  Copyright (C) 2017 Google Inc.
  Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
  */
+
+import './bulk-update-target-state';
 import template from
   '../../../mustache/components/object-bulk-update/object-bulk-update.mustache';
 
@@ -9,6 +11,10 @@ export default can.Component.extend({
   tag: 'object-bulk-update',
   template: template,
   viewModel: function (attrs, parentViewModel) {
+    var type = attrs.type;
+    var targetStates = GGRC.Utils.State.getBulkStatesForModel(type);
+    var targetState = targetStates.length ? targetStates[0] : null;
+
     return GGRC.VM.ObjectOperationsBaseVM.extend({
       type: attrs.type,
       object: attrs.object,
@@ -18,6 +24,19 @@ export default can.Component.extend({
         return type;
       },
       reduceToOwnedItems: true,
+      showTargetState: true,
+      targetStates: targetStates,
+      targetState: targetState,
     });
+  },
+  events: {
+    closeModal: function () {
+      if (this.element) {
+        this.element.find('.modal-dismiss').trigger('click');
+      }
+    },
+    '.btn-cancel click': function () {
+      this.closeModal();
+    },
   },
 });

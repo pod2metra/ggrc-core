@@ -1,0 +1,24 @@
+{{!
+    Copyright (C) 2017 Google Inc.
+    Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
+}}
+
+{{#if warningMessage}}
+  <div class="alert">
+    <p>
+        {{warningMessage}}
+    </p>
+  </div>
+{{/if}}
+
+<div class="target-state-control">
+  <div class="target-state-control__label">
+    <h6>State</h6>
+  </div>
+  <select id="targetState" {($value)}="targetState" class="target-state-control__selector"
+    {{^enabled}}disabled="disabled"{{/enabled}}>
+    {{#targetStates}}
+      <option value="{{.}}">{{.}}</option>
+    {{/targetStates}}
+  </select>
+</div>

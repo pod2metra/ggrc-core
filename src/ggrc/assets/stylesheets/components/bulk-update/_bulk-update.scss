@@ -6,3 +6,27 @@
 .bulk-update-button:hover {
   text-decoration: none;
 }
+
+.target-state {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+
+  &-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+
+    &__label {
+      margin-right: 16px;
+      width: 35px;
+    }
+
+    &__selector {
+      background: #fff url("data:image/svg+xml;utf8,<svg width='24' height='16' viewBox='0 0 1792 1792' xmlns='http://www.w3.org/2000/svg'><path fill='#797979' d='M1408 704q0 26-19 45l-448 448q-19 19-45 19t-45-19l-448-448q-19-19-19-45t19-45 45-19h896q26 0 45 19t19 45z'/></svg>") no-repeat 100% 50%;
+      padding: 0 24px 0 4px;
+      width: 320px;
+      -webkit-appearance: none;
+    }
+  }
+}

@@ -135,6 +135,7 @@ dashboard-js-template-files:
   - components/autocomplete/autocomplete.mustache
   - components/bulk-update-button/bulk-update-button.mustache
   - components/object-bulk-update/object-bulk-update.mustache
+  - components/object-bulk-update/bulk-update-target-state.mustache
   - components/object-mapper/object-mapper.mustache
   - components/object-generator/object-generator.mustache
   - components/object-search/object-search.mustache

@@ -70,4 +70,29 @@
       </mapper-results>
     </div>
   </collapsible-panel>
+  <collapsible-panel {soft-mode}="true" {title-text}="'Bulk Update'" {(expanded)}="showTargetState">
+    <bulk-update-target-state
+      {target-states}="targetStates"
+      {(target-state)}="targetState"
+      {model-name}="model.singular"
+      {enabled}="selected.length"
+      class="target-state">
+    </bulk-update-target-state>
+  </collapsible-panel>
+  <div class="control-buttons">
+    <div class="confirm-buttons">
+      <span>
+        {{selected.length}}
+          object(s) selected
+        </span>
+        <button class="btn btn-small btn-white btn-cancel">
+          Cancel
+        </button>
+        <button class="btn-update btn btn-small btn-green preventdoubleclick"
+          {{^if selected.length}}disabled="disabled"{{/if}}>
+          Update
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
