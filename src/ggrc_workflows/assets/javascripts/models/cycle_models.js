@@ -337,9 +337,9 @@
           attr_sort_field: 'task last updated by'
         }
       ],
-      display_attr_names: ['title', 
-                           'Task Assignees', 
-                           'start_date', 
+      display_attr_names: ['title',
+                           'Task Assignees',
+                           'start_date',
                            'end_date'],
       mandatory_attr_name: ['title'],
       draw_children: true
@@ -383,7 +383,16 @@
           });
         }
       });
-    }
+    },
+    toBulkModel: function (data, options) {
+      var state = options.state;
+      return _.map(data, function (item) {
+        return {
+          id: item.id,
+          state: state,
+        };
+      });
+    },
   }, {
     _workflow: function () {
       return this.refresh_all('cycle', 'workflow').then(function (workflow) {
