@@ -3,6 +3,7 @@
 
 import datetime
 import unittest
+import collections
 from mock import MagicMock
 
 import ddt
@@ -10,6 +11,7 @@ import freezegun
 
 from ggrc import db
 from ggrc.models import all_models
+from ggrc.fulltext import mysql
 
 from integration.ggrc import TestCase
 from integration.ggrc.api_helper import Api
@@ -662,57 +664,98 @@ class TestStatusApiPatch(TestCase):
         [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
         [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
 
+  def assert_latest_revisoin_status(self, *obj_status_chain):
+    objs_status_dict = {(o.type, o.id): s for o, s in obj_status_chain}
+    revisions = []
+    for o_type, o_id in objs_status_dict:
+      revisions.append(all_models.Revision.query.filter(
+          all_models.Revision.resource_id == o_id,
+          all_models.Revision.resource_type == o_type
+      ))
+    revisions_query = revisions[0].union(
+        *revisions[1:]
+    ).order_by(
+        all_models.Revision.id
+    )
+
+    revisions_dict = collections.defaultdict(list)
+    for revision in revisions_query:
+      key = (revision.resource_type, revision.resource_id)
+      revisions_dict[key].append(revision.content)
+    for key, status in objs_status_dict.iteritems():
+      self.assertIn(key, revisions_dict)
+      content = revisions_dict[key][-1]
+      self.assertIn("status", content)
+      self.assertEqual(status, content["status"])
+
+  def assert_searchable_by_status(self, *obj_status_chain):
+    objs_status_dict = {(o.type, o.id): s for o, s in obj_status_chain}
+    full_text_properties = []
+    for o_type, o_id in objs_status_dict:
+      full_text_properties.append(
+          mysql.MysqlRecordProperty.query.filter(
+              mysql.MysqlRecordProperty.key == o_id,
+              mysql.MysqlRecordProperty.type == o_type,
+              mysql.MysqlRecordProperty.property == "task status",
+          )
+      )
+    query = full_text_properties[0].union(*full_text_properties[1:])
+    full_text_dict = {(f.type, f.key): f.content for f in query}
+    for key, status in objs_status_dict.iteritems():
+      self.assertIn(key, full_text_dict)
+      self.assertEqual(status, full_text_dict[key])
+
+  def assert_status_over_bulk_update(self,
+                                     statuses,
+                                     assert_statuses,
+                                     group_status,
+                                     cycle_status,
+                                     workflow_status):
+    self._update_ct_via_patch(statuses)
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.order_by(
+        all_models.CycleTaskGroupObjectTask.id
+    ).all()
+    self.assertItemsEqual(assert_statuses,
+                          [obj.status for obj in self.tasks])
+    group = all_models.CycleTaskGroup.query.one()
+    # group in progress too
+    self.assertEqual(group_status, group.status)
+    # cycle in progress too
+    self.assertEqual(cycle_status, group.cycle.status)
+    # workflow is active
+    self.assertEqual(workflow_status, group.cycle.workflow.status)
+    obj_status_chain = [
+        (t, assert_statuses[idx]) for idx, t in enumerate(self.tasks)
+    ]
+    self.assert_latest_revisoin_status(*obj_status_chain)
+    self.assert_searchable_by_status(*obj_status_chain)
+
   def test_group_status_over_task_update(self):
 
     # all tasks in assigned state
     self.assertEqual([self.ASSIGNED] * 3, [t.status for t in self.tasks])
-    self._update_ct_via_patch([self.IN_PROGRESS] * 3)
     # all tasks in progress state
-    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
-    self.assertItemsEqual([self.IN_PROGRESS] * 3,
-                          [obj.status for obj in self.tasks])
-    group = all_models.CycleTaskGroup.query.one()
-    # group in progress too
-    self.assertEqual(self.IN_PROGRESS, group.status)
-    # cycle in progress too
-    self.assertEqual(self.IN_PROGRESS, group.cycle.status)
-    # workflow is active
-    self.assertEqual(group.cycle.workflow.ACTIVE, group.cycle.workflow.status)
+    self.assert_status_over_bulk_update([self.IN_PROGRESS] * 3,
+                                        [self.IN_PROGRESS] * 3,
+                                        self.IN_PROGRESS,
+                                        self.IN_PROGRESS,
+                                        all_models.Workflow.ACTIVE)
     # update 1 task to finished
-    self._update_ct_via_patch([self.FINISHED])
-    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
-    self.assertItemsEqual([self.FINISHED, self.IN_PROGRESS, self.IN_PROGRESS],
-                          [obj.status for obj in self.tasks])
-    # group should be in progress, 2 other tasks are still in progress
-    group = all_models.CycleTaskGroup.query.one()
-    self.assertEqual(self.IN_PROGRESS, group.status)
-    # cycle in progress too
-    self.assertEqual(self.IN_PROGRESS, group.cycle.status)
-    # workflow is active
-    self.assertEqual(group.cycle.workflow.ACTIVE, group.cycle.workflow.status)
+    self.assert_status_over_bulk_update(
+        [self.FINISHED],
+        [self.FINISHED, self.IN_PROGRESS, self.IN_PROGRESS],
+        self.IN_PROGRESS,
+        self.IN_PROGRESS,
+        all_models.Workflow.ACTIVE)
     # all tasks moved to finished
-    self._update_ct_via_patch([self.FINISHED] * 3)
-    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
-    self.assertItemsEqual([self.FINISHED] * 3,
-                          [obj.status for obj in self.tasks])
-    # group should be finished too
-    group = all_models.CycleTaskGroup.query.one()
-    self.assertEqual(self.FINISHED, group.status)
-    # cycle finished too
-    self.assertEqual(self.FINISHED, group.cycle.status)
-    # workflow is inactive
-    self.assertEqual(group.cycle.workflow.ACTIVE,
-                     group.cycle.workflow.status)
-    # all tasks moved to finished
-    self._update_ct_via_patch([self.VERIFIED] * 3)
-    self.tasks = all_models.CycleTaskGroupObjectTask.query.all()
-    self.assertItemsEqual([self.VERIFIED] * 3,
-                          [obj.status for obj in self.tasks])
-    # group should be finished too
-    group = all_models.CycleTaskGroup.query.one()
-    self.assertEqual(self.VERIFIED, group.status)
-    # cycle finished too
-    self.assertEqual(self.VERIFIED, group.cycle.status)
-    # workflow is inactive
-    self.assertEqual(group.cycle.workflow.INACTIVE,
-                     group.cycle.workflow.status)
+    self.assert_status_over_bulk_update([self.FINISHED] * 3,
+                                        [self.FINISHED] * 3,
+                                        self.FINISHED,
+                                        self.FINISHED,
+                                        all_models.Workflow.ACTIVE)
+    # all tasks moved to verified
+    self.assert_status_over_bulk_update([self.VERIFIED] * 3,
+                                        [self.VERIFIED] * 3,
+                                        self.VERIFIED,
+                                        self.VERIFIED,
+                                        all_models.Workflow.INACTIVE)

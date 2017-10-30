@@ -9,11 +9,11 @@ import sqlalchemy as sa
 from flask import current_app
 from ggrc import db
 from ggrc import utils
-from ggrc.services.common import Resource
+from ggrc.services import common
 import ggrc_workflows
 
 
-class CycleTaskResource(Resource):
+class CycleTaskResource(common.Resource):
   """Contains CycleTask's specific Resource implementation."""
 
   def patch(self):
@@ -50,6 +50,10 @@ class CycleTaskResource(Resource):
         cycle.is_current = cycle.status != cycle.done_status
     for workflow in workflows.values():
       ggrc_workflows.update_workflow_state(workflow)
+    with utils.benchmark("get_modified_objects"):
+      common.get_modified_objects(db.session)
+    with utils.benchmark("Log event"):
+      common.log_event(db.session, flush=False)
     with utils.benchmark("Commit"):
       db.session.commit()
     skipped_ids = {int(item['id']) for item in src
