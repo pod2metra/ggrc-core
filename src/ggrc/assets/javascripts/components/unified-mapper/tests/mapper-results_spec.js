@@ -282,8 +282,20 @@ describe('GGRC.Components.mapperResults', function () {
     var mockMappingItems = ['mappingItem'];
     var mockStatusItem = new can.Map({
       value: {
-        items: ['statusItem']
-      }
+        items: ['statusItem'],
+      },
+    });
+    var mockUser = {
+      id: -1,
+    };
+    var oldUser;
+
+    beforeAll(function () {
+      oldUser = GGRC.current_user;
+      GGRC.current_user = mockUser;
+    });
+    afterAll(function () {
+      GGRC.current_user = oldUser;
     });
 
     beforeEach(function () {
@@ -395,6 +407,23 @@ describe('GGRC.Components.mapperResults', function () {
 
       expect(GGRC.query_parser.join_queries.calls.argsFor(2)[1])
         .toBe('unlocked');
+    });
+
+    it('prepare request for owned items if flag was set', function () {
+      spyOn(GGRC.current_user, 'id').and.returnValue(-1);
+      viewModel.attr('applyOwnedFilter', true);
+
+      viewModel.getQuery();
+
+      expect(GGRC.query_parser.join_queries.calls.argsFor(2)[1]).toEqual({
+        expression: {
+          object_name: 'Person',
+          op: {
+            name: 'owned',
+          },
+          ids: [mockUser.id],
+        },
+      });
     });
   });
 

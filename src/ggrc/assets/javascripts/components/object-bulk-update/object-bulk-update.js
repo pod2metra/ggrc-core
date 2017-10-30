@@ -17,6 +17,7 @@ export default can.Component.extend({
         var type = GGRC.Mappings.getMappingType(object);
         return type;
       },
+      reduceToOwnedItems: true,
     });
   },
 });
