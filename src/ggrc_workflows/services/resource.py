@@ -7,13 +7,15 @@ import datetime
 
 import sqlalchemy as sa
 from flask import current_app
+
 from ggrc import db
 from ggrc import utils
-from ggrc.services.common import Resource
+from ggrc.services import common
+
 import ggrc_workflows
 
 
-class CycleTaskResource(Resource):
+class CycleTaskResource(common.Resource):
   """Contains CycleTask's specific Resource implementation."""
 
   def propagate_status(self, updated_objects):
@@ -36,6 +38,12 @@ class CycleTaskResource(Resource):
     ggrc_workflows.update_cycle_task_object_task_parent_state(
         updated_objects, is_put=True)
 
+  @staticmethod
+  def log_event():
+    """Log event action."""
+    common.get_modified_objects(db.session)
+    common.log_event(db.session, flush=False)
+
   def patch(self):
     """PATCH operation handler."""
     src = self.request.json
@@ -46,6 +54,8 @@ class CycleTaskResource(Resource):
       updated_objects = self.model.bulk_update(src)
     with utils.benchmark("Status propagation on bulk update"):
       self.propagate_status(updated_objects)
+    with utils.benchmark("Log Event"):
+      self.log_event()
     with utils.benchmark("Commit"):
       db.session.commit()
     with utils.benchmark("Make response"):
