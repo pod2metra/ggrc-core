@@ -5,6 +5,7 @@
 
 import datetime
 import unittest
+import collections
 from mock import MagicMock
 
 import ddt
@@ -676,11 +677,39 @@ class TestStatusApiPatch(TestCase):
     self.cycle = self.group.cycle
     self.workflow = self.group.cycle.workflow
 
+  def assert_latest_revision_status(self, *obj_status_chain):
+    """Assert last status for object and status chain."""
+    objs_status_dict = {(o.type, o.id): s for o, s in obj_status_chain}
+    revisions = []
+    for o_type, o_id in objs_status_dict:
+      revisions.append(all_models.Revision.query.filter(
+          all_models.Revision.resource_id == o_id,
+          all_models.Revision.resource_type == o_type
+      ))
+    revisions_query = revisions[0].union(
+        *revisions[1:]
+    ).order_by(
+        all_models.Revision.id
+    )
+    revisions_dict = collections.defaultdict(list)
+    for revision in revisions_query:
+      key = (revision.resource_type, revision.resource_id)
+      revisions_dict[key].append(revision.content)
+    for key, status in objs_status_dict.iteritems():
+      self.assertIn(key, revisions_dict)
+      content = revisions_dict[key][-1]
+      self.assertIn("status", content)
+      self.assertEqual(status, content["status"])
+
   def assert_status_over_bulk_update(self, statuses, assert_statuses):
     """Assertion cycle_task statuses over bulk update."""
     self._update_ct_via_patch(statuses)
     self.refresh_set_up_instances()
     self.assertItemsEqual(assert_statuses, [obj.status for obj in self.tasks])
+    obj_status_chain = [
+        (t, assert_statuses[idx]) for idx, t in enumerate(self.tasks)
+    ]
+    self.assert_latest_revision_status(*obj_status_chain)
 
   def test_propagation_status_full(self):
     """Task status propagation for required verification workflow."""
