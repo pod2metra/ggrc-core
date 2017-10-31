@@ -542,13 +542,16 @@ class TestStatusApiPatch(TestCase):
   IN_PROGRESS = all_models.CycleTaskGroupObjectTask.IN_PROGRESS
   FINISHED = all_models.CycleTaskGroupObjectTask.FINISHED
   DEPRECATED = all_models.CycleTaskGroupObjectTask.DEPRECATED
+  VERIFIED = all_models.CycleTaskGroupObjectTask.VERIFIED
+  DECLINED = all_models.CycleTaskGroupObjectTask.DECLINED
 
   def setUp(self):
     super(TestStatusApiPatch, self).setUp()
     self.api = Api()
     with factories.single_commit():
       self.assignee = factories.PersonFactory(email="assignee@example.com")
-      self.workflow = wf_factories.WorkflowFactory()
+      self.workflow = wf_factories.WorkflowFactory(
+          status=all_models.Workflow.ACTIVE)
       self.cycle = wf_factories.CycleFactory(workflow=self.workflow)
       self.group = wf_factories.CycleTaskGroupFactory(
           cycle=self.cycle,
@@ -659,3 +662,97 @@ class TestStatusApiPatch(TestCase):
     self.assertItemsEqual(
         [self.ASSIGNED, self.ASSIGNED, self.ASSIGNED],
         [obj.status for obj in all_models.CycleTaskGroupObjectTask.query])
+
+  def refresh_set_up_instances(self):
+    """Update set up instances after request operation."""
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.order_by(
+        all_models.CycleTaskGroupObjectTask.id
+    ).all()
+    self.group = all_models.CycleTaskGroup.query.one()
+    self.cycle = self.group.cycle
+    self.workflow = self.group.cycle.workflow
+
+  def assert_status_over_bulk_update(self, statuses, assert_statuses):
+    """Assertion cycle_task statuses over bulk update."""
+    self._update_ct_via_patch(statuses)
+    self.refresh_set_up_instances()
+    self.assertItemsEqual(assert_statuses, [obj.status for obj in self.tasks])
+
+  def test_propagation_status_full(self):
+    """Task status propagation for required verification workflow."""
+    # all tasks in assigned state
+    self.assertEqual([self.ASSIGNED] * 3, [t.status for t in self.tasks])
+    # all tasks in progress state
+    self.assert_status_over_bulk_update([self.IN_PROGRESS] * 3,
+                                        [self.IN_PROGRESS] * 3)
+    self.assertEqual(self.IN_PROGRESS, self.group.status)
+    self.assertEqual(self.IN_PROGRESS, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    # update 1 task to finished
+    self.assert_status_over_bulk_update(
+        [self.FINISHED],
+        [self.FINISHED, self.IN_PROGRESS, self.IN_PROGRESS])
+    self.assertEqual(self.IN_PROGRESS, self.group.status)
+    self.assertEqual(self.IN_PROGRESS, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    # all tasks moved to finished
+    self.assert_status_over_bulk_update([self.FINISHED] * 3,
+                                        [self.FINISHED] * 3)
+    self.assertEqual(self.FINISHED, self.group.status)
+    self.assertEqual(self.FINISHED, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    # all tasks moved to verified
+    self.assert_status_over_bulk_update([self.VERIFIED] * 3,
+                                        [self.VERIFIED] * 3)
+    self.assertEqual(self.VERIFIED, self.group.status)
+    self.assertEqual(self.VERIFIED, self.cycle.status)
+    self.assertEqual(all_models.Workflow.INACTIVE, self.workflow.status)
+
+  def test_propagation_status_short(self):
+    """Task status propagation for not required verification workflow."""
+    all_models.Cycle.query.filter(
+        all_models.Cycle.id == self.cycle.id
+    ).update({
+        all_models.Cycle.is_verification_needed: False
+    })
+    db.session.commit()
+    self.tasks = all_models.CycleTaskGroupObjectTask.query.order_by(
+        all_models.CycleTaskGroupObjectTask.id
+    ).all()
+    # all tasks in assigned state
+    self.assertEqual([self.ASSIGNED] * 3, [t.status for t in self.tasks])
+    # all tasks in progress state
+    self.assert_status_over_bulk_update([self.IN_PROGRESS] * 3,
+                                        [self.IN_PROGRESS] * 3)
+    self.assertEqual(self.IN_PROGRESS, self.group.status)
+    self.assertEqual(self.IN_PROGRESS, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    # update 1 task to finished
+    self.assert_status_over_bulk_update(
+        [self.FINISHED],
+        [self.FINISHED, self.IN_PROGRESS, self.IN_PROGRESS])
+    self.assertEqual(self.IN_PROGRESS, self.group.status)
+    self.assertEqual(self.IN_PROGRESS, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    # all tasks moved to finished
+    self.assert_status_over_bulk_update([self.FINISHED] * 3,
+                                        [self.FINISHED] * 3)
+    self.assertEqual(self.FINISHED, self.group.status)
+    self.assertEqual(self.FINISHED, self.cycle.status)
+    self.assertEqual(all_models.Workflow.INACTIVE, self.workflow.status)
+
+  def test_deprecated_final(self):
+    """Test task status propagation for deprecated workflow."""
+    self.assertEqual([self.ASSIGNED] * 3, [t.status for t in self.tasks])
+    # all tasks in progress state
+    self.assert_status_over_bulk_update([self.DEPRECATED] * 3,
+                                        [self.DEPRECATED] * 3)
+    self.assertEqual(self.DEPRECATED, self.group.status)
+    self.assertEqual(self.DEPRECATED, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
+    self.assert_status_over_bulk_update(
+        [self.ASSIGNED, self.VERIFIED, self.FINISHED],
+        [self.DEPRECATED] * 3)
+    self.assertEqual(self.DEPRECATED, self.group.status)
+    self.assertEqual(self.DEPRECATED, self.cycle.status)
+    self.assertEqual(all_models.Workflow.ACTIVE, self.workflow.status)
