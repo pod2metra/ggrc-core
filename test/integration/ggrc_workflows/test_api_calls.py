@@ -13,6 +13,7 @@ import freezegun
 
 from ggrc import db
 from ggrc.models import all_models
+from ggrc.fulltext import mysql
 
 from integration.ggrc import TestCase
 from integration.ggrc.api_helper import Api
@@ -701,6 +702,24 @@ class TestStatusApiPatch(TestCase):
       self.assertIn("status", content)
       self.assertEqual(status, content["status"])
 
+  def assert_searchable_by_status(self, *obj_status_chain):
+    """Assert expected status in full text search."""
+    objs_status_dict = {(o.type, o.id): s for o, s in obj_status_chain}
+    full_text_properties = []
+    for o_type, o_id in objs_status_dict:
+      full_text_properties.append(
+          mysql.MysqlRecordProperty.query.filter(
+              mysql.MysqlRecordProperty.key == o_id,
+              mysql.MysqlRecordProperty.type == o_type,
+              mysql.MysqlRecordProperty.property == "task status",
+          )
+      )
+    query = full_text_properties[0].union(*full_text_properties[1:])
+    full_text_dict = {(f.type, f.key): f.content for f in query}
+    for key, status in objs_status_dict.iteritems():
+      self.assertIn(key, full_text_dict)
+      self.assertEqual(status, full_text_dict[key])
+
   def assert_status_over_bulk_update(self, statuses, assert_statuses):
     """Assertion cycle_task statuses over bulk update."""
     self._update_ct_via_patch(statuses)
@@ -710,6 +729,7 @@ class TestStatusApiPatch(TestCase):
         (t, assert_statuses[idx]) for idx, t in enumerate(self.tasks)
     ]
     self.assert_latest_revision_status(*obj_status_chain)
+    self.assert_searchable_by_status(*obj_status_chain)
 
   def test_propagation_status_full(self):
     """Task status propagation for required verification workflow."""
