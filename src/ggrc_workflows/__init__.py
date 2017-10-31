@@ -388,16 +388,6 @@ def _update_parent_state(parent, child_statuses):
   if old_status == new_status:
     return
   parent.status = new_status
-  Signals.status_change.send(
-      parent.__class__,
-      objs=[
-          Signals.StatusChangeSignalObjectContext(
-              instance=parent,
-              old_status=old_status,
-              new_status=new_status,
-          )
-      ]
-  )
 
 
 def update_cycle_task_object_task_parent_state(objs, is_put=False):
@@ -427,8 +417,11 @@ def update_cycle_task_object_task_parent_state(objs, is_put=False):
     _update_parent_state(group, task_statuses)
     if old_status != group.status:
       # if status updated then add it in list. require to update cycle state
-      updated_groups.append(group)
-  update_cycle_task_group_parent_state(updated_groups)
+      updated_groups.append(Signals.StatusChangeSignalObjectContext(
+          instance=group, old_status=old_status, new_status=group.status))
+  if updated_groups:
+    Signals.status_change.send(models.CycleTaskGroup, objs=updated_groups)
+    update_cycle_task_group_parent_state([i.instance for i in updated_groups])
 
 
 def update_cycle_task_group_parent_state(objs):
@@ -450,8 +443,16 @@ def update_cycle_task_group_parent_state(objs):
   ).distinct().with_for_update()
   for cycle_id, status in child_statuses.values("cycle_id", "status"):
     cycle_statuses_dict[cycles_dict[cycle_id]].add(status)
+
+  updated_cycles = []
   for cycle, group_statuses in cycle_statuses_dict.iteritems():
+    old_status = cycle.status
     _update_parent_state(cycle, group_statuses)
+    if old_status != cycle.status:
+      updated_cycles.append(Signals.StatusChangeSignalObjectContext(
+          instance=cycle, old_status=old_status, new_status=cycle.status))
+  if updated_cycles:
+    Signals.status_change.send(models.Cycle, objs=updated_cycles)
 
 
 def ensure_assignee_is_workflow_member(workflow, assignee, assignee_id=None):

@@ -333,9 +333,7 @@ class CycleTaskGroupObjectTask(roleable.Roleable,
           [{"status": "Assigned", "id": 1}, {"status": "InProgress", "id": 2}]
 
     Returns:
-        Two lists: updated_ids, skipped_ids.
-        First one contains object's ids that were updated successfully.
-        Second one contains object's ids that were skipped.
+        list of updated_instances
     """
     new_prv_state_map = {
         cls.DEPRECATED: (cls.ASSIGNED, cls.IN_PROGRESS, cls.FINISHED,
@@ -371,8 +369,7 @@ class CycleTaskGroupObjectTask(roleable.Roleable,
     for obj in updatable_objects:
       obj.status = new_state
       obj.modified_by_id = login.get_current_user_id()
-    updated_ids = {obj.id for obj in updatable_objects}
-    return list(updated_ids), list(all_ids - updated_ids)
+    return updatable_objects
 
 
 class CycleTaskable(object):
