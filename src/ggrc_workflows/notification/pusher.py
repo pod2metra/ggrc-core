@@ -24,10 +24,9 @@ def get_notification_query(*objs, **kwargs):
   )
   notification_names = kwargs.get('notification_names') or []
   if notification_names:
-    type_ids = [get_notification_type(n).id for n in notification_names]
-    query = query.filter(
-        Notification.notification_type_id.in_(type_ids)
-    )
+    query = query.filter(Notification.notification_type_id.in_([
+        n.id for n in get_notification_types(*notification_names)
+    ]))
   return query
 
 
@@ -37,9 +36,12 @@ def notification_exists_for(*obj, **kwargs):
   ).scalar()
 
 
+def get_notification_types(*names):
+  return NotificationType.query.filter(NotificationType.name.in_(names)).all()
+
+
 def get_notification_type(name):
-  # NOTE: add cache here
-  return NotificationType.query.filter(NotificationType.name == name).first()
+  return get_notification_types(name)[0]
 
 
 def push(obj, notif_type, send_on=None, repeating=False):
@@ -51,22 +53,36 @@ def push(obj, notif_type, send_on=None, repeating=False):
   )
 
 
+def get_notification_context(notification_type, send_at):
+  """Return notification context dict for sent data."""
+  today = datetime.datetime.combine(datetime.date.today(),
+                                    datetime.datetime.min.time())
+  repeatable_notification = notification_type.name in REPEATABLE_NOTIFICATIONS
+  send_on_date = send_at - relativedelta.relativedelta(
+      days=notification_type.advance_notice
+  )
+  send_on = datetime.datetime.combine(send_on_date,
+                                      datetime.datetime.min.time())
+  if repeatable_notification:
+    send_on = max(send_on, today)
+  return {"notif_type": notification_type,
+          "send_on": send_on,
+          "repeating": repeatable_notification}
+
+
 def update_or_create_notifications(obj, send_at, *notification_names):
   today = datetime.datetime.combine(datetime.date.today(),
                                     datetime.datetime.min.time())
+  types = {n.name: n for n in get_notification_types(*notification_names)}
   for notification_name in notification_names:
-    notif_type = get_notification_type(notification_name)
-    repeatable_notification = notification_name in REPEATABLE_NOTIFICATIONS
-    send_on_date = send_at - relativedelta.relativedelta(
-        days=notif_type.advance_notice
-    )
-    send_on = datetime.datetime.combine(send_on_date,
-                                        datetime.datetime.min.time())
-    if repeatable_notification:
-      send_on = max(send_on, today)
+    notif_type = types[notification_name]
+    notification_context = get_notification_context(notif_type, send_at)
     query = get_notification_query(
-        obj, notification_names=[notification_name]
+        obj
+    ).filter(
+        Notification.notification_type_id == notif_type.id
     )
+    send_on = notification_context["send_on"]
     if send_on < today:
       # this should not be allowed, but if a cycle task is changed to a past
       # date, we remove the current pending notification if it exists
@@ -75,4 +91,29 @@ def update_or_create_notifications(obj, send_at, *notification_names):
                           synchronize_session="fetch"):
       # when cycle date is moved in the future and no current create new
       # notification
-      push(obj, notif_type, send_on, repeatable_notification)
+      push(obj, **notification_context)
+
+
+def create_notifications_for_objects(notification_type, send_at, *objs):
+  """Only creates objects for selected notification_name.
+
+  Args:
+      notification_type can be base_string or instance of notification type.
+      objs list of notified instances
+  """
+
+  if not objs:
+    return
+  if isinstance(notification_type, basestring):
+    notification_type = get_notification_type(notification_type)
+  if not isinstance(notification_type, NotificationType):
+    raise TypeError("notification_type should be basestring or "
+                    "NotificationType instance.")
+  notification_context = get_notification_context(notification_type, send_at)
+  today = datetime.datetime.combine(datetime.date.today(),
+                                    datetime.datetime.min.time())
+  send_on = notification_context["send_on"]
+  if send_on < today:
+    return
+  for obj in objs:
+    push(obj, **notification_context)

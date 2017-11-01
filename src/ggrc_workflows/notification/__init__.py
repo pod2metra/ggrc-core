@@ -68,8 +68,7 @@ def register_listeners():
 
   @Signals.status_change.connect_via(CycleTaskGroupObjectTask)
   def cycle_task_status_change_listener(sender, objs=None):
-    for obj in objs:
-      handle_cycle_task_status_change(obj.instance)
+    handle_cycle_task_status_change(*[o.instance for o in objs])
 
 
 """
