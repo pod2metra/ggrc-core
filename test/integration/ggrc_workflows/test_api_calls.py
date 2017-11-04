@@ -1,6 +1,8 @@
 # Copyright (C) 2017 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
+"""Tests for api calls on ggrc_workflows module."""
+
 import datetime
 import unittest
 from mock import MagicMock
@@ -20,8 +22,9 @@ from integration.ggrc_workflows import WorkflowTestCase
 from integration.ggrc_workflows.models import factories as wf_factories
 
 
-@ddt.ddt
+@ddt.ddt  # pylint: disable=too-many-public-methods
 class TestWorkflowsApiPost(TestCase):
+  """Test class for ggrc workflow api post action."""
 
   def setUp(self):
     super(TestWorkflowsApiPost, self).setUp()
@@ -32,6 +35,7 @@ class TestWorkflowsApiPost(TestCase):
     pass
 
   def test_send_invalid_data(self):
+    """Test send invalid data on Workflow post."""
     data = self.get_workflow_dict()
     del data["workflow"]["title"]
     del data["workflow"]["context"]
@@ -40,6 +44,7 @@ class TestWorkflowsApiPost(TestCase):
     # TODO: check why response.json["message"] is empty
 
   def test_create_one_time_workflows(self):
+    """Test simple create one time Workflow over api."""
     data = self.get_workflow_dict()
     response = self.api.post(all_models.Workflow, data)
     self.assertEqual(response.status_code, 201)
@@ -82,6 +87,7 @@ class TestWorkflowsApiPost(TestCase):
     self.assertEqual(response.status_code, 400)
 
   def test_create_task_group(self):
+    """Test create task group over api."""
     wf_data = self.get_workflow_dict()
     wf_data["workflow"]["title"] = "Create_task_group"
     wf_response = self.api.post(all_models.Workflow, wf_data)
@@ -94,13 +100,14 @@ class TestWorkflowsApiPost(TestCase):
   # TODO: Api should be able to handle invalid data
   @unittest.skip("Not implemented.")
   def test_create_task_group_invalid_workflow_data(self):  # noqa pylint: disable=invalid-name
+    """Test create task group with invalid data."""
     data = self.get_task_group_dict({"id": -1, "context": {"id": -1}})
     response = self.api.post(all_models.TaskGroup, data)
     self.assert400(response)
 
   @staticmethod
   def get_workflow_dict():
-    data = {
+    return {
         "workflow": {
             "custom_attribute_definitions": [],
             "custom_attributes": {},
@@ -116,11 +123,10 @@ class TestWorkflowsApiPost(TestCase):
             "context": None,
         }
     }
-    return data
 
   @staticmethod
   def get_task_group_dict(workflow):
-    data = {
+    return {
         "task_group": {
             "custom_attribute_definitions": [],
             "custom_attributes": {},
@@ -145,14 +151,12 @@ class TestWorkflowsApiPost(TestCase):
             "description": "",
         }
     }
-    return data
 
   @ddt.data({},
             {"repeat_every": 5,
              "unit": "month"})
   def test_repeat_multiplier_field(self, data):
-    """Check repeat_multiplier is set to 0 after wf creation.
-    """
+    """Check repeat_multiplier is set to 0 after wf creation."""
     with factories.single_commit():
       workflow = wf_factories.WorkflowFactory(**data)
     workflow_id = workflow.id
