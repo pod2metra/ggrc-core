@@ -22,6 +22,7 @@ from ggrc import db
 from ggrc import models
 from ggrc import notifications
 from ggrc import utils
+from ggrc.access_control import role as ACR
 from ggrc.models.comment import Commentable
 from ggrc.utils import DATE_FORMAT_US
 from ggrc.models.reflection import AttributeInfo
@@ -68,27 +69,31 @@ def as_user_time(utc_datetime):
   return local_time.strftime(datetime_format)
 
 
-def _get_updated_roles(new_list, old_list, roles):
+def _prepare_role_data(data_list, obj_type):
+  """Conver role data list ro role data dict."""
+  roles = ACR.get_custom_roles_for(obj_type)
+  data_dict = defaultdict(set)
+  for val in data_list:
+    role_id = int(val["ac_role_id"])
+    role_name = roles.get(role_id)
+    if not role_name:
+      continue
+    person_id = val["person_id"]
+    data_dict[role_name].add(person_id)
+  return data_dict
+
+
+def _get_updated_roles(new_list, old_list, obj_type):
   """Get difference between old and new access control lists"""
-  new_dict = defaultdict(set)
-  for new_val in new_list:
-    role_id = new_val["ac_role_id"]
-    person_id = new_val["person_id"]
-    new_dict[role_id].add(person_id)
 
-  old_dict = defaultdict(set)
-  for old_val in old_list:
-    role_id = old_val["ac_role_id"]
-    person_id = old_val["person_id"]
-    old_dict[role_id].add(person_id)
+  old_dict = _prepare_role_data(old_list, obj_type)
+  new_dict = _prepare_role_data(new_list, obj_type)
 
-  diff_roles = set(new_dict.keys()) ^ set(old_dict.keys())
-  role_set = {roles[role_id] for role_id in diff_roles}
-
+  role_set = set(new_dict.keys()) ^ set(old_dict.keys())
   common_roles = set(new_dict.keys()) & set(old_dict.keys())
-  for role_id in common_roles:
-    if sorted(new_dict[role_id]) != sorted(old_dict[role_id]):
-      role_set.add(roles[role_id])
+  for role_name in common_roles:
+    if sorted(new_dict[role_name]) != sorted(old_dict[role_name]):
+      role_set.add(role_name)
 
   return role_set
 
@@ -115,7 +120,7 @@ def _get_revisions(obj, created_at):
   return new_rev, old_rev
 
 
-def _get_updated_fields(obj, created_at, definitions, roles):
+def _get_updated_fields(obj, created_at, definitions):
   """Get dict of updated  attributes of assessment"""
   fields = []
 
@@ -136,7 +141,7 @@ def _get_updated_fields(obj, created_at, definitions, roles):
          sorted(old_val.split(",")) == sorted(new_val.split(",")):
         continue
       if attr_name == "access_control_list":
-        fields.extend(_get_updated_roles(new_val, old_val, roles))
+        fields.extend(_get_updated_roles(new_val, old_val, obj.type))
         continue
       fields.append(attr_name)
 
@@ -149,15 +154,6 @@ def _get_updated_fields(obj, created_at, definitions, roles):
     else:
       updated_fields.append(field.upper())
   return updated_fields
-
-
-def _get_assignable_roles(obj):
-  """Get access control roles for assignable"""
-  query = db.session.query(
-      models.AccessControlRole.id,
-      models.AccessControlRole.name).filter_by(
-      object_type=obj.__class__.__name__)
-  return {role_id: name for role_id, name in query}
 
 
 def _get_assignable_dict(people, notif):
@@ -175,7 +171,6 @@ def _get_assignable_dict(people, notif):
   data = {}
 
   definitions = AttributeInfo.get_object_attr_definitions(obj.__class__)
-  roles = _get_assignable_roles(obj)
 
   for person in people:
     # We should default to today() if no start date is found on the object.
@@ -194,8 +189,7 @@ def _get_assignable_dict(people, notif):
                     notif.id: as_user_time(notif.updated_at)},
                 "updated_fields": _get_updated_fields(obj,
                                                       notif.created_at,
-                                                      definitions,
-                                                      roles)
+                                                      definitions)
                 if notif.notification_type.name == "assessment_updated"
                 else None,
             }
