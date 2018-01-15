@@ -16,6 +16,7 @@ from ggrc import settings
 from ggrc import utils
 from ggrc.access_control import roleable
 from ggrc.models import all_models
+from ggrc.models import reflection
 
 
 EmailProposalContext = collections.namedtuple(
@@ -115,6 +116,18 @@ def get_object_url(obj):
                           "{}/{}".format(obj._inflector.table_plural, obj.id))
 
 
+def field_name_converter(values_dict, object_type):
+  """Change field name to resented user valule."""
+  aliases = reflection.AttributeInfo.gather_visible_aliases(object_type)
+  for field_name in values_dict:
+    if field_name not in aliases:
+      continue
+    display_name = aliases[field_name]
+    if isinstance(display_name, dict):
+      display_name = display_name["display_name"]
+    values_dict[display_name] = values_dict.pop(field_name)
+
+
 def addressee_body_generator(proposals):
   """Generator, that returns pairs addresse and text mailing to addressee."""
   # cache wormup
@@ -137,8 +150,11 @@ def addressee_body_generator(proposals):
       continue
     single_values = get_field_single_values(proposal, person_dict, cads_dict)
     list_values = get_fields_list_values(proposal, acr_dict, person_dict)
+    field_name_converter(single_values, proposal.instance.__class__)
+    field_name_converter(list_values, proposal.instance.__class__)
     if not (single_values or list_values):
       continue
+
     proposal_email_context = EmailProposalContext(
         proposal.agenda,
         proposal.proposed_by.name or proposal.proposed_by.email,
