@@ -8,6 +8,7 @@ import datetime
 import urlparse
 
 from werkzeug import exceptions
+import flask
 from google.appengine.api import mail
 
 from ggrc import db
@@ -17,6 +18,7 @@ from ggrc import utils
 from ggrc.access_control import roleable
 from ggrc.models import all_models
 from ggrc.models import reflection
+from ggrc.fulltext import attributes as ft_attrs
 
 
 EmailProposalContext = collections.namedtuple(
@@ -116,6 +118,34 @@ def get_object_url(obj):
                           "{}/{}".format(obj._inflector.table_plural, obj.id))
 
 
+def _get_presented_attrs(object_type):
+  """Returns overwrite value mapping for current models."""
+  if not hasattr(flask.g, "object_field_value_mapper"):
+    flask.g.object_field_value_mapper = {}
+  if object_type not in flask.g.object_field_value_mapper:
+    all_attrs = reflection.AttributeInfo.gather_attrs(object_type,
+                                                      "_fulltext_attrs")
+    flask.g.object_field_value_mapper[object_type] = {
+        a.alias: a.value_map for a in all_attrs
+        if isinstance(a, ft_attrs.ValueMapFullTextAttr)
+    }
+  return flask.g.object_field_value_mapper[object_type]
+
+
+def field_value_converter(values_dict, object_type):
+  """Change value from collected in DB to User presented value."""
+  attrs = _get_presented_attrs(object_type)
+  for field in values_dict:
+    if field in attrs:
+      value = getattr(
+          object_type,
+          field
+      ).property.columns[0].type.python_type(
+          values_dict[field]
+      )
+      values_dict[field] = attrs[field].get(value)
+
+
 def field_name_converter(values_dict, object_type):
   """Change field name to resented user valule."""
   aliases = reflection.AttributeInfo.gather_visible_aliases(object_type)
@@ -150,6 +180,8 @@ def addressee_body_generator(proposals):
       continue
     single_values = get_field_single_values(proposal, person_dict, cads_dict)
     list_values = get_fields_list_values(proposal, acr_dict, person_dict)
+    field_value_converter(single_values, proposal.instance.__class__)
+    field_value_converter(list_values, proposal.instance.__class__)
     field_name_converter(single_values, proposal.instance.__class__)
     field_name_converter(list_values, proposal.instance.__class__)
     if not (single_values or list_values):
