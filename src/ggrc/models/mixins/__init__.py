@@ -742,9 +742,6 @@ def person_relation_factory(relation_name, fulltext_attr=None, api_attr=None):
       _api_attrs = reflection.ApiAttributes(api_attr)
       fulltext_attr = [gen_fulltext_attr]
 
-
-
-
   return type(
       "{}_mixin".format(relation_name),
       (DecoratedClass, ),
