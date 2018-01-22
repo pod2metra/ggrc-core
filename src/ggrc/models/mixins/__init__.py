@@ -621,6 +621,18 @@ class BusinessObject(Stateful, Noted, Described, Titled, Slugged):
       }
   }
 
+  @declared_attr
+  def revisions(cls):  # pylint: disable=no-self-argument
+    joinstr = 'and_(remote(Revision.resource_id) == {type}.id, '\
+        'remote(Revision.resource_type) == "{type}")'
+    return db.relationship(
+        'Revision',
+        primaryjoin=joinstr.format(type=cls.__name__),
+        foreign_keys='Revision.resource_id',
+        backref='{0}_resource'.format(cls.__name__),
+        cascade='all, delete-orphan',
+        lazy='subquery')
+
 
 # This class is just a marker interface/mixin to indicate that a model type
 # supports custom attributes.

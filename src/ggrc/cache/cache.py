@@ -104,6 +104,8 @@ def all_mapping_entries():
   ret = [
       mapping('Audit', 'program'),
       mapping('CustomAttributeValue', 'attributable', True),
+      mapping('Control', 'revisions'),
+      mapping('Risk', 'revisions'),
       mapping('ObjectPerson', 'person'),
       mapping('ObjectPerson', 'personable', True),
       mapping('Section', 'directive'),  # this goes out?
