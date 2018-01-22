@@ -19,6 +19,7 @@ color
 from logging import getLogger
 from uuid import uuid1
 import datetime
+import copy
 
 from sqlalchemy import event
 from sqlalchemy import orm
@@ -621,6 +622,40 @@ class BusinessObject(Stateful, Noted, Described, Titled, Slugged):
       }
   }
 
+
+class RevisionRelatedMixin(object):  # pylint: disable=too-few-public-methods
+  """Hot fix mixin.
+
+  Fix the issue with revision update on mixined instance update."""
+
+  @declared_attr
+  def revisions(cls):  # pylint: disable=no-self-argument
+    """Relationship.
+
+    Required only for invalidate memcache for related revisions.
+    DEPRECATED! CODE DEBT! Will be deleted soon. DON'T USE IT!"""
+    joinstr = 'and_(remote(Revision.resource_id) == {type}.id, '\
+        'remote(Revision.resource_type) == "{type}")'
+    return db.relationship(
+        'Revision',
+        primaryjoin=joinstr.format(type=cls.__name__),
+        foreign_keys='Revision.resource_id',
+        backref='{0}_resource'.format(cls.__name__),
+        viewonly=True,
+        uselist=True,
+        passive_deletes=True,
+        lazy='subquery')
+
+  def __deepcopy__(self, memo):
+    """Fix deepcopy issue. Revisions shouldn't be copied."""
+    cls = self.__class__
+    result = cls.__new__(cls)
+    memo[id(self)] = result
+    for key, value in self.__dict__.items():
+      if key == "revisions":
+        continue
+      setattr(result, key, copy.deepcopy(value, memo))
+    return result
 
 # This class is just a marker interface/mixin to indicate that a model type
 # supports custom attributes.

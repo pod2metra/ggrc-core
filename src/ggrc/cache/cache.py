@@ -82,6 +82,7 @@ def all_cache_entries():
       resource('risk_assessment_mappings', 'RiskAssessmentMapping'),
       resource('risk_assessment_control_mappings',
                'RiskAssessmentControlMapping'),
+      resource('risks', 'Risk'),
       resource('threats', 'Threat'),
       resource('vulnerabilities', 'Vulnerability'),
 
@@ -104,6 +105,8 @@ def all_mapping_entries():
   ret = [
       mapping('Audit', 'program'),
       mapping('CustomAttributeValue', 'attributable', True),
+      mapping('Control', 'revisions'),
+      mapping('Risk', 'revisions'),
       mapping('ObjectPerson', 'person'),
       mapping('ObjectPerson', 'personable', True),
       mapping('Section', 'directive'),  # this goes out?

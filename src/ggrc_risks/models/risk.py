@@ -24,6 +24,7 @@ from ggrc.models.track_object_state import HasObjectState
 class Risk(Roleable, HasObjectState, mixins.CustomAttributable, Relatable,
            Personable, PublicDocumentable, Commentable, TestPlanned,
            mixins.LastDeprecatedTimeboxed, mixins.BusinessObject,
+           mixins.RevisionRelatedMixin,
            Indexed, proposal.Proposalable, db.Model):
   """Basic Risk model."""
   __tablename__ = 'risks'
