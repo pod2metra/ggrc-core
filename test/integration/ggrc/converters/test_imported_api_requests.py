@@ -62,10 +62,12 @@ class TestComprehensiveSheets(TestCase):
 
   LIMIT_DICT = {
       "LIST": {
-          all_models.Revision: 74,
-          all_models.Event: 73,
+          all_models.Revision: 75,
+          all_models.Event: 74,
       },
-      "SINGLE": {}
+      "SINGLE": {
+          all_models.Control: 40,
+      }
   }
   DEFAULT_LIMIT = 39
 
@@ -89,9 +91,10 @@ class TestComprehensiveSheets(TestCase):
 
   @ddt.data(*all_object_views())
   def test_queries_per_object_page(self, view):
-    """Import comprehensive_sheet1 and count db requests per collection get.
+    """Import {0.model_class.__name__} comprehensive_sheet1
 
-    Query count should be <LIMIT for all model types.
+    and count db requests per collection get.
+    Query count should be < LIMIT for all model types.
     """
     with QueryCounter() as counter:
       model = view.model_class
