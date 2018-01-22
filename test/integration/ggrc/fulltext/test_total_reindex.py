@@ -31,7 +31,7 @@ class TestTotalReindex(TestCase):
       'Audit': 7,
       'Comment': 4,
       'Contract': 9,
-      'Control': 21,
+      'Control': 22,
       'Cycle': 5,
       'CycleTaskEntry': 3,
       'CycleTaskGroup': 4,
@@ -46,6 +46,7 @@ class TestTotalReindex(TestCase):
       'Process': 8,
       'Program': 7,
       'Regulation': 9,
+      'Risk': 9,
       'TaskGroup': 3,
       'TaskGroupObject': 5,
       'TaskGroupTask': 4,
@@ -73,6 +74,7 @@ class TestTotalReindex(TestCase):
       ggrc_factories.ProgramFactory,
       ggrc_factories.RegulationFactory,
       ggrc_factories.DocumentFactory,
+      ggrc_factories.RiskFactory,
       wf_factories.CycleFactory,
       wf_factories.CycleTaskGroupFactory,
       wf_factories.CycleTaskEntryFactory,
@@ -109,7 +111,7 @@ class TestTotalReindex(TestCase):
   @ddt.data(*COMMIT_INDEX_TEST_CASES)
   @ddt.unpack
   def test_index_on_commit(self, factory, obj_count):
-    """Test count number of queries on reindex procedure."""
+    """Test count number of queries on reindex {0._meta.model.__name__}."""
     model = factory._meta.model  # pylint: disable=protected-access
     with ggrc_factories.single_commit():
       obj_to_index = {factory() for _ in range(obj_count)}
