@@ -12,6 +12,7 @@ from sqlalchemy.sql.schema import UniqueConstraint
 from ggrc import db
 from ggrc.models.mixins import attributevalidator
 from ggrc.models import mixins
+from ggrc.models import deferred
 from ggrc.models.custom_attribute_value import CustomAttributeValue
 from ggrc.access_control import role as acr
 from ggrc.models.exceptions import ValidationError
@@ -29,7 +30,9 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
 
   __tablename__ = 'custom_attribute_definitions'
 
-  definition_type = db.Column(db.String, nullable=False)
+  definition_type_id = deferred.deferred(
+      db.Column(db.Integer, db.ForeignKey('models.id'), nullable=False),
+      'Model')
   definition_id = db.Column(db.Integer)
   attribute_type = db.Column(db.String, nullable=False)
   multi_choice_options = db.Column(db.String)
@@ -50,7 +53,7 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
 
   @property
   def definition_attr(self):
-    return '{0}_definition'.format(self.definition_type)
+    return '{0}_definition'.format(self.definition_type.name)
 
   @property
   def definition(self):
@@ -70,14 +73,11 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
   @definition.setter
   def definition(self, value):
     self.definition_id = getattr(value, 'id', None)
-    if hasattr(value, '_inflector'):
-      self.definition_type = value._inflector.table_singular
-    else:
-      self.definition_type = ''
+    self.definition_type = getattr(value, "model_instance", "")
     return setattr(self, self.definition_attr, value)
 
   _extra_table_args = (
-      UniqueConstraint('definition_type', 'definition_id', 'title',
+      UniqueConstraint('definition_type_id', 'definition_id', 'title',
                        name='uq_custom_attribute'),
       db.Index('ix_custom_attributes_title', 'title'))
 
