@@ -2,14 +2,18 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 from collections import namedtuple
+
 from flask import g
 from flask.ext.login import current_user
-from .user_permissions import UserPermissions
+
 from ggrc.app import db
 from ggrc.rbac.permissions import permissions_for as find_permissions
 from ggrc.rbac.permissions import is_allowed_create
 from ggrc.models import get_model
 from ggrc.models import Person
+
+from .user_permissions import UserPermissions
+
 
 Permission = namedtuple(
     'Permission',
@@ -97,7 +101,12 @@ def is_condition(instance, value, property_name, **_):
   return value == property_value
 
 
-def relationship_condition(instance, action, property_name, **_):
+def _relationship_condition(instance, action, property_name, **_):
+  """Simple relationshil condition checker.
+
+  If you have permission on action for both source and destionation
+  then you allowed to work with permissions.
+  """
   if getattr(instance, 'context') is not None:
     context_id = getattr(instance.context, 'id')
   else:
@@ -115,6 +124,25 @@ def relationship_condition(instance, action, property_name, **_):
     if not find_permissions()._is_allowed_for(obj, action):
       return False
   return True
+
+
+def _can_attach_comment(instance, *args, **_):
+  """Mapping comment require only read permissions to object."""
+  if instance.source_type == "Comment":
+    perm_instance = instance.destination
+    comment = instance.source
+  elif instance.destination_type == "Comment":
+    perm_instance = instance.source
+    comment = instance.destination
+  else:
+    return False
+  return (find_permissions()._is_allowed_for(perm_instance, "read") and
+          find_permissions()._is_allowed_for(comment, "update"))
+
+
+def relationship_condition(*args, **kwargs):
+  return (_relationship_condition(*args, **kwargs) or
+          _can_attach_comment(*args, **kwargs))
 
 
 def forbid_condition(instance, blacklist, _current_action, **_):
