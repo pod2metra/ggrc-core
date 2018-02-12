@@ -260,13 +260,13 @@ class TestAuditRoleProgation(TestCase):
     self.assertEqual(acl_count, 1)
 
     # Check if comment/document propagated roles were deleted:
-    acl_count = all_models.AccessControlList.query.filter(
+    acl_pool = all_models.AccessControlList.query.filter(
         tuple_(all_models.AccessControlList.object_id,
                all_models.AccessControlList.object_type).in_(
                    ((self.objects['issue_comment'].id, "Comment"),
                     (self.objects['issue_document'].id, "Document")))
-    ).count()
+    )
     # NOTE: The result should actually be 2 here, but because the Admin role
     # does not propagate permissions to comment/document it's those permission
     # are missing.
-    self.assertEqual(acl_count, 0)
+    self.assertEqual([u'CommentReader'], [i.ac_role.name for i in acl_pool])
