@@ -25,6 +25,10 @@ def propagate_acl(instance, comments=None):
                role.AccessControlRole.object_type == "Comment"
            )}
   for acl in instance.access_control_list:
+    if acl.ac_role is None:
+      # FIXME: this can happend only on propagation now
+      # should be fixed on ACL manager
+      acl.ac_role = all_models.AccessControlRole.query.get(acl.ac_role_id)
     if acl.ac_role.read:
       append_roles.append((acl, roles["CommentReader"]))
   if comments is None:
