@@ -27,10 +27,18 @@ class TestACLProposalsApi(base.BaseTestProposalApi):
     control_content["access_control_list"] = [
         {"ac_role_id": role_id, "person": {"type": "Person", "id": person.id}}
     ]
+    self.assertTrue(
+        all_models.AccessControlRole.query.get(
+            role_id
+        ).is_delete_allowed)
     self.create_proposal(control,
                          full_instance_content=control_content,
                          agenda="update access control roles",
                          context=None)
+    self.assertFalse(
+        all_models.AccessControlRole.query.get(
+            role_id
+        ).is_delete_allowed)
     control = all_models.Control.query.get(control_id)
     self.assertEqual(1, len(control.proposals))
     self.assertIn("access_control_list", control.proposals[0].content)

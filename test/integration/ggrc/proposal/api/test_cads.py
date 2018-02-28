@@ -15,25 +15,40 @@ from integration.ggrc.proposal.api import base
 class TestCADProposalsApi(base.BaseTestProposalApi):
   """Test for proposal cav api."""
 
-  def test_change_cad(self):
+  @ddt.data(True, False)
+  def test_change_cad(self, cav_empty):
     """Test create proposal with change CAVs."""
     with factories.single_commit():
       control = factories.ControlFactory(title="1")
       cad = factories.CustomAttributeDefinitionFactory(
           definition_type="control")
-      factories.CustomAttributeValueFactory(
-          custom_attribute=cad,
-          attributable=control,
-          attribute_value="123")
+      if not cav_empty:
+        factories.CustomAttributeValueFactory(
+            custom_attribute=cad,
+            attributable=control,
+            attribute_value="123")
     control_id = control.id
     cad_id = cad.id
     data = control.log_json()
     del data["custom_attributes"]
-    data["custom_attribute_values"][0]["attribute_value"] = "321"
+    data["custom_attribute_values"] = [{
+        "custom_attribute_id": cad_id,
+        "attribute_value": "321",
+        "attribute_object_id": None,
+    }]
+    self.assertEqual(
+        cav_empty,
+        all_models.CustomAttributeDefinition.query.get(
+            cad_id
+        ).is_delete_allowed)
     self.create_proposal(control,
                          full_instance_content=data,
                          agenda="update cav",
                          context=None)
+    self.assertFalse(
+        all_models.CustomAttributeDefinition.query.get(
+            cad_id
+        ).is_delete_allowed)
     control = all_models.Control.query.get(control_id)
     self.assertEqual(1, len(control.proposals))
     self.assertIn("custom_attribute_values", control.proposals[0].content)
