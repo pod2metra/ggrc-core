@@ -16,10 +16,14 @@ from ggrc.models.custom_attribute_value import CustomAttributeValue
 from ggrc.access_control import role as acr
 from ggrc.models.exceptions import ValidationError
 from ggrc.models import reflection
+from ggrc.models.mixins import deny_delete
 
 
-class CustomAttributeDefinition(attributevalidator.AttributeValidator,
-                                mixins.Base, mixins.Titled, db.Model):
+class CustomAttributeDefinition(deny_delete.DenyDelete,
+                                attributevalidator.AttributeValidator,
+                                mixins.Base,
+                                mixins.Titled,
+                                db.Model):
   """Custom attribute definition model.
 
   Attributes:
@@ -37,7 +41,6 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
   mandatory = db.Column(db.Boolean)
   helptext = db.Column(db.String)
   placeholder = db.Column(db.String)
-
   attribute_values = db.relationship('CustomAttributeValue',
                                      backref='custom_attribute',
                                      cascade='all, delete-orphan')
