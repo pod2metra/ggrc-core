@@ -43,6 +43,7 @@ from ggrc.services import signals
 from ggrc.models.background_task import BackgroundTask, create_task
 from ggrc.query import utils as query_utils
 from ggrc import settings
+from ggrc.models.mixins import deny_delete
 
 
 # pylint: disable=invalid-name
@@ -830,6 +831,8 @@ class Resource(ModelView):
          and not permissions.has_conditions("delete", self.model.__name__):
         raise Forbidden()
       if not permissions.is_allowed_delete_for(obj):
+        raise Forbidden()
+      if isinstance(obj, deny_delete.DenyDelete) and not obj.is_delete_allowed:
         raise Forbidden()
     header_error = self.validate_headers_for_put_or_delete(obj)
     if header_error:
