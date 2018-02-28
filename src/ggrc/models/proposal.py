@@ -231,3 +231,18 @@ def set_acl_to(proposal):
   if isinstance(proposal, Proposal):
     if isinstance(proposal.instance, roleable.Roleable):
       permissions_for_proposal_setter(proposal, get_propsal_acr_dict())
+
+
+@sa.event.listens_for(sa.orm.session.Session, "after_flush")
+def deny_delete_required_obj(session, _):
+  from ggrc.models import all_models
+  cad_ids = set()
+  acl_ids = set()
+  for obj in session.new:
+    if isinstance(obj, Proposal):
+      acl_ids |= set(obj.content.get("access_control_list", {}).keys())
+      cad_ids |= set(obj.content.get("custom_attribute_values", {}).keys())
+  all_models.AccessControlRole.deny_delete(acl_ids)
+  all_models.CustomAttributeDefinition.deny_delete(cad_ids)
+
+
