@@ -5,6 +5,7 @@
 
 from collections import namedtuple
 
+import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -390,3 +391,19 @@ class CustomAttributeValue(Base, Indexed, db.Model):
           (make_flags(mask)
            for mask in cad.multi_choice_mandatory.split(",")),
       ))
+
+
+@sa.event.listens_for(sa.orm.session.Session, "after_flush")
+def deny_delete_cads(session, _):
+  from ggrc.models import all_models
+  ids = set()
+  for obj in session.new:
+    if isinstance(obj, CustomAttributeValue):
+      if obj.custom_attribute:
+        ids.add(obj.custom_attribute.id)
+      else:
+        ids.add(obj.custom_attribute_id)
+  ids = [i for i in ids if i]
+  all_models.CustomAttributeDefinition.deny_delete(ids)
+
+
