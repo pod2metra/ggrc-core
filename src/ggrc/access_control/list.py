@@ -3,6 +3,8 @@
 
 """Access Control List model"""
 
+import sqlalchemy as sa
+
 from ggrc import db
 from ggrc.builder import simple_property
 from ggrc.models import mixins
@@ -70,3 +72,19 @@ class AccessControlList(mixins.Base, db.Model):
         ),
         db.Index('idx_object_type_object_idx', 'object_type', 'object_id'),
     )
+
+
+@sa.event.listens_for(sa.orm.session.Session, "after_flush")
+def deny_delete_acrs(session, _):
+  from ggrc.models import all_models
+  ids = set()
+  for obj in session.new:
+    if not isinstance(obj, AccessControlList):
+      continue
+    if obj.ac_role:
+      ids.add(obj.ac_role.id)
+    elif obj.ac_role_id:
+      ids.add(obj.ac_role_id)
+  all_models.AccessControlRole.deny_delete(ids)
+
+
