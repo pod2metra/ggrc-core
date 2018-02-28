@@ -17,10 +17,14 @@ from ggrc.models import mixins
 from ggrc.models import reflection
 from ggrc.models.mixins import attributevalidator
 from ggrc.fulltext.mixin import Indexed
+from ggrc.models.mixins import deny_delete
 
 
-class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
-                        mixins.Base, db.Model):
+class AccessControlRole(deny_delete.DenyDelete,
+                        Indexed,
+                        attributevalidator.AttributeValidator,
+                        mixins.Base,
+                        db.Model):
   """Access Control Role
 
   Model holds all roles in the application. These roles can be added
