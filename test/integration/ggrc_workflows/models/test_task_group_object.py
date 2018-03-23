@@ -3,6 +3,9 @@
 """TaskGroupObject model related tests."""
 
 import ddt
+import datetime
+import time
+from multiprocessing import Process, Queue
 
 from ggrc.models import all_models
 from ggrc_workflows import ac_roles
@@ -78,3 +81,40 @@ class TestTaskGroupObjectApiCalls(workflow_test_case.WorkflowTestCase):
     self.assertTrue(
         response.json["task_group_objects_collection"]["task_group_objects"]
     )
+
+  def test_submit_for_review(self):
+    with factories.single_commit():
+      control = factories.ControlFactory()
+      task_group = wf_factories.TaskGroupFactory()
+      user = factories.PersonFactory()
+      for idx in range(4):
+        factories.AccessControlRoleFactory(object_type=control.type,
+                                           name="test_{}".format(idx))
+    tgt_name = all_models.TaskGroupTask.__name__
+    acr = all_models.AccessControlRole.query.filter(
+       all_models.AccessControlRole.name=="Task Assignees",
+       all_models.AccessControlRole.object_type==tgt_name,
+    ).one()
+
+    tgt_data = workflow_api.get_task_post_dict(
+        task_group,
+        {"Task Assignees": user},
+        datetime.date.today(),
+        datetime.date.today(),
+    )
+    tgo_data = workflow_api.get_task_group_object_post_dict(task_group, control)
+
+    def put_in_subprocess(queue, model, data):
+      queue.put(self.api_helper.post(model, data).status_code)
+
+    queue = Queue()
+    th_create_obj = Process(target=put_in_subprocess,
+                            args=(queue, all_models.TaskGroupObject, tgo_data))
+    th_create_task = Process(target=put_in_subprocess,
+                             args=(queue, all_models.TaskGroupTask, tgt_data))
+    th_create_obj.start()
+    th_create_task.start()
+    th_create_obj.join(10)
+    th_create_task.join(10)
+    self.assertEqual(201, queue.get())
+    self.assertEqual(201, queue.get())
