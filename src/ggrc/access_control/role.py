@@ -20,8 +20,8 @@ from ggrc.models.mixins import attributevalidator
 from ggrc.fulltext.mixin import Indexed
 
 
-class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
-                        mixins.Base, db.Model):
+class AccessControlRole(attributevalidator.AttributeValidator,
+                        mixins.Base, Indexed, db.Model):
   """Access Control Role
 
   Model holds all roles in the application. These roles can be added
@@ -48,6 +48,14 @@ class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
       'AccessControlList', backref='ac_role', cascade='all, delete-orphan')
 
   _reserved_names = {}
+
+  _fulltext_attrs = [
+      "object_type",
+  ]
+
+  @property
+  def is_index_allowed(self):
+    return not self.internal
 
   @staticmethod
   def _extra_table_args(_):
