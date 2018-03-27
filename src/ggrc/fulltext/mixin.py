@@ -42,7 +42,8 @@ class Indexed(object):
     instances = cls.indexed_query().filter(cls.id.in_(ids))
     indexer = fulltext.get_indexer()
     keys = inspect(indexer.record_type).c
-    records = (indexer.fts_record_for(i) for i in instances)
+    records = (indexer.fts_record_for(i) for i in instances
+               if i.is_index_allowed)
     rows = itertools.chain(*[indexer.records_generator(i) for i in records])
     values = [{c.name: getattr(r, a) for a, c in keys.items()} for r in rows]
     if values:
@@ -74,3 +75,7 @@ class Indexed(object):
     return cls.query.options(
         orm.Load(cls).load_only("id"),
     )
+
+  @property
+  def is_index_allowed(self):
+    return True
