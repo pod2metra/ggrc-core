@@ -12,30 +12,31 @@ import inflection
 
 
 class TemplateProvider(object):
-  """Provider of methods for work with JSON templates."""
+    """Provider of methods for work with JSON templates."""
 
-  @staticmethod
-  def generate_template_as_dict(json_tmpl_name, **kwargs):
-    """Get template as dictionary from predefined JSON file and attributes
+    @staticmethod
+    def generate_template_as_dict(json_tmpl_name, **kwargs):
+        """Get template as dictionary from predefined JSON file and attributes
     (items (kwargs): key=value).
     Return dictionary like as {type: {key: value, ...}}.
     """
-    json_tmpl_name = inflection.underscore(json_tmpl_name)
-    path = os.path.join(
-        os.path.dirname(__file__), "template/{0}.json".format(json_tmpl_name))
-    with open(path) as json_file:
-      json_data = json.load(json_file)
-    json_data.update({k: v for k, v in kwargs.iteritems() if v})
-    return {json_tmpl_name: json_data}
+        json_tmpl_name = inflection.underscore(json_tmpl_name)
+        path = os.path.join(
+            os.path.dirname(__file__),
+            "template/{0}.json".format(json_tmpl_name))
+        with open(path) as json_file:
+            json_data = json.load(json_file)
+        json_data.update({k: v for k, v in kwargs.iteritems() if v})
+        return {json_tmpl_name: json_data}
 
-  @staticmethod
-  def update_template_as_dict(json_data_str, **kwargs):
-    """Update JSON data string as dictionary according to
+    @staticmethod
+    def update_template_as_dict(json_data_str, **kwargs):
+        """Update JSON data string as dictionary according to
     attributes (items (kwargs): key=value).
     Return dictionary like as [{type: {key: value, ...}}].
     """
-    json_data = json.loads(json_data_str)
-    type = json_data.iterkeys().next()
-    value = json_data.itervalues().next()
-    value.update(kwargs)
-    return {type: value}
+        json_data = json.loads(json_data_str)
+        type = json_data.iterkeys().next()
+        value = json_data.itervalues().next()
+        value.update(kwargs)
+        return {type: value}

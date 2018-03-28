@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add Assessment updated notification type
 
@@ -13,22 +12,19 @@ from datetime import datetime
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '562ec606ff7c'
 down_revision = '6e9a3ed063d2'
 
 
 def upgrade():
-  """Add new notification type: Assessment updated."""
-  description = (
-      "Send an Assessment updated notification to "
-      "Assessors, Creators and Verifiers."
-  )
+    """Add new notification type: Assessment updated."""
+    description = ("Send an Assessment updated notification to "
+                   "Assessors, Creators and Verifiers.")
 
-  now = datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S")
+    now = datetime.utcnow().strftime("%Y-%m-%d %H-%M-%S")
 
-  sql = """
+    sql = """
     INSERT INTO notification_types (
         name,
         description,
@@ -47,17 +43,18 @@ def upgrade():
         '{now}',
         '{now}'
     )
-  """.format(description=description, now=now)
+  """.format(
+        description=description, now=now)
 
-  op.execute(sql)
+    op.execute(sql)
 
 
 def downgrade():
-  """Remove the "Assessment updated" notification type.
+    """Remove the "Assessment updated" notification type.
 
   Also delete all notifications of that type.
   """
-  sql = """
+    sql = """
     DELETE n
     FROM notifications AS n
     LEFT JOIN notification_types AS nt ON
@@ -65,11 +62,11 @@ def downgrade():
     WHERE
         nt.name = "assessment_updated"
   """
-  op.execute(sql)
+    op.execute(sql)
 
-  sql = """
+    sql = """
     DELETE
     FROM notification_types
     WHERE name = "assessment_updated"
   """
-  op.execute(sql)
+    op.execute(sql)

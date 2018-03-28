@@ -26,112 +26,99 @@ from ggrc.models import reflection
 # subclass.
 # (of course, if there is a nice way of overriding/customizing declared
 # attributes in subclasses, we might want to use that approach)
-class SystemOrProcess(track_object_state.HasObjectState,
-                      Commentable, TestPlanned, LastDeprecatedTimeboxed,
-                      BusinessObject, db.Model):
-  # Override model_inflector
-  _table_plural = 'systems_or_processes'
-  __tablename__ = 'systems'
+class SystemOrProcess(track_object_state.HasObjectState, Commentable,
+                      TestPlanned, LastDeprecatedTimeboxed, BusinessObject,
+                      db.Model):
+    # Override model_inflector
+    _table_plural = 'systems_or_processes'
+    __tablename__ = 'systems'
 
-  infrastructure = deferred(db.Column(db.Boolean), 'SystemOrProcess')
-  is_biz_process = db.Column(db.Boolean, default=False)
-  version = deferred(db.Column(db.String), 'SystemOrProcess')
-  network_zone_id = deferred(db.Column(db.Integer), 'SystemOrProcess')
-  network_zone = db.relationship(
-      'Option',
-      primaryjoin='and_(foreign(SystemOrProcess.network_zone_id) == Option.id,'
-      ' Option.role == "network_zone")',
-      uselist=False,
-  )
-
-  __mapper_args__ = {
-      'polymorphic_on': is_biz_process
-  }
-
-  # REST properties
-  _api_attrs = reflection.ApiAttributes(
-      'infrastructure',
-      'version',
-      'network_zone',
-      reflection.Attribute('is_biz_process', create=False, update=False),
-  )
-  _fulltext_attrs = [
-      'infrastructure',
-      'version',
-      'network_zone',
-  ]
-  _sanitize_html = ['version']
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-      "network_zone": {
-          "display_name": "Network Zone",
-      },
-  }
-
-  @validates('network_zone')
-  def validate_system_options(self, key, option):
-    return validate_option(
-        self.__class__.__name__, key, option, 'network_zone')
-
-  @classmethod
-  def eager_query(cls):
-    from sqlalchemy import orm
-
-    query = super(SystemOrProcess, cls).eager_query()
-    return query.options(
-        orm.joinedload('network_zone'))
-
-  @classmethod
-  def indexed_query(cls):
-    from sqlalchemy import orm
-
-    query = super(SystemOrProcess, cls).eager_query()
-    return query.options(
-        orm.joinedload(
-            'network_zone',
-        ).undefer_group(
-            "Option_complete",
-        )
+    infrastructure = deferred(db.Column(db.Boolean), 'SystemOrProcess')
+    is_biz_process = db.Column(db.Boolean, default=False)
+    version = deferred(db.Column(db.String), 'SystemOrProcess')
+    network_zone_id = deferred(db.Column(db.Integer), 'SystemOrProcess')
+    network_zone = db.relationship(
+        'Option',
+        primaryjoin='and_(foreign(SystemOrProcess.network_zone_id) == Option.id,'
+        ' Option.role == "network_zone")',
+        uselist=False,
     )
 
-  @staticmethod
-  def _extra_table_args(cls):
-    return (
-        db.Index('ix_{}_is_biz_process'.format(cls.__tablename__),
-                 'is_biz_process'),
+    __mapper_args__ = {'polymorphic_on': is_biz_process}
+
+    # REST properties
+    _api_attrs = reflection.ApiAttributes(
+        'infrastructure',
+        'version',
+        'network_zone',
+        reflection.Attribute('is_biz_process', create=False, update=False),
     )
+    _fulltext_attrs = [
+        'infrastructure',
+        'version',
+        'network_zone',
+    ]
+    _sanitize_html = ['version']
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+        "network_zone": {
+            "display_name": "Network Zone",
+        },
+    }
+
+    @validates('network_zone')
+    def validate_system_options(self, key, option):
+        return validate_option(self.__class__.__name__, key, option,
+                               'network_zone')
+
+    @classmethod
+    def eager_query(cls):
+        from sqlalchemy import orm
+
+        query = super(SystemOrProcess, cls).eager_query()
+        return query.options(orm.joinedload('network_zone'))
+
+    @classmethod
+    def indexed_query(cls):
+        from sqlalchemy import orm
+
+        query = super(SystemOrProcess, cls).eager_query()
+        return query.options(
+            orm.joinedload('network_zone', ).undefer_group(
+                "Option_complete", ))
+
+    @staticmethod
+    def _extra_table_args(cls):
+        return (db.Index('ix_{}_is_biz_process'.format(cls.__tablename__),
+                         'is_biz_process'), )
 
 
-class System(CustomAttributable, Personable, Roleable,
-             Relatable, PublicDocumentable, SystemOrProcess, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': False
-  }
-  _table_plural = 'systems'
+class System(CustomAttributable, Personable, Roleable, Relatable,
+             PublicDocumentable, SystemOrProcess, Indexed):
+    __mapper_args__ = {'polymorphic_identity': False}
+    _table_plural = 'systems'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('is_biz_process')
-  def validates_is_biz_process(self, key, value):
-    return False
+    @validates('is_biz_process')
+    def validates_is_biz_process(self, key, value):
+        return False
 
 
-class Process(CustomAttributable, Personable, Roleable,
-              Relatable, PublicDocumentable, SystemOrProcess, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': True
-  }
-  _table_plural = 'processes'
+class Process(CustomAttributable, Personable, Roleable, Relatable,
+              PublicDocumentable, SystemOrProcess, Indexed):
+    __mapper_args__ = {'polymorphic_identity': True}
+    _table_plural = 'processes'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('is_biz_process')
-  def validates_is_biz_process(self, key, value):
-    return True
+    @validates('is_biz_process')
+    def validates_is_biz_process(self, key, value):
+        return True

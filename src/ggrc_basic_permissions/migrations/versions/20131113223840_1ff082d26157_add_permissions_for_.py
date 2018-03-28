@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add permissions for Standard
 
 Revision ID: 1ff082d26157
@@ -21,8 +19,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import table, column
 
-
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('permissions_json', sa.Text),
@@ -32,8 +30,7 @@ roles_table = table('roles',
     column('updated_at', sa.DateTime),
     column('context_id', sa.Integer),
     column('scope', sa.String),
-    )
-
+)
 '''
 def update_role(role, spec):
     spec = dict(spec)
@@ -66,16 +63,17 @@ def assert_roles(roles_spec):
       assert_role(roles_spec[role_data['name']], role_data)
 '''
 
+
 def assert_roles(role_specs):
     current_timestamp = datetime.now()
     for role_name, role_spec in role_specs.items():
-      spec = dict(role_spec)
-      if 'permissions' in spec:
-        spec['permissions_json'] = json.dumps(spec['permissions'])
-        del spec['permissions']
-      spec['updated_at'] = current_timestamp
-      op.execute(roles_table.update()\
-          .values(**spec).where(roles_table.c.name == role_name))
+        spec = dict(role_spec)
+        if 'permissions' in spec:
+            spec['permissions_json'] = json.dumps(spec['permissions'])
+            del spec['permissions']
+        spec['updated_at'] = current_timestamp
+        op.execute(roles_table.update()\
+            .values(**spec).where(roles_table.c.name == role_name))
 
 
 def upgrade():
@@ -88,1155 +86,784 @@ def downgrade():
 
 OLD_ROLES = {
     "AuditorReader": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "DirectiveControl", "Document",
+                "Facility", "Help", "Market", "Objective", "ObjectiveControl",
+                "ObjectControl", "ObjectDocument", "ObjectObjective",
+                "ObjectPerson", "ObjectSection", "Option", "OrgGroup",
+                "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [],
             "update": [],
             "delete": []
         },
-        "scope": "System",
-        "description": "A user with Auditor role for a program audit will also have this role in the default object context so that the auditor will have access to the objects required to perform the audit.",
-        "name": "AuditorReader"
+        "scope":
+        "System",
+        "description":
+        "A user with Auditor role for a program audit will also have this role in the default object context so that the auditor will have access to the objects required to perform the audit.",
+        "name":
+        "AuditorReader"
     },
     "ObjectEditor": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "DirectiveControl", "Document",
+                "Facility", "Help", "Market", "Objective", "ObjectiveControl",
+                "ObjectControl", "ObjectDocument", "ObjectObjective",
+                "ObjectPerson", "ObjectSection", "Option", "OrgGroup",
+                "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "Person"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "DirectiveControl", "Document",
+                "Facility", "Help", "Market", "Objective", "ObjectiveControl",
+                "ObjectControl", "ObjectDocument", "ObjectObjective",
+                "ObjectPerson", "ObjectSection", "Option", "OrgGroup",
+                "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "Person"
             ],
             "update": [
-                "Categorization",
-                {
+                "Categorization", {
                     "type": "Category",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Control",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ControlControl",
-                "ControlSection",
-                {
+                }, "ControlControl", "ControlSection", {
                     "type": "DataAsset",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Directive",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Contract",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Policy",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Regulation",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "DirectiveControl",
-                {
+                }, "DirectiveControl", {
                     "type": "Document",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Facility",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Help",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Market",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Objective",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                {
+                }, "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", {
                     "type": "Option",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "OrgGroup",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "PopulationSample",
-                {
+                }, "PopulationSample", {
                     "type": "Product",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ProgramControl",
-                "ProgramDirective",
-                {
+                }, "ProgramControl", "ProgramDirective", {
                     "type": "Project",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "Relationship",
-                "RelationshipType",
-                {
+                }, "Relationship", "RelationshipType", {
                     "type": "Section",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SectionObjective",
-                {
+                }, "SectionObjective", {
                     "type": "SystemOrProcess",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "System",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Process",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SystemControl",
-                "SystemSystem",
-                "Person"
+                }, "SystemControl", "SystemSystem", "Person"
             ],
             "delete": [
-                "Categorization",
-                {
+                "Categorization", {
                     "type": "Category",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Control",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ControlControl",
-                "ControlSection",
-                {
+                }, "ControlControl", "ControlSection", {
                     "type": "DataAsset",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Directive",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Contract",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Policy",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Regulation",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "DirectiveControl",
-                {
+                }, "DirectiveControl", {
                     "type": "Document",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Facility",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Help",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Market",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Objective",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                {
+                }, "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", {
                     "type": "Option",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "OrgGroup",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "PopulationSample",
-                {
+                }, "PopulationSample", {
                     "type": "Product",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ProgramControl",
-                "ProgramDirective",
-                {
+                }, "ProgramControl", "ProgramDirective", {
                     "type": "Project",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "Relationship",
-                "RelationshipType",
-                {
+                }, "Relationship", "RelationshipType", {
                     "type": "Section",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SectionObjective",
-                {
+                }, "SectionObjective", {
                     "type": "SystemOrProcess",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "System",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Process",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SystemControl",
-                "SystemSystem"
+                }, "SystemControl", "SystemSystem"
             ]
         },
-        "scope": "System",
-        "description": "This role grants a user basic object creation and editing permission.",
-        "name": "ObjectEditor"
+        "scope":
+        "System",
+        "description":
+        "This role grants a user basic object creation and editing permission.",
+        "name":
+        "ObjectEditor"
     },
     "Reader": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "DirectiveControl", "Document",
+                "Facility", "Help", "Market", "Objective", "ObjectiveControl",
+                "ObjectControl", "ObjectDocument", "ObjectObjective",
+                "ObjectPerson", "ObjectSection", "Option", "OrgGroup",
+                "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [],
             "update": [],
             "delete": []
         },
-        "scope": "System",
-        "description": "This role grants a user basic, read-only, access permission to a gGRC instance.",
-        "name": "Reader"
+        "scope":
+        "System",
+        "description":
+        "This role grants a user basic, read-only, access permission to a gGRC instance.",
+        "name":
+        "Reader"
     },
 }
 
-
 NEW_ROLES = {
     "AuditorReader": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "Standard",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "Standard", "DirectiveControl",
+                "Document", "Facility", "Help", "Market", "Objective",
+                "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", "Option",
+                "OrgGroup", "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [],
             "update": [],
             "delete": []
         },
-        "scope": "System",
-        "description": "A user with Auditor role for a program audit will also have this role in the default object context so that the auditor will have access to the objects required to perform the audit.",
-        "name": "AuditorReader"
+        "scope":
+        "System",
+        "description":
+        "A user with Auditor role for a program audit will also have this role in the default object context so that the auditor will have access to the objects required to perform the audit.",
+        "name":
+        "AuditorReader"
     },
     "ObjectEditor": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "Standard",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "Standard", "DirectiveControl",
+                "Document", "Facility", "Help", "Market", "Objective",
+                "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", "Option",
+                "OrgGroup", "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "Standard",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "Person"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "Standard", "DirectiveControl",
+                "Document", "Facility", "Help", "Market", "Objective",
+                "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", "Option",
+                "OrgGroup", "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "Person"
             ],
             "update": [
-                "Categorization",
-                {
+                "Categorization", {
                     "type": "Category",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Control",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ControlControl",
-                "ControlSection",
-                {
+                }, "ControlControl", "ControlSection", {
                     "type": "DataAsset",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Directive",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Contract",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Policy",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Regulation",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Standard",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "DirectiveControl",
-                {
+                }, "DirectiveControl", {
                     "type": "Document",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Facility",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Help",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Market",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Objective",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                {
+                }, "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", {
                     "type": "Option",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "OrgGroup",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "PopulationSample",
-                {
+                }, "PopulationSample", {
                     "type": "Product",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ProgramControl",
-                "ProgramDirective",
-                {
+                }, "ProgramControl", "ProgramDirective", {
                     "type": "Project",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "Relationship",
-                "RelationshipType",
-                {
+                }, "Relationship", "RelationshipType", {
                     "type": "Section",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SectionObjective",
-                {
+                }, "SectionObjective", {
                     "type": "SystemOrProcess",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "System",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Process",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SystemControl",
-                "SystemSystem",
-                "Person"
+                }, "SystemControl", "SystemSystem", "Person"
             ],
             "delete": [
-                "Categorization",
-                {
+                "Categorization", {
                     "type": "Category",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Control",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ControlControl",
-                "ControlSection",
-                {
+                }, "ControlControl", "ControlSection", {
                     "type": "DataAsset",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Directive",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Contract",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Policy",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Regulation",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Standard",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "DirectiveControl",
-                {
+                }, "DirectiveControl", {
                     "type": "Document",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Facility",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Help",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Market",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Objective",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                {
+                }, "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", {
                     "type": "Option",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "OrgGroup",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "PopulationSample",
-                {
+                }, "PopulationSample", {
                     "type": "Product",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "ProgramControl",
-                "ProgramDirective",
-                {
+                }, "ProgramControl", "ProgramDirective", {
                     "type": "Project",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "Relationship",
-                "RelationshipType",
-                {
+                }, "Relationship", "RelationshipType", {
                     "type": "Section",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SectionObjective",
-                {
+                }, "SectionObjective", {
                     "type": "SystemOrProcess",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "System",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                {
+                }, {
                     "type": "Process",
                     "terms": {
                         "list_property": "owners",
                         "value": "$current_user"
                     },
                     "condition": "contains"
-                },
-                "SystemControl",
-                "SystemSystem"
+                }, "SystemControl", "SystemSystem"
             ]
         },
-        "scope": "System",
-        "description": "This role grants a user basic object creation and editing permission.",
-        "name": "ObjectEditor"
+        "scope":
+        "System",
+        "description":
+        "This role grants a user basic object creation and editing permission.",
+        "name":
+        "ObjectEditor"
     },
     "Reader": {
-        "context_id": None,
+        "context_id":
+        None,
         "permissions": {
             "read": [
-                "Categorization",
-                "Category",
-                "Control",
-                "ControlControl",
-                "ControlSection",
-                "DataAsset",
-                "Directive",
-                "Contract",
-                "Policy",
-                "Regulation",
-                "Standard",
-                "DirectiveControl",
-                "Document",
-                "Facility",
-                "Help",
-                "Market",
-                "Objective",
-                "ObjectiveControl",
-                "ObjectControl",
-                "ObjectDocument",
-                "ObjectObjective",
-                "ObjectPerson",
-                "ObjectSection",
-                "Option",
-                "OrgGroup",
-                "PopulationSample",
-                "Product",
-                "ProgramControl",
-                "ProgramDirective",
-                "Project",
-                "Relationship",
-                "RelationshipType",
-                "Section",
-                "SectionObjective",
-                "SystemOrProcess",
-                "System",
-                "Process",
-                "SystemControl",
-                "SystemSystem",
-                "ObjectOwner",
-                "Person",
-                "Program",
-                "Role"
+                "Categorization", "Category", "Control", "ControlControl",
+                "ControlSection", "DataAsset", "Directive", "Contract",
+                "Policy", "Regulation", "Standard", "DirectiveControl",
+                "Document", "Facility", "Help", "Market", "Objective",
+                "ObjectiveControl", "ObjectControl", "ObjectDocument",
+                "ObjectObjective", "ObjectPerson", "ObjectSection", "Option",
+                "OrgGroup", "PopulationSample", "Product", "ProgramControl",
+                "ProgramDirective", "Project", "Relationship",
+                "RelationshipType", "Section", "SectionObjective",
+                "SystemOrProcess", "System", "Process", "SystemControl",
+                "SystemSystem", "ObjectOwner", "Person", "Program", "Role"
             ],
             "create": [],
             "update": [],
             "delete": []
         },
-        "scope": "System",
-        "description": "This role grants a user basic, read-only, access permission to a gGRC instance.",
-        "name": "Reader"
+        "scope":
+        "System",
+        "description":
+        "This role grants a user basic, read-only, access permission to a gGRC instance.",
+        "name":
+        "Reader"
     },
 }

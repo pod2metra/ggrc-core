@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Clean up TaskGroupTask
 
 Revision ID: 2b1ba26f2123
@@ -27,14 +25,26 @@ def upgrade():
     # reused for the `task_group_id` foreign key constraint, so we have to
     # remove the `task_group_id` constraint, then the uniqueness, then rebuild
     # the `task_group_id` foreign key constraint
-    op.drop_constraint('fk_task_group_tasks_task_id', table_name='task_group_tasks', type_='foreignkey')
-    op.drop_constraint('fk_task_group_tasks_task_group_id', table_name='task_group_tasks', type_='foreignkey')
-    op.drop_constraint('task_group_id', table_name='task_group_tasks', type_='unique')
-    op.create_foreign_key('fk_task_group_tasks_task_group_id', 'task_group_tasks', 'task_groups', ['task_group_id'], ['id'])
+    op.drop_constraint(
+        'fk_task_group_tasks_task_id',
+        table_name='task_group_tasks',
+        type_='foreignkey')
+    op.drop_constraint(
+        'fk_task_group_tasks_task_group_id',
+        table_name='task_group_tasks',
+        type_='foreignkey')
+    op.drop_constraint(
+        'task_group_id', table_name='task_group_tasks', type_='unique')
+    op.create_foreign_key('fk_task_group_tasks_task_group_id',
+                          'task_group_tasks', 'task_groups', ['task_group_id'],
+                          ['id'])
     op.drop_column('task_group_tasks', 'task_id')
 
     # Add indexes for other columns
-    op.create_index('fk_task_group_tasks_contact', 'task_group_tasks', ['contact_id'], unique=False)
+    op.create_index(
+        'fk_task_group_tasks_contact',
+        'task_group_tasks', ['contact_id'],
+        unique=False)
 
     # Ignore `Task.slug` uniqueness?
     #op.create_unique_constraint('uq_task_group_tasks', 'task_group_tasks', ['slug'])

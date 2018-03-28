@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Module defines application settings."""
 
 import os
@@ -44,10 +43,10 @@ COPYRIGHT = u"Confidential. Copyright \u00A9"  # \u00A9 is the (c) symbol
 # Construct build number
 BUILD_NUMBER = ""
 try:
-  import build_number
-  BUILD_NUMBER = " ({0})".format(build_number.BUILD_NUMBER[:7])
+    import build_number
+    BUILD_NUMBER = " ({0})".format(build_number.BUILD_NUMBER[:7])
 except ImportError:
-  pass
+    pass
 
 # NOTE: This version name is used for GAE deployments along with the current
 # commit hash. The version and hash are trimmed to 30 characters (see do_deploy
@@ -79,9 +78,9 @@ ga('send', 'pageview');
 """
 
 if GOOGLE_ANALYTICS_ID:
-  GOOGLE_ANALYTICS_SCRIPT = ANALYTICS_TEMPLATE % GOOGLE_ANALYTICS_ID
+    GOOGLE_ANALYTICS_SCRIPT = ANALYTICS_TEMPLATE % GOOGLE_ANALYTICS_ID
 else:
-  GOOGLE_ANALYTICS_SCRIPT = ""
+    GOOGLE_ANALYTICS_SCRIPT = ""
 
 # Initialize from environment if present
 SQLALCHEMY_DATABASE_URI = os.environ.get('GGRC_DATABASE_URI', '')
@@ -110,7 +109,6 @@ USE_APP_ENGINE_ASSETS_SUBDOMAIN = False
 
 BACKGROUND_COLLECTION_POST_SLEEP = 0
 
-
 LOGGING_HANDLER = {
     "class": "logging.StreamHandler",
     "stream": "ext://sys.stdout",
@@ -125,12 +123,10 @@ LOGGING_LOGGERS = {
     "ggrc.performance": "INFO",
     # INFO    - logs performance stats for requests
     # WARNING - logs performance for requests that took longer than 1s
-
     "sqlalchemy": "WARNING",
     # WARNING - logs warnings and errors only
     # INFO    - logs SQL-queries
     # DEBUG   - logs SQL-queries + result sets
-
     "werkzeug": "WARNING",
     # WARNING - logs warnings and errors only
     # INFO    - logs HTTP-queries
@@ -138,7 +134,6 @@ LOGGING_LOGGERS = {
     # "ggrc.utils.benchmarks": "DEBUG"
     # DEBUG - logs all benchmarks
 }
-
 
 DEBUG_BENCHMARK = os.environ.get("GGRC_BENCHMARK")
 
@@ -170,9 +165,9 @@ _DEFAULT_DASHBOARD_INTEGRATION_CONFIG = {
 }
 
 if bool(os.environ.get("DASHBOARD_INTEGRATION", "")):
-  DASHBOARD_INTEGRATION = _DEFAULT_DASHBOARD_INTEGRATION_CONFIG.copy()
+    DASHBOARD_INTEGRATION = _DEFAULT_DASHBOARD_INTEGRATION_CONFIG.copy()
 else:
-  DASHBOARD_INTEGRATION = None
+    DASHBOARD_INTEGRATION = None
 
 # App2app QueryAPI endpoints
 ALLOWED_QUERYAPI_APP_IDS = os.environ.get(
@@ -192,7 +187,5 @@ GAPI_ADMIN_GROUP = os.environ.get('GGRC_GAPI_ADMIN_GROUP', "")
 GAPI_CLIENT_SECRET = os.environ.get('GGRC_GAPI_CLIENT_SECRET', "")
 
 # ggrc_risk_assessment specific module settings
-RISK_ASSESSMENT_URL = os.environ.get(
-    'GGRC_RISK_ASSESSMENT_URL',
-    'http://localhost:8080'
-)
+RISK_ASSESSMENT_URL = os.environ.get('GGRC_RISK_ASSESSMENT_URL',
+                                     'http://localhost:8080')

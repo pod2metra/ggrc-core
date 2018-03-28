@@ -16,125 +16,128 @@ from lib.constants.test import modal_create_new, modal_custom_attribute
 
 
 def append_random_string(text):
-  return text + str(uuid.uuid4())
+    return text + str(uuid.uuid4())
 
 
 def prepend_random_string(text):
-  return str(uuid.uuid4()) + text
+    return str(uuid.uuid4()) + text
 
 
 class HtmlParser(object):
-  """The HtmlParser class simulates what happens with (non-rich)text in HTML.
+    """The HtmlParser class simulates what happens with (non-rich)text in HTML.
  """
-  @staticmethod
-  def parse_text(text):
-    """Simulates text parsed by html.
+
+    @staticmethod
+    def parse_text(text):
+        """Simulates text parsed by html.
     Args: text (basestring)
     """
-    return re.sub(r'\s+', " ", text)
+        return re.sub(r'\s+', " ", text)
 
 
 class ModalInput(base.TestUtil):
-  """Base class for filling out modals."""
-  @staticmethod
-  def enter_test_data(modal):
-    modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
+    """Base class for filling out modals."""
+
+    @staticmethod
+    def enter_test_data(modal):
+        modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
 
 
 class ModalNewControls(ModalInput):
-  """Methods for simulating common user actions."""
+    """Methods for simulating common user actions."""
 
-  @staticmethod
-  def enter_test_data(modal):
-    """Fills out all fields in lhn_modal.
+    @staticmethod
+    def enter_test_data(modal):
+        """Fills out all fields in lhn_modal.
     Args: modal (lib.page.lhn_modal.new_control.Controls)
     """
-    modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_description(append_random_string(
-        modal_create_new.SHORT_TITLE))
-    modal.enter_test_plan(append_random_string(
-        modal_create_new.SHORT_TITLE))
-    modal.enter_notes(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_code(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_description(
+            append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_test_plan(
+            append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_notes(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_code(append_random_string(modal_create_new.SHORT_TITLE))
 
 
 class ModalNewPrograms(ModalInput):
-  """Methods for simulating common user actions."""
+    """Methods for simulating common user actions."""
 
-  @staticmethod
-  def set_start_date(modal, day_start):
-    """Sets start date from datepicker in new program/edit modal.
+    @staticmethod
+    def set_start_date(modal, day_start):
+        """Sets start date from datepicker in new program/edit modal.
     Args:
     modal (lib.page.modal.edit_object.Programs)
     day_start (int): for more info see
     base.DatePicker.select_day_in_current_month
     """
-    modal.enter_effective_date_start_month(day_start)
+        modal.enter_effective_date_start_month(day_start)
 
-  @staticmethod
-  def enter_test_data(modal):
-    """Fills out all fields in lhn_modal.
+    @staticmethod
+    def enter_test_data(modal):
+        """Fills out all fields in lhn_modal.
     Args: modal (lib.page.modal.edit_object.Programs)
     """
-    modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_description(append_random_string(
-        modal_create_new.SHORT_TITLE))
-    modal.enter_notes(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_code(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_program_ref_url(prepend_random_string(
-        modal_create_new.Programs.PROGRAM_URL))
-    ModalNewPrograms.set_start_date(modal, 0)
+        modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_description(
+            append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_notes(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_code(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_program_ref_url(
+            prepend_random_string(modal_create_new.Programs.PROGRAM_URL))
+        ModalNewPrograms.set_start_date(modal, 0)
 
 
 class ModalNewProgramCustomAttribute(ModalInput):
-  @staticmethod
-  def enter_test_data(modal):
-    """Fills out all fields in lhn_modal.
+    @staticmethod
+    def enter_test_data(modal):
+        """Fills out all fields in lhn_modal.
     Args: modal (lib.page.modal.custom_attribute.ModalCustomAttributes)
     """
-    modal.enter_title(append_random_string(
-        modal_custom_attribute.Programs.TITLE))
-    modal.enter_inline_help(append_random_string(
-        modal_custom_attribute.Programs.INLINE_HELP))
-    modal.enter_placeholder(append_random_string(
-        modal_custom_attribute.Programs.PLACEHOLDER))
+        modal.enter_title(
+            append_random_string(modal_custom_attribute.Programs.TITLE))
+        modal.enter_inline_help(
+            append_random_string(modal_custom_attribute.Programs.INLINE_HELP))
+        modal.enter_placeholder(
+            append_random_string(modal_custom_attribute.Programs.PLACEHOLDER))
 
 
 class ModalNewOrgGroups(ModalInput):
-  """Utils for data entry for Org Group modals."""
+    """Utils for data entry for Org Group modals."""
 
 
 class ModalNewRisks(ModalInput):
-  """Utils for data entry for Risk modals."""
-  @staticmethod
-  def enter_test_data(modal):
-    """Fills out all fields in lhn_modal.
+    """Utils for data entry for Risk modals."""
+
+    @staticmethod
+    def enter_test_data(modal):
+        """Fills out all fields in lhn_modal.
     Args: modal (lib.page.modal.edit_object.EditRisksModal)
     """
-    modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
-    modal.enter_description(append_random_string(
-        modal_create_new.SHORT_TITLE))
+        modal.enter_title(append_random_string(modal_create_new.SHORT_TITLE))
+        modal.enter_description(
+            append_random_string(modal_create_new.SHORT_TITLE))
 
 
 class ModalNewIssues(ModalInput):
-  """Utils for data entry for Issues modals."""
+    """Utils for data entry for Issues modals."""
 
 
 class ModalNewProcesses(ModalInput):
-  """Utils for data entry for Process modals."""
+    """Utils for data entry for Process modals."""
 
 
 class ModalNewDataAssets(ModalInput):
-  """Utils for data entry for Data asset modals."""
+    """Utils for data entry for Data asset modals."""
 
 
 class ModalNewSystems(ModalInput):
-  """Utils for data entry for System modals."""
+    """Utils for data entry for System modals."""
 
 
 class ModalNewProducts(ModalInput):
-  """Utils for data entry for Product modals."""
+    """Utils for data entry for Product modals."""
 
 
 class ModalNewProjects(ModalInput):
-  """Utils for data entry for Project modals."""
+    """Utils for data entry for Project modals."""

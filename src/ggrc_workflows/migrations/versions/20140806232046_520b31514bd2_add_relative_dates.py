@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add relative dates
 
 Revision ID: 520b31514bd2
@@ -19,11 +17,17 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('task_group_tasks', sa.Column('relative_end_day', sa.Integer(), nullable=True))
-    op.add_column('task_group_tasks', sa.Column('relative_end_month', sa.Integer(), nullable=True))
-    op.add_column('task_group_tasks', sa.Column('relative_start_day', sa.Integer(), nullable=True))
-    op.add_column('task_group_tasks', sa.Column('relative_start_month', sa.Integer(), nullable=True))
-    op.add_column('workflows', sa.Column('next_cycle_start_date', sa.Date(), nullable=True))
+    op.add_column('task_group_tasks',
+                  sa.Column('relative_end_day', sa.Integer(), nullable=True))
+    op.add_column('task_group_tasks',
+                  sa.Column('relative_end_month', sa.Integer(), nullable=True))
+    op.add_column('task_group_tasks',
+                  sa.Column('relative_start_day', sa.Integer(), nullable=True))
+    op.add_column('task_group_tasks',
+                  sa.Column(
+                      'relative_start_month', sa.Integer(), nullable=True))
+    op.add_column('workflows',
+                  sa.Column('next_cycle_start_date', sa.Date(), nullable=True))
 
 
 def downgrade():

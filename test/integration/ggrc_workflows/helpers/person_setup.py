@@ -13,7 +13,7 @@ from integration.ggrc_workflows.helpers import rbac_helper
 
 
 class PersonSetup(object):
-  """Setup helper for Person related objects setup.
+    """Setup helper for Person related objects setup.
 
   Attributes:
       email_template: String template to generate user with predictable email.
@@ -22,16 +22,16 @@ class PersonSetup(object):
           {random_ascii}: Random ASCII string.
   """
 
-  def __init__(self, model_name):
-    self.email_template = "{}_{}_{}_{}@google.com".format(
-        model_name,
-        "{g_rname}",
-        "{m_rname}",
-        "{random_ascii}",
-    )
+    def __init__(self, model_name):
+        self.email_template = "{}_{}_{}_{}@google.com".format(
+            model_name,
+            "{g_rname}",
+            "{m_rname}",
+            "{random_ascii}",
+        )
 
-  def setup_person(self, g_rname, m_rname):
-    """Generate Person with Global Role using Factories.
+    def setup_person(self, g_rname, m_rname):
+        """Generate Person with Global Role using Factories.
 
     Args:
         g_rname: Global Role name for user.
@@ -41,14 +41,14 @@ class PersonSetup(object):
     Returns:
         Generated person.
     """
-    email = self._gen_email(g_rname, m_rname)
-    person = factories.PersonFactory(email=email)
-    bp_factories.UserRoleFactory(person=person,
-                                 role=rbac_helper.G_ROLES[g_rname])
-    return person
+        email = self._gen_email(g_rname, m_rname)
+        person = factories.PersonFactory(email=email)
+        bp_factories.UserRoleFactory(
+            person=person, role=rbac_helper.G_ROLES[g_rname])
+        return person
 
-  def _gen_email(self, g_rname, m_rname):
-    """Generate Person's email.
+    def _gen_email(self, g_rname, m_rname):
+        """Generate Person's email.
 
     Args:
         g_rname: Global Role name.
@@ -63,13 +63,14 @@ class PersonSetup(object):
         Generated email to return:
             prefix + body + suffix
     """
-    m_rname = m_rname.replace(" ", "_")
-    random_ascii = factories.random_str(length=6, chars=string.ascii_letters)
-    return self.email_template.format(g_rname=g_rname, m_rname=m_rname,
-                                      random_ascii=random_ascii)
+        m_rname = m_rname.replace(" ", "_")
+        random_ascii = factories.random_str(
+            length=6, chars=string.ascii_letters)
+        return self.email_template.format(
+            g_rname=g_rname, m_rname=m_rname, random_ascii=random_ascii)
 
-  def get_people(self, g_rname, m_rname):
-    """Query all people who match email template.
+    def get_people(self, g_rname, m_rname):
+        """Query all people who match email template.
 
     Args:
         g_rname: Global Role name.
@@ -77,15 +78,14 @@ class PersonSetup(object):
     Returns:
         List of people with predictable email template.
     """
-    m_rname = m_rname.replace(" ", "_")
-    query_email_templ = self.email_template.format(g_rname=g_rname,
-                                                   m_rname=m_rname,
-                                                   random_ascii="%")
-    return all_models.Person.query.filter(
-        all_models.Person.email.like(query_email_templ)).all()
+        m_rname = m_rname.replace(" ", "_")
+        query_email_templ = self.email_template.format(
+            g_rname=g_rname, m_rname=m_rname, random_ascii="%")
+        return all_models.Person.query.filter(
+            all_models.Person.email.like(query_email_templ)).all()
 
-  def get_person(self, g_rname, m_rname):
-    """Query person who match email template.
+    def get_person(self, g_rname, m_rname):
+        """Query person who match email template.
 
     Args:
         g_rname: Global Role name.
@@ -94,7 +94,7 @@ class PersonSetup(object):
         Person instance, if only one Person in DB with predictable email.
         None, if list of people match template or nobody.
     """
-    people = self.get_people(g_rname, m_rname)
-    if len(people) == 1:
-      return people[0]
-    return None
+        people = self.get_people(g_rname, m_rname)
+        if len(people) == 1:
+            return people[0]
+        return None

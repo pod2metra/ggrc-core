@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add object id to custom attributes
 
 Revision ID: 1e2abee7566c
@@ -20,9 +19,10 @@ down_revision = '1839dabd2357'
 
 
 def upgrade():
-  op.add_column('custom_attribute_values',
-                sa.Column('attribute_object_id', sa.Integer(), nullable=True))
+    op.add_column('custom_attribute_values',
+                  sa.Column(
+                      'attribute_object_id', sa.Integer(), nullable=True))
 
 
 def downgrade():
-  op.drop_column('custom_attribute_values', 'attribute_object_id')
+    op.drop_column('custom_attribute_values', 'attribute_object_id')

@@ -27,206 +27,194 @@ from .track_object_state import HasObjectState
 # to be run in the context of each particular subclass.
 # (of course, if there is a nice way of overriding/customizing declared
 # attributes in subclasses, we might want to use that approach)
-class Directive(HasObjectState, LastDeprecatedTimeboxed,
-                Commentable, TestPlanned, BusinessObject, db.Model):
-  __tablename__ = 'directives'
+class Directive(HasObjectState, LastDeprecatedTimeboxed, Commentable,
+                TestPlanned, BusinessObject, db.Model):
+    __tablename__ = 'directives'
 
-  version = deferred(db.Column(db.String), 'Directive')
-  organization = deferred(db.Column(db.String), 'Directive')
-  scope = deferred(db.Column(db.Text, nullable=False, default=u""),
-                   'Directive')
-  kind_id = deferred(db.Column(db.Integer), 'Directive')
-  audit_start_date = deferred(db.Column(db.DateTime), 'Directive')
-  audit_frequency_id = deferred(db.Column(db.Integer), 'Directive')
-  audit_duration_id = deferred(db.Column(db.Integer), 'Directive')
-  meta_kind = db.Column(db.String)
-  kind = deferred(db.Column(db.String), 'Directive')
+    version = deferred(db.Column(db.String), 'Directive')
+    organization = deferred(db.Column(db.String), 'Directive')
+    scope = deferred(
+        db.Column(db.Text, nullable=False, default=u""), 'Directive')
+    kind_id = deferred(db.Column(db.Integer), 'Directive')
+    audit_start_date = deferred(db.Column(db.DateTime), 'Directive')
+    audit_frequency_id = deferred(db.Column(db.Integer), 'Directive')
+    audit_duration_id = deferred(db.Column(db.Integer), 'Directive')
+    meta_kind = db.Column(db.String)
+    kind = deferred(db.Column(db.String), 'Directive')
 
-  # TODO: FIX jost!
-  # sections = db.relationship(
-  #     'Section', backref='directive',
-  #     order_by='Section.slug', cascade='all, delete-orphan')
-  controls = db.relationship(
-      'Control', backref='directive', order_by='Control.slug')
-  audit_frequency = db.relationship(
-      'Option',
-      primaryjoin='and_(foreign(Directive.audit_frequency_id) == Option.id, '
-                  'Option.role == "audit_frequency")',
-      uselist=False,
-  )
-  audit_duration = db.relationship(
-      'Option',
-      primaryjoin='and_(foreign(Directive.audit_duration_id) == Option.id, '
-                  'Option.role == "audit_duration")',
-      uselist=False,
-  )
-
-  __mapper_args__ = {
-      'polymorphic_on': meta_kind
-  }
-
-  _api_attrs = reflection.ApiAttributes(
-      'audit_start_date',
-      'audit_frequency',
-      'audit_duration',
-      'controls',
-      'kind',
-      'organization',
-      'scope',
-      'version',
-  )
-
-  _fulltext_attrs = [
-      'audit_start_date',
-      'audit_frequency',
-      'audit_duration',
-      'controls',
-      'kind',
-      'organization',
-      'scope',
-      'version',
-  ]
-
-  @classmethod
-  def indexed_query(cls):
-    return super(Directive, cls).indexed_query().options(
-        orm.Load(cls).joinedload('audit_frequency'),
-        orm.Load(cls).joinedload('audit_duration'),
-        orm.Load(cls).subqueryload('controls'),
-        orm.Load(cls).load_only(
-            'audit_start_date',
-            'kind',
-            'organization',
-            'scope',
-            'version',
-        ),
+    # TODO: FIX jost!
+    # sections = db.relationship(
+    #     'Section', backref='directive',
+    #     order_by='Section.slug', cascade='all, delete-orphan')
+    controls = db.relationship(
+        'Control', backref='directive', order_by='Control.slug')
+    audit_frequency = db.relationship(
+        'Option',
+        primaryjoin='and_(foreign(Directive.audit_frequency_id) == Option.id, '
+        'Option.role == "audit_frequency")',
+        uselist=False,
+    )
+    audit_duration = db.relationship(
+        'Option',
+        primaryjoin='and_(foreign(Directive.audit_duration_id) == Option.id, '
+        'Option.role == "audit_duration")',
+        uselist=False,
     )
 
-  _sanitize_html = [
-      'organization',
-      'scope',
-      'version',
-  ]
+    __mapper_args__ = {'polymorphic_on': meta_kind}
 
-  _include_links = []
+    _api_attrs = reflection.ApiAttributes(
+        'audit_start_date',
+        'audit_frequency',
+        'audit_duration',
+        'controls',
+        'kind',
+        'organization',
+        'scope',
+        'version',
+    )
 
-  _aliases = {
-      'kind': "Kind/Type",
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _fulltext_attrs = [
+        'audit_start_date',
+        'audit_frequency',
+        'audit_duration',
+        'controls',
+        'kind',
+        'organization',
+        'scope',
+        'version',
+    ]
 
-  @validates('kind')
-  def validate_kind(self, key, value):
-    if not value:
-      return None
-    if value not in self.VALID_KINDS:
-      message = "Invalid value '{}' for attribute {}.{}.".format(
+    @classmethod
+    def indexed_query(cls):
+        return super(Directive, cls).indexed_query().options(
+            orm.Load(cls).joinedload('audit_frequency'),
+            orm.Load(cls).joinedload('audit_duration'),
+            orm.Load(cls).subqueryload('controls'),
+            orm.Load(cls).load_only(
+                'audit_start_date',
+                'kind',
+                'organization',
+                'scope',
+                'version',
+            ),
+        )
+
+    _sanitize_html = [
+        'organization',
+        'scope',
+        'version',
+    ]
+
+    _include_links = []
+
+    _aliases = {
+        'kind': "Kind/Type",
+        "document_url": None,
+        "document_evidence": None,
+    }
+
+    @validates('kind')
+    def validate_kind(self, key, value):
+        if not value:
+            return None
+        if value not in self.VALID_KINDS:
+            message = "Invalid value '{}' for attribute {}.{}.".format(
                 value, self.__class__.__name__, key)
-      raise ValueError(message)
-    return value
+            raise ValueError(message)
+        return value
 
-  @validates('audit_duration', 'audit_frequency')
-  def validate_directive_options(self, key, option):
-    return validate_option(self.__class__.__name__, key, option, key)
+    @validates('audit_duration', 'audit_frequency')
+    def validate_directive_options(self, key, option):
+        return validate_option(self.__class__.__name__, key, option, key)
 
-  @classmethod
-  def eager_query(cls):
-    query = super(Directive, cls).eager_query()
-    return cls.eager_inclusions(query, Directive._include_links).options(
-        orm.joinedload('audit_frequency'),
-        orm.joinedload('audit_duration'),
-        orm.subqueryload('controls'))
+    @classmethod
+    def eager_query(cls):
+        query = super(Directive, cls).eager_query()
+        return cls.eager_inclusions(query, Directive._include_links).options(
+            orm.joinedload('audit_frequency'),
+            orm.joinedload('audit_duration'), orm.subqueryload('controls'))
 
-  @staticmethod
-  def _extra_table_args(cls):
-    return (
-        db.Index('ix_{}_meta_kind'.format(cls.__tablename__), 'meta_kind'),
-    )
+    @staticmethod
+    def _extra_table_args(cls):
+        return (db.Index('ix_{}_meta_kind'.format(cls.__tablename__),
+                         'meta_kind'), )
 
 
 # FIXME: For subclasses, restrict kind
-class Policy(Roleable, CustomAttributable, Relatable,
-             Personable, PublicDocumentable, Directive, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': 'Policy'
-  }
+class Policy(Roleable, CustomAttributable, Relatable, Personable,
+             PublicDocumentable, Directive, Indexed):
+    __mapper_args__ = {'polymorphic_identity': 'Policy'}
 
-  _table_plural = 'policies'
+    _table_plural = 'policies'
 
-  VALID_KINDS = frozenset([
-      "Company Policy", "Org Group Policy", "Data Asset Policy",
-      "Product Policy", "Contract-Related Policy", "Company Controls Policy"
-  ])
+    VALID_KINDS = frozenset([
+        "Company Policy", "Org Group Policy", "Data Asset Policy",
+        "Product Policy", "Contract-Related Policy", "Company Controls Policy"
+    ])
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('meta_kind')
-  def validates_meta_kind(self, key, value):
-    return 'Policy'
+    @validates('meta_kind')
+    def validates_meta_kind(self, key, value):
+        return 'Policy'
 
 
-class Regulation(Roleable, CustomAttributable, Relatable,
-                 Personable, PublicDocumentable, Directive, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': 'Regulation'
-  }
+class Regulation(Roleable, CustomAttributable, Relatable, Personable,
+                 PublicDocumentable, Directive, Indexed):
+    __mapper_args__ = {'polymorphic_identity': 'Regulation'}
 
-  _table_plural = 'regulations'
+    _table_plural = 'regulations'
 
-  VALID_KINDS = ("Regulation",)
+    VALID_KINDS = ("Regulation", )
 
-  _aliases = {
-      "kind": None,
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "kind": None,
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('meta_kind')
-  def validates_meta_kind(self, key, value):
-    return 'Regulation'
+    @validates('meta_kind')
+    def validates_meta_kind(self, key, value):
+        return 'Regulation'
 
 
-class Standard(Roleable, CustomAttributable, Relatable,
-               Personable, PublicDocumentable, Directive, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': 'Standard'
-  }
+class Standard(Roleable, CustomAttributable, Relatable, Personable,
+               PublicDocumentable, Directive, Indexed):
+    __mapper_args__ = {'polymorphic_identity': 'Standard'}
 
-  _table_plural = 'standards'
+    _table_plural = 'standards'
 
-  VALID_KINDS = ("Standard",)
+    VALID_KINDS = ("Standard", )
 
-  _aliases = {
-      "kind": None,
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "kind": None,
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('meta_kind')
-  def validates_meta_kind(self, key, value):
-    return 'Standard'
+    @validates('meta_kind')
+    def validates_meta_kind(self, key, value):
+        return 'Standard'
 
 
-class Contract(Roleable, CustomAttributable, Relatable,
-               Personable, PublicDocumentable, Directive, Indexed):
-  __mapper_args__ = {
-      'polymorphic_identity': 'Contract'
-  }
+class Contract(Roleable, CustomAttributable, Relatable, Personable,
+               PublicDocumentable, Directive, Indexed):
+    __mapper_args__ = {'polymorphic_identity': 'Contract'}
 
-  _table_plural = 'contracts'
+    _table_plural = 'contracts'
 
-  VALID_KINDS = ("Contract",)
+    VALID_KINDS = ("Contract", )
 
-  _aliases = {
-      "kind": None,
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "kind": None,
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  @validates('meta_kind')
-  def validates_meta_kind(self, key, value):
-    return 'Contract'
+    @validates('meta_kind')
+    def validates_meta_kind(self, key, value):
+        return 'Contract'

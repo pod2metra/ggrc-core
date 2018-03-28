@@ -12,39 +12,37 @@ from integration.ggrc_workflows.models import factories as wf_factories
 
 @ddt.ddt
 class TestRelationships(workflow_test_case.WorkflowTestCase):
-  """Tests for Workflow scope object Relationships."""
+    """Tests for Workflow scope object Relationships."""
 
-  @ddt.data("Workflow", "TaskGroupTask", "TaskGroup")
-  def test_cycle_task_model(self, model_name):
-    """Test Relationship POST for CycleTask<->{0}.
+    @ddt.data("Workflow", "TaskGroupTask", "TaskGroup")
+    def test_cycle_task_model(self, model_name):
+        """Test Relationship POST for CycleTask<->{0}.
 
     Args:
         model_name: Non-Relatable model with which we are trying to create
             Relationship.
     """
-    with factories.single_commit():
-      workflow = wf_factories.WorkflowFactory()
-      cycle = wf_factories.CycleFactory(workflow=workflow)
-      cycle_task_group = wf_factories.CycleTaskGroupFactory(cycle=cycle)
-      task_group = wf_factories.TaskGroupFactory(workflow=workflow)
-      task_group_task = wf_factories.TaskGroupTaskFactory(
-          task_group=task_group
-      )
-      wf_factories.CycleTaskFactory(cycle=cycle,
-                                    cycle_task_group=cycle_task_group,
-                                    task_group_task=task_group_task)
+        with factories.single_commit():
+            workflow = wf_factories.WorkflowFactory()
+            cycle = wf_factories.CycleFactory(workflow=workflow)
+            cycle_task_group = wf_factories.CycleTaskGroupFactory(cycle=cycle)
+            task_group = wf_factories.TaskGroupFactory(workflow=workflow)
+            task_group_task = wf_factories.TaskGroupTaskFactory(
+                task_group=task_group)
+            wf_factories.CycleTaskFactory(
+                cycle=cycle,
+                cycle_task_group=cycle_task_group,
+                task_group_task=task_group_task)
 
-    cycle_task = all_models.CycleTaskGroupObjectTask.query.one()
-    instance = getattr(all_models, model_name).query.one()
-    data_ct_src = relationship_api.get_relationship_post_dict(
-        cycle_task, instance
-    )
-    data_ct_dst = relationship_api.get_relationship_post_dict(
-        instance, cycle_task
-    )
+        cycle_task = all_models.CycleTaskGroupObjectTask.query.one()
+        instance = getattr(all_models, model_name).query.one()
+        data_ct_src = relationship_api.get_relationship_post_dict(
+            cycle_task, instance)
+        data_ct_dst = relationship_api.get_relationship_post_dict(
+            instance, cycle_task)
 
-    response = self.api_helper.post(all_models.Relationship, data_ct_src)
-    self.assertEqual(response.status_code, 400)
+        response = self.api_helper.post(all_models.Relationship, data_ct_src)
+        self.assertEqual(response.status_code, 400)
 
-    response = self.api_helper.post(all_models.Relationship, data_ct_dst)
-    self.assertEqual(response.status_code, 400)
+        response = self.api_helper.post(all_models.Relationship, data_ct_dst)
+        self.assertEqual(response.status_code, 400)

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add status and frequency fields to workflow
 
 Revision ID: 8ca25af37c4
@@ -20,7 +18,9 @@ import sqlalchemy as sa
 
 def upgrade():
     #op.add_column(u'workflows', sa.Column(u'status', sa.String(length=250), nullable=True))
-    op.add_column(u'workflows', sa.Column(u'frequency', sa.String(length=250), nullable=True))
+    op.add_column(u'workflows',
+                  sa.Column(
+                      u'frequency', sa.String(length=250), nullable=True))
 
 
 def downgrade():

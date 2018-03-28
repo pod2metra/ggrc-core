@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add RiskAssessmentControlMapping model and table
 
 Revision ID: 1cf70fb6b6cc
@@ -20,22 +18,34 @@ import sqlalchemy as sa
 
 def upgrade():
     op.create_table('risk_assessment_control_mappings',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('control_strength', sa.Text(), nullable=True),
-    sa.Column('residual_risk', sa.Text(), nullable=True),
-    sa.Column('risk_assessment_mapping_id', sa.Integer(), nullable=False),
-    sa.Column('threat_id', sa.Integer(), nullable=False),
-    sa.Column('control_id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('modified_by_id', sa.Integer(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.Column('context_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['context_id'], ['contexts.id'], ),
-    sa.ForeignKeyConstraint(['control_id'], ['controls.id'], ),
-    sa.ForeignKeyConstraint(['risk_assessment_mapping_id'], ['risk_assessment_mappings.id'], ),
-    sa.ForeignKeyConstraint(['threat_id'], ['threats.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
+                    sa.Column('id', sa.Integer(), nullable=False),
+                    sa.Column('control_strength', sa.Text(), nullable=True),
+                    sa.Column('residual_risk', sa.Text(), nullable=True),
+                    sa.Column(
+                        'risk_assessment_mapping_id',
+                        sa.Integer(),
+                        nullable=False),
+                    sa.Column('threat_id', sa.Integer(), nullable=False),
+                    sa.Column('control_id', sa.Integer(), nullable=False),
+                    sa.Column('created_at', sa.DateTime(), nullable=True),
+                    sa.Column('modified_by_id', sa.Integer(), nullable=True),
+                    sa.Column('updated_at', sa.DateTime(), nullable=True),
+                    sa.Column('context_id', sa.Integer(), nullable=True),
+                    sa.ForeignKeyConstraint(
+                        ['context_id'],
+                        ['contexts.id'],
+                    ),
+                    sa.ForeignKeyConstraint(
+                        ['control_id'],
+                        ['controls.id'],
+                    ),
+                    sa.ForeignKeyConstraint(
+                        ['risk_assessment_mapping_id'],
+                        ['risk_assessment_mappings.id'],
+                    ), sa.ForeignKeyConstraint(
+                        ['threat_id'],
+                        ['threats.id'],
+                    ), sa.PrimaryKeyConstraint('id'))
     op.drop_constraint(
         'risk_assessment_mappings_ibfk_2',
         'risk_assessment_mappings',
@@ -46,13 +56,13 @@ def upgrade():
 
 
 def downgrade():
-    op.add_column('risk_assessment_mappings', sa.Column(u'control_strength', sa.Text(), nullable=True))
-    op.add_column('risk_assessment_mappings', sa.Column(u'residual_risk', sa.Text(), nullable=True))
-    op.add_column('risk_assessment_mappings', sa.Column(u'control_id', sa.Integer(), nullable=False))
-    op.create_foreign_key(
-        'risk_assessment_mappings_ibfk_2',
-        'risk_assessment_mappings',
-        'controls',
-        ['control_id'],
-        ['id'])
+    op.add_column('risk_assessment_mappings',
+                  sa.Column(u'control_strength', sa.Text(), nullable=True))
+    op.add_column('risk_assessment_mappings',
+                  sa.Column(u'residual_risk', sa.Text(), nullable=True))
+    op.add_column('risk_assessment_mappings',
+                  sa.Column(u'control_id', sa.Integer(), nullable=False))
+    op.create_foreign_key('risk_assessment_mappings_ibfk_2',
+                          'risk_assessment_mappings', 'controls',
+                          ['control_id'], ['id'])
     op.drop_table('risk_assessment_control_mappings')

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add url and reference_url columns
 
@@ -19,16 +18,15 @@ down_revision = '17ae137bda7a'
 
 
 def upgrade():
-  """Add url and reference_url columns"""
+    """Add url and reference_url columns"""
 
-  op.add_column("risks",
-                sa.Column("url", sa.String(length=250),
-                          nullable=True))
-  op.add_column("risks",
-                sa.Column("reference_url", sa.String(length=250),
-                          nullable=True))
+    op.add_column("risks",
+                  sa.Column("url", sa.String(length=250), nullable=True))
+    op.add_column("risks",
+                  sa.Column(
+                      "reference_url", sa.String(length=250), nullable=True))
 
 
 def downgrade():
-  op.drop_column("risks", "url")
-  op.drop_column("risks", "reference_url")
+    op.drop_column("risks", "url")
+    op.drop_column("risks", "reference_url")

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Rename admin role from gGRC Admin to Administrator.
 
@@ -25,16 +24,17 @@ roles_table = table(
 
 
 def upgrade():
-  op.execute(roles_table.update()
-             .where(roles_table.c.name == 'gGRC Admin')
-             .values(name='Administrator',
-                     description='System Administrator with super-user '
-                                 'privileges'))
+    op.execute(roles_table.update().where(roles_table.c.name == 'gGRC Admin')
+               .values(
+                   name='Administrator',
+                   description='System Administrator with super-user '
+                   'privileges'))
 
 
 def downgrade():
-  op.execute(roles_table.update()
-             .where(roles_table.c.name == 'Administrator')
-             .values(name='gGRC Admin',
-                     description='gGRC System Administrator with super-user '
-                                 'privileges'))
+    op.execute(
+        roles_table.update().where(roles_table.c.name == 'Administrator')
+        .values(
+            name='gGRC Admin',
+            description='gGRC System Administrator with super-user '
+            'privileges'))

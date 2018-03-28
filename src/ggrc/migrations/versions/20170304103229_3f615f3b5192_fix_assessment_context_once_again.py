@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Fix Assessment context once again
 
@@ -11,18 +10,17 @@ Create Date: 2017-03-04 10:32:29.038243
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '3f615f3b5192'
 down_revision = '5335453abae'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  # Fixes assessments without audit context
-  # SELECT COUNT(*) FROM assessments
-  #  WHERE context_id is NULL;
-  sql = """
+    """Upgrade database schema and/or data, creating a new revision."""
+    # Fixes assessments without audit context
+    # SELECT COUNT(*) FROM assessments
+    #  WHERE context_id is NULL;
+    sql = """
   UPDATE assessments as a
     JOIN relationships AS r ON r.source_id = a.id
      AND r.source_type = 'Assessment' AND r.destination_type = 'Audit'
@@ -30,8 +28,8 @@ def upgrade():
      SET a.context_id = au.context_id
    WHERE a.context_id is NULL;
   """
-  op.execute(sql)
-  sql = """
+    op.execute(sql)
+    sql = """
   UPDATE assessments as a
     JOIN relationships AS r ON r.destination_id = a.id
      AND r.destination_type = 'Assessment' AND r.source_type = 'Audit'
@@ -39,32 +37,32 @@ def upgrade():
      SET a.context_id = au.context_id
    WHERE a.context_id is NULL;
   """
-  op.execute(sql)
-  # Fixes object_documents mapped to assessments without audit context
-  # SELECT COUNT(*) FROM object_documents
-  #  WHERE documentable_type = 'Assessment' AND context_id IS NULL;
-  sql = """
+    op.execute(sql)
+    # Fixes object_documents mapped to assessments without audit context
+    # SELECT COUNT(*) FROM object_documents
+    #  WHERE documentable_type = 'Assessment' AND context_id IS NULL;
+    sql = """
   UPDATE object_documents AS od
     JOIN assessments AS a ON od.documentable_id = a.id
      SET od.context_id = a.context_id
    WHERE documentable_type = 'Assessment' AND od.context_id IS NULL;
   """
-  op.execute(sql)
-  # Fixes documents attached to assessments without audit context
-  # SELECT count(*)
-  #   FROM documents AS d
-  #   JOIN object_documents AS od ON d.id = od.document_id
-  #  WHERE od.documentable_type = 'Assessment' AND d.context_id IS NULL;
-  sql = """
+    op.execute(sql)
+    # Fixes documents attached to assessments without audit context
+    # SELECT count(*)
+    #   FROM documents AS d
+    #   JOIN object_documents AS od ON d.id = od.document_id
+    #  WHERE od.documentable_type = 'Assessment' AND d.context_id IS NULL;
+    sql = """
   UPDATE documents AS d
     JOIN object_documents AS od ON od.document_id = d.id
      AND od.documentable_type = 'Assessment'
      SET d.context_id = od.context_id
    WHERE d.context_id IS NULL
   """
-  op.execute(sql)
+    op.execute(sql)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  pass
+    """Downgrade database schema and/or data back to the previous revision."""
+    pass

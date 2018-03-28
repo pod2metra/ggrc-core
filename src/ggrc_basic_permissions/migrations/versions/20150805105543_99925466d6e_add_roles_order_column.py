@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add roles order column
 
 Revision ID: 99925466d6e
@@ -18,12 +17,13 @@ down_revision = '401fb7f0184b'
 
 
 def upgrade():
-  op.add_column("roles", sa.Column("role_order", sa.Integer(), nullable=True))
-  op.execute("UPDATE roles SET role_order = id")
+    op.add_column("roles", sa.Column(
+        "role_order", sa.Integer(), nullable=True))
+    op.execute("UPDATE roles SET role_order = id")
 
-  # creator role should appear before other roles
-  op.execute("UPDATE roles SET role_order = 4 WHERE name='Creator'")
+    # creator role should appear before other roles
+    op.execute("UPDATE roles SET role_order = 4 WHERE name='Creator'")
 
 
 def downgrade():
-  op.drop_column("roles", "role_order")
+    op.drop_column("roles", "role_order")

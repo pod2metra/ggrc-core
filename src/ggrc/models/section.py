@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Module with Section model."""
 
 from ggrc import db
@@ -18,61 +17,53 @@ from ggrc.models.relationship import Relationship
 from ggrc.models.track_object_state import HasObjectState
 
 
-class Section(Roleable,
-              HasObjectState,
-              mixins.Hierarchical,
-              mixins.CustomAttributable,
-              mixins.WithStartDate,
-              mixins.WithLastDeprecatedDate,
-              Personable,
-              Relatable,
-              Indexed,
-              Commentable,
-              mixins.TestPlanned,
-              PublicDocumentable,
-              mixins.BusinessObject,
-              db.Model):
-  """Section model."""
+class Section(Roleable, HasObjectState, mixins.Hierarchical,
+              mixins.CustomAttributable, mixins.WithStartDate,
+              mixins.WithLastDeprecatedDate, Personable, Relatable, Indexed,
+              Commentable, mixins.TestPlanned, PublicDocumentable,
+              mixins.BusinessObject, db.Model):
+    """Section model."""
 
-  __tablename__ = 'sections'
-  _table_plural = 'sections'
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-      "description": "Text of Section",
-      "directive": {
-          "display_name": "Policy / Regulation / Standard / Contract",
-          "type": reflection.AttributeInfo.Type.MAPPING,
-          "filter_by": "_filter_by_directive",
-      }
-  }
+    __tablename__ = 'sections'
+    _table_plural = 'sections'
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+        "description": "Text of Section",
+        "directive": {
+            "display_name": "Policy / Regulation / Standard / Contract",
+            "type": reflection.AttributeInfo.Type.MAPPING,
+            "filter_by": "_filter_by_directive",
+        }
+    }
 
-  na = deferred(db.Column(db.Boolean, default=False, nullable=False),
-                'Section')
-  notes = deferred(db.Column(db.Text, nullable=False, default=u""), 'Section')
+    na = deferred(
+        db.Column(db.Boolean, default=False, nullable=False), 'Section')
+    notes = deferred(
+        db.Column(db.Text, nullable=False, default=u""), 'Section')
 
-  _api_attrs = reflection.ApiAttributes('na', 'notes')
-  _sanitize_html = ['notes']
-  _include_links = []
+    _api_attrs = reflection.ApiAttributes('na', 'notes')
+    _sanitize_html = ['notes']
+    _include_links = []
 
-  @classmethod
-  def _filter_by_directive(cls, predicate):
-    """Apply predicate to the object referenced by directive field."""
-    types = ["Policy", "Regulation", "Standard", "Contract"]
-    dst = Relationship.query \
-        .filter(
-            (Relationship.source_id == cls.id) &
-            (Relationship.source_type == cls.__name__) &
-            (Relationship.destination_type.in_(types))) \
-        .join(Directive, Directive.id == Relationship.destination_id) \
-        .filter(predicate(Directive.slug) | predicate(Directive.title)) \
-        .exists()
-    src = Relationship.query \
-        .filter(
-            (Relationship.destination_id == cls.id) &
-            (Relationship.destination_type == cls.__name__) &
-            (Relationship.source_type.in_(types))) \
-        .join(Directive, Directive.id == Relationship.source_id) \
-        .filter(predicate(Directive.slug) | predicate(Directive.title)) \
-        .exists()
-    return dst | src
+    @classmethod
+    def _filter_by_directive(cls, predicate):
+        """Apply predicate to the object referenced by directive field."""
+        types = ["Policy", "Regulation", "Standard", "Contract"]
+        dst = Relationship.query \
+            .filter(
+                (Relationship.source_id == cls.id) &
+                (Relationship.source_type == cls.__name__) &
+                (Relationship.destination_type.in_(types))) \
+            .join(Directive, Directive.id == Relationship.destination_id) \
+            .filter(predicate(Directive.slug) | predicate(Directive.title)) \
+            .exists()
+        src = Relationship.query \
+            .filter(
+                (Relationship.destination_id == cls.id) &
+                (Relationship.destination_type == cls.__name__) &
+                (Relationship.source_type.in_(types))) \
+            .join(Directive, Directive.id == Relationship.source_id) \
+            .filter(predicate(Directive.slug) | predicate(Directive.title)) \
+            .exists()
+        return dst | src

@@ -1,7 +1,6 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
-
 from ggrc.models.all_models import register_model
 from ggrc.models import all_models
 
@@ -14,7 +13,6 @@ from .cycle_task_entry import CycleTaskEntry
 from .cycle_task_group import CycleTaskGroup
 from .cycle_task_group_object_task import CycleTaskGroupObjectTask
 
-
 register_model(TaskGroup)
 register_model(TaskGroupObject)
 register_model(TaskGroupTask)
@@ -26,14 +24,11 @@ register_model(CycleTaskGroup)
 register_model(CycleTaskGroupObjectTask)
 
 WORKFLOW_OBJECT_TYPES = {
-    "Program", "Vendor", "OrgGroup",
-    "Assessment",
-    "Regulation", "Standard", "Policy", "Contract",
-    "Objective", "Control", "Section", "Clause",
-    "System", "Process",
-    "DataAsset", "Facility", "Market", "Product", "Project", "Issue",
-    "AccessGroup", "Risk", "RiskObject", "Threat"
+    "Program", "Vendor", "OrgGroup", "Assessment", "Regulation", "Standard",
+    "Policy", "Contract", "Objective", "Control", "Section", "Clause",
+    "System", "Process", "DataAsset", "Facility", "Market", "Product",
+    "Project", "Issue", "AccessGroup", "Risk", "RiskObject", "Threat"
 }
 
-WORKFLOW_OBJECT_TYPES = set(t for t in WORKFLOW_OBJECT_TYPES if
-                            hasattr(all_models, t))
+WORKFLOW_OBJECT_TYPES = set(
+    t for t in WORKFLOW_OBJECT_TYPES if hasattr(all_models, t))

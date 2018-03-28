@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Remove private programs
 
@@ -20,10 +19,9 @@ down_revision = '5208a8371512'
 
 
 def upgrade():
-  """Add context implications for private programs and drop the column"""
+    """Add context implications for private programs and drop the column"""
 
-  op.execute(
-      """
+    op.execute("""
       INSERT INTO context_implications (
         context_id, source_context_id,
         context_scope, source_context_scope,
@@ -37,19 +35,15 @@ def upgrade():
         WHERE context_implications.context_id = programs.context_id
         AND context_implications.source_context_id IS NULL
       );
-      """
-  )
-  op.drop_column('programs', 'private')
+      """)
+    op.drop_column('programs', 'private')
 
 
 def downgrade():
-  """Add private column to programs but keep them all public."""
-  op.add_column(
-      'programs',
-      sa.Column(
-          'private',
-          mysql.TINYINT(display_width=1),
-          autoincrement=False,
-          nullable=False
-      )
-  )
+    """Add private column to programs but keep them all public."""
+    op.add_column('programs',
+                  sa.Column(
+                      'private',
+                      mysql.TINYINT(display_width=1),
+                      autoincrement=False,
+                      nullable=False))

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Convert all roles to code declared roles.
 
 Revision ID: 41270fab9540
@@ -20,7 +18,8 @@ from datetime import datetime
 from sqlalchemy.sql import table, column, select
 import json
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('permissions_json', sa.String),
@@ -30,38 +29,69 @@ roles_table = table('roles',
     column('updated_at', sa.DateTime),
     column('context_id', sa.Integer),
     column('scope', sa.String),
-    )
+)
 
 ROLES = [
-    'AuditorReader', 'Reader', 'ProgramCreator', 'ObjectEditor',
-    'ProgramBasicReader', 'ProgramOwner', 'ProgramEditor', 'ProgramReader',
-    'AuditorProgramReader', 'ProgramAuditOwner', 'ProgramAuditEditor',
-    'ProgramAuditReader', 'Auditor',
-    ]
+    'AuditorReader',
+    'Reader',
+    'ProgramCreator',
+    'ObjectEditor',
+    'ProgramBasicReader',
+    'ProgramOwner',
+    'ProgramEditor',
+    'ProgramReader',
+    'AuditorProgramReader',
+    'ProgramAuditOwner',
+    'ProgramAuditEditor',
+    'ProgramAuditReader',
+    'Auditor',
+]
+
 
 def upgrade():
-  op.execute(
-      roles_table.update()\
-          .where(roles_table.c.name.in_(ROLES))\
-          .values(permissions_json="CODE DECLARED ROLE"))
-
-def downgrade():
-  from ggrc_basic_permissions.roles import (
-      Auditor, AuditorProgramReader, AuditorReader, ObjectEditor,
-      ProgramAuditEditor, ProgramAuditOwner, ProgramAuditReader,
-      ProgramBasicReader, ProgramCreator, ProgramEditor, ProgramOwner,
-      ProgramReader, Reader, gGRC_Admin,
-      )
-
-  roles = [
-      Auditor, AuditorProgramReader, AuditorReader, ObjectEditor,
-      ProgramAuditEditor, ProgramAuditOwner, ProgramAuditReader,
-      ProgramBasicReader, ProgramCreator, ProgramEditor, ProgramOwner,
-      ProgramReader, Reader, gGRC_Admin,
-      ]
-
-  for role in roles:
     op.execute(
         roles_table.update()\
-            .where(roles_table.c.name == role.__name__)\
-            .values(permissions_json=json.dumps(role.permissions)))
+            .where(roles_table.c.name.in_(ROLES))\
+            .values(permissions_json="CODE DECLARED ROLE"))
+
+
+def downgrade():
+    from ggrc_basic_permissions.roles import (
+        Auditor,
+        AuditorProgramReader,
+        AuditorReader,
+        ObjectEditor,
+        ProgramAuditEditor,
+        ProgramAuditOwner,
+        ProgramAuditReader,
+        ProgramBasicReader,
+        ProgramCreator,
+        ProgramEditor,
+        ProgramOwner,
+        ProgramReader,
+        Reader,
+        gGRC_Admin,
+    )
+
+    roles = [
+        Auditor,
+        AuditorProgramReader,
+        AuditorReader,
+        ObjectEditor,
+        ProgramAuditEditor,
+        ProgramAuditOwner,
+        ProgramAuditReader,
+        ProgramBasicReader,
+        ProgramCreator,
+        ProgramEditor,
+        ProgramOwner,
+        ProgramReader,
+        Reader,
+        gGRC_Admin,
+    ]
+
+    for role in roles:
+        op.execute(
+            roles_table.update()\
+                .where(roles_table.c.name == role.__name__)\
+                .values(permissions_json=json.dumps(role.permissions)))

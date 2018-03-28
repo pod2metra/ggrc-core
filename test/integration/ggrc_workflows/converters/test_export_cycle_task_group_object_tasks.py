@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Tests for task group task specific export."""
 
 from collections import defaultdict
@@ -17,168 +15,171 @@ from ggrc.models import all_models
 
 @ddt
 class TestExportTasks(TestCase):
-  """Test imports for basic workflow objects."""
+    """Test imports for basic workflow objects."""
 
-  model = all_models.CycleTaskGroupObjectTask
+    model = all_models.CycleTaskGroupObjectTask
 
-  def setUp(self):
-    super(TestExportTasks, self).setUp()
-    self.client.get("/login")
-    self.headers = {
-        'Content-Type': 'application/json',
-        "X-Requested-By": "GGRC",
-        "X-export-view": "blocks",
-    }
+    def setUp(self):
+        super(TestExportTasks, self).setUp()
+        self.client.get("/login")
+        self.headers = {
+            'Content-Type': 'application/json',
+            "X-Requested-By": "GGRC",
+            "X-export-view": "blocks",
+        }
 
-  @staticmethod
-  def generate_tasks_for_cycle(task_count):
-    """generate number of task groups and task for current task group"""
-    results = []
-    with ggrc_factories.single_commit():
-      for idx in range(task_count):
-        person = ggrc_factories.PersonFactory(
-            name="user for group {}".format(idx)
-        )
-        task = factories.CycleTaskFactory()
-        ct_roles = all_models.AccessControlRole.query.filter(
-            all_models.AccessControlRole.name.in_(
-                ("Task Assignees", "Task Secondary Assignees")),
-            all_models.AccessControlRole.object_type == task.type,
-        )
-        for role in ct_roles:
-          ggrc_factories.AccessControlListFactory(
-              ac_role=role, object=task, person=person)
-        results.append(task.id)
-    return results
+    @staticmethod
+    def generate_tasks_for_cycle(task_count):
+        """generate number of task groups and task for current task group"""
+        results = []
+        with ggrc_factories.single_commit():
+            for idx in range(task_count):
+                person = ggrc_factories.PersonFactory(
+                    name="user for group {}".format(idx))
+                task = factories.CycleTaskFactory()
+                ct_roles = all_models.AccessControlRole.query.filter(
+                    all_models.AccessControlRole.name.in_(
+                        ("Task Assignees", "Task Secondary Assignees")),
+                    all_models.AccessControlRole.object_type == task.type,
+                )
+                for role in ct_roles:
+                    ggrc_factories.AccessControlListFactory(
+                        ac_role=role, object=task, person=person)
+                results.append(task.id)
+        return results
 
-  @data(0, 1, 2)
-  def test_filter_by_task_title(self, task_count):
-    """Test filter tasks by title"""
-    generated = self.generate_tasks_for_cycle(task_count)
-    self.assertEqual(bool(task_count), bool(generated))
-    for task_id in generated:
-      task = all_models.CycleTaskGroupObjectTask.query.filter(
-          all_models.CycleTaskGroupObjectTask.id == task_id
-      ).one()
-      self.assert_slugs("task title", task.title, [task.slug])
+    @data(0, 1, 2)
+    def test_filter_by_task_title(self, task_count):
+        """Test filter tasks by title"""
+        generated = self.generate_tasks_for_cycle(task_count)
+        self.assertEqual(bool(task_count), bool(generated))
+        for task_id in generated:
+            task = all_models.CycleTaskGroupObjectTask.query.filter(
+                all_models.CycleTaskGroupObjectTask.id == task_id).one()
+            self.assert_slugs("task title", task.title, [task.slug])
 
-  @data(0, 1, 2)
-  def test_filter_by_task_due_date(self, task_count):
-    """Test filter by task due date"""
-    due_date_dict = defaultdict(set)
-    generated = self.generate_tasks_for_cycle(task_count)
-    self.assertEqual(bool(task_count), bool(generated))
-    for task_id in generated:
-      task = all_models.CycleTaskGroupObjectTask.query.filter(
-          all_models.CycleTaskGroupObjectTask.id == task_id
-      ).one()
-      due_date_dict[str(task.end_date)].add(task.slug)
+    @data(0, 1, 2)
+    def test_filter_by_task_due_date(self, task_count):
+        """Test filter by task due date"""
+        due_date_dict = defaultdict(set)
+        generated = self.generate_tasks_for_cycle(task_count)
+        self.assertEqual(bool(task_count), bool(generated))
+        for task_id in generated:
+            task = all_models.CycleTaskGroupObjectTask.query.filter(
+                all_models.CycleTaskGroupObjectTask.id == task_id).one()
+            due_date_dict[str(task.end_date)].add(task.slug)
 
-    for due_date, slugs in due_date_dict.iteritems():
-      self.assert_slugs("task due date", due_date, list(slugs))
+        for due_date, slugs in due_date_dict.iteritems():
+            self.assert_slugs("task due date", due_date, list(slugs))
 
-  @data(0, 1, 2,)
-  def test_filter_by_task_assignee(self, task_count):
-    """Test filter task by assignee name or email"""
-    generated = self.generate_tasks_for_cycle(task_count)
-    self.assertEqual(bool(task_count), bool(generated))
-    for task_id in generated:
-      task = all_models.CycleTaskGroupObjectTask.query.filter(
-          all_models.CycleTaskGroupObjectTask.id == task_id
-      ).one()
-      role = all_models.AccessControlRole.query.filter(
-          all_models.AccessControlRole.name == "Task Assignees",
-          all_models.AccessControlRole.object_type == task.type,
-      ).one()
-      assignees = [i.person for i in task.access_control_list
-                   if i.ac_role_id == role.id]
-      self.assertEqual(1, len(assignees))
-      self.assert_slugs("task assignees", assignees[0].email, [task.slug])
-      self.assert_slugs("task assignees", assignees[0].name, [task.slug])
-
-  @data(0, 1, 2,)
-  def test_filter_by_task_secondary_assignee(self, task_count):  # noqa pylint: disable=invalid-name
-    """Test filter task by secondary assignee name or email"""
-    generated = self.generate_tasks_for_cycle(task_count)
-    self.assertEqual(bool(task_count), bool(generated))
-    for task_id in generated:
-      task = all_models.CycleTaskGroupObjectTask.query.filter(
-          all_models.CycleTaskGroupObjectTask.id == task_id
-      ).one()
-      role = all_models.AccessControlRole.query.filter(
-          all_models.AccessControlRole.name == "Task Secondary Assignees",
-          all_models.AccessControlRole.object_type == task.type,
-      ).one()
-      s_assignees = [i.person for i in task.access_control_list
-                     if i.ac_role_id == role.id]
-      self.assertEqual(1, len(s_assignees))
-      self.assert_slugs("task secondary assignees",
-                        s_assignees[0].email, [task.slug])
-      self.assert_slugs("task secondary assignees",
-                        s_assignees[0].name, [task.slug])
-
-  def test_filter_by_task_comment(self):
-    """Test filter by comments"""
-    task_id = self.generate_tasks_for_cycle(4)[0]
-    comment_text = "123"
-    task = all_models.CycleTaskGroupObjectTask.query.filter(
-        all_models.CycleTaskGroupObjectTask.id == task_id
-    ).one()
-    factories.CycleTaskEntryFactory(
-        cycle_task_group_object_task=task,
-        description=comment_text,
+    @data(
+        0,
+        1,
+        2,
     )
-    self.assert_slugs("task comments", comment_text, [task.slug])
+    def test_filter_by_task_assignee(self, task_count):
+        """Test filter task by assignee name or email"""
+        generated = self.generate_tasks_for_cycle(task_count)
+        self.assertEqual(bool(task_count), bool(generated))
+        for task_id in generated:
+            task = all_models.CycleTaskGroupObjectTask.query.filter(
+                all_models.CycleTaskGroupObjectTask.id == task_id).one()
+            role = all_models.AccessControlRole.query.filter(
+                all_models.AccessControlRole.name == "Task Assignees",
+                all_models.AccessControlRole.object_type == task.type,
+            ).one()
+            assignees = [
+                i.person for i in task.access_control_list
+                if i.ac_role_id == role.id
+            ]
+            self.assertEqual(1, len(assignees))
+            self.assert_slugs("task assignees", assignees[0].email,
+                              [task.slug])
+            self.assert_slugs("task assignees", assignees[0].name, [task.slug])
 
-  @data(
-      ("status", ["Task State", "task state", "task status"]),
-      ("end_date", ["Task Due Date", "task due date", "task end_date"]),
-      (
-          "start_date",
-          ["task Start Date", "task start date", "task start_date"],
-      ),
-  )
-  @unpack
-  def test_filter_by_aliases(self, field, aliases):
-    """Test filter by alias"""
-    expected_results = defaultdict(list)
-    tasks = all_models.CycleTaskGroupObjectTask.query.filter(
-        all_models.CycleTaskGroupObjectTask.id.in_(
-            self.generate_tasks_for_cycle(4)
-        )
-    ).all()
-    for task in tasks:
-      expected_results[str(getattr(task, field))].append(task.slug)
-    for value, slugs in expected_results.iteritems():
-      for alias in aliases:
-        self.assert_slugs(alias, value, slugs)
+    @data(
+        0,
+        1,
+        2,
+    )
+    def test_filter_by_task_secondary_assignee(self, task_count):  # noqa pylint: disable=invalid-name
+        """Test filter task by secondary assignee name or email"""
+        generated = self.generate_tasks_for_cycle(task_count)
+        self.assertEqual(bool(task_count), bool(generated))
+        for task_id in generated:
+            task = all_models.CycleTaskGroupObjectTask.query.filter(
+                all_models.CycleTaskGroupObjectTask.id == task_id).one()
+            role = all_models.AccessControlRole.query.filter(
+                all_models.AccessControlRole.name ==
+                "Task Secondary Assignees",
+                all_models.AccessControlRole.object_type == task.type,
+            ).one()
+            s_assignees = [
+                i.person for i in task.access_control_list
+                if i.ac_role_id == role.id
+            ]
+            self.assertEqual(1, len(s_assignees))
+            self.assert_slugs("task secondary assignees", s_assignees[0].email,
+                              [task.slug])
+            self.assert_slugs("task secondary assignees", s_assignees[0].name,
+                              [task.slug])
 
-  @data(
-      (
-          "updated_at",
-          [
-              "task Last Updated Date",
-              "task last updated date",
-              "task updated_at"
-          ],
-      ),
-      (
-          "created_at",
-          ["task Created Date", "task created Date", "task created_at"],
-      ),
-  )
-  @unpack
-  def test_filter_by_datetime_aliases(self, field, aliases):
-    """Test filter by datetime field and it's aliases"""
-    expected_results = defaultdict(list)
-    tasks = all_models.CycleTaskGroupObjectTask.query.filter(
-        all_models.CycleTaskGroupObjectTask.id.in_(
-            self.generate_tasks_for_cycle(4)
+    def test_filter_by_task_comment(self):
+        """Test filter by comments"""
+        task_id = self.generate_tasks_for_cycle(4)[0]
+        comment_text = "123"
+        task = all_models.CycleTaskGroupObjectTask.query.filter(
+            all_models.CycleTaskGroupObjectTask.id == task_id).one()
+        factories.CycleTaskEntryFactory(
+            cycle_task_group_object_task=task,
+            description=comment_text,
         )
-    ).all()
-    for task in tasks:
-      for value in self.generate_date_strings(getattr(task, field)):
-        expected_results[value].append(task.slug)
-    for value, slugs in expected_results.iteritems():
-      for alias in aliases:
-        self.assert_slugs(alias, value, slugs)
+        self.assert_slugs("task comments", comment_text, [task.slug])
+
+    @data(
+        ("status", ["Task State", "task state", "task status"]),
+        ("end_date", ["Task Due Date", "task due date", "task end_date"]),
+        (
+            "start_date",
+            ["task Start Date", "task start date", "task start_date"],
+        ),
+    )
+    @unpack
+    def test_filter_by_aliases(self, field, aliases):
+        """Test filter by alias"""
+        expected_results = defaultdict(list)
+        tasks = all_models.CycleTaskGroupObjectTask.query.filter(
+            all_models.CycleTaskGroupObjectTask.id.in_(
+                self.generate_tasks_for_cycle(4))).all()
+        for task in tasks:
+            expected_results[str(getattr(task, field))].append(task.slug)
+        for value, slugs in expected_results.iteritems():
+            for alias in aliases:
+                self.assert_slugs(alias, value, slugs)
+
+    @data(
+        (
+            "updated_at",
+            [
+                "task Last Updated Date", "task last updated date",
+                "task updated_at"
+            ],
+        ),
+        (
+            "created_at",
+            ["task Created Date", "task created Date", "task created_at"],
+        ),
+    )
+    @unpack
+    def test_filter_by_datetime_aliases(self, field, aliases):
+        """Test filter by datetime field and it's aliases"""
+        expected_results = defaultdict(list)
+        tasks = all_models.CycleTaskGroupObjectTask.query.filter(
+            all_models.CycleTaskGroupObjectTask.id.in_(
+                self.generate_tasks_for_cycle(4))).all()
+        for task in tasks:
+            for value in self.generate_date_strings(getattr(task, field)):
+                expected_results[value].append(task.slug)
+        for value, slugs in expected_results.iteritems():
+            for alias in aliases:
+                self.assert_slugs(alias, value, slugs)

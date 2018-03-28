@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add finished/verified dates to cycle tasks
 
 Revision ID: 13e52f6a9deb
@@ -17,20 +16,24 @@ from sqlalchemy.dialects import mysql
 revision = '13e52f6a9deb'
 down_revision = '18bdb0671010'
 
+
 def upgrade():
-  op.add_column('cycle_task_group_object_tasks', sa.Column('finished_date', sa.DateTime(), nullable=True))
-  op.add_column('cycle_task_group_object_tasks', sa.Column('verified_date', sa.DateTime(), nullable=True))
-  op.execute("""
+    op.add_column('cycle_task_group_object_tasks',
+                  sa.Column('finished_date', sa.DateTime(), nullable=True))
+    op.add_column('cycle_task_group_object_tasks',
+                  sa.Column('verified_date', sa.DateTime(), nullable=True))
+    op.execute("""
       UPDATE cycle_task_group_object_tasks
       SET finished_date = updated_at
       WHERE status = "Finished"
   """)
-  op.execute("""
+    op.execute("""
       UPDATE cycle_task_group_object_tasks
       SET verified_date = updated_at, finished_date = updated_at
       WHERE status = "Verified"
   """)
 
+
 def downgrade():
-  op.drop_column('cycle_task_group_object_tasks', 'verified_date')
-  op.drop_column('cycle_task_group_object_tasks', 'finished_date')
+    op.drop_column('cycle_task_group_object_tasks', 'verified_date')
+    op.drop_column('cycle_task_group_object_tasks', 'finished_date')

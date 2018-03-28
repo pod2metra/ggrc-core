@@ -47,13 +47,13 @@ NO_ACCESS = "No Access"
 
 
 class ACLRolesIDs(object):
-  """Access Control List Roles IDs constants."""
-  # pylint: disable=too-few-public-methods
-  CONTROL_ADMINS = 49
-  ISSUE_ADMINS = 53
-  OBJECTIVE_ADMINS = 55
-  ASSESSMENT_CREATORS = 76
-  ASSESSMENT_ASSIGNEES = 72
-  ASSESSMENT_VERIFIERS = 73
-  AUDIT_CAPTAINS = 82
-  PROGRAM_MANAGERS = 87
+    """Access Control List Roles IDs constants."""
+    # pylint: disable=too-few-public-methods
+    CONTROL_ADMINS = 49
+    ISSUE_ADMINS = 53
+    OBJECTIVE_ADMINS = 55
+    ASSESSMENT_CREATORS = 76
+    ASSESSMENT_ASSIGNEES = 72
+    ASSESSMENT_VERIFIERS = 73
+    AUDIT_CAPTAINS = 82
+    PROGRAM_MANAGERS = 87

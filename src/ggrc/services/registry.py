@@ -6,5 +6,6 @@ from .common import Resource
 
 ServiceEntry = namedtuple('ServiceEntry', 'name model_class service_class')
 
+
 def service(name, model_class, service_class=Resource):
-  return ServiceEntry(name, model_class, service_class)
+    return ServiceEntry(name, model_class, service_class)

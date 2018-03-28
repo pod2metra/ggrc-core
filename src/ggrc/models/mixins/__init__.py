@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Mixins to add common attributes and relationships. Note, all model classes
 must also inherit from ``db.Model``. For example:
 color
@@ -35,618 +34,578 @@ from ggrc.models.mixins.notifiable import Notifiable
 from ggrc.models.mixins.base import Base
 from ggrc.fulltext import attributes
 
-
 # pylint: disable=invalid-name
 logger = getLogger(__name__)
 
 
 class Titled(object):
-  """Mixin that defines `title` field.
+    """Mixin that defines `title` field.
 
   Strips title on update and defines optional UNIQUE constraint on it.
   """
 
-  @validates('title')
-  def validate_title(self, key, value):
-    """Validates and cleans Title that has leading/trailing spaces"""
-    # pylint: disable=unused-argument,no-self-use
-    return value if value is None else value.strip()
+    @validates('title')
+    def validate_title(self, key, value):
+        """Validates and cleans Title that has leading/trailing spaces"""
+        # pylint: disable=unused-argument,no-self-use
+        return value if value is None else value.strip()
 
-  @declared_attr
-  def title(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.String, nullable=False), cls.__name__)
+    @declared_attr
+    def title(cls):  # pylint: disable=no-self-argument
+        return deferred(db.Column(db.String, nullable=False), cls.__name__)
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Titled, cls).indexed_query().options(
-        orm.Load(cls).load_only("title"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Titled, cls).indexed_query().options(
+            orm.Load(cls).load_only("title"), )
 
-  @staticmethod
-  def _extra_table_args(model):
-    """If model._title_uniqueness is set, apply UNIQUE constraint to title."""
-    if getattr(model, '_title_uniqueness', True):
-      return (
-          db.UniqueConstraint(
-              'title', name='uq_t_{}'.format(model.__tablename__)),
-      )
-    return ()
+    @staticmethod
+    def _extra_table_args(model):
+        """If model._title_uniqueness is set, apply UNIQUE constraint to title."""
+        if getattr(model, '_title_uniqueness', True):
+            return (db.UniqueConstraint(
+                'title', name='uq_t_{}'.format(model.__tablename__)), )
+        return ()
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('title')
-  _fulltext_attrs = ['title']
-  _sanitize_html = ['title']
-  _aliases = {"title": "Title"}
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('title')
+    _fulltext_attrs = ['title']
+    _sanitize_html = ['title']
+    _aliases = {"title": "Title"}
 
 
 class Described(object):
-  """Mixin that defines `description` field."""
+    """Mixin that defines `description` field."""
 
-  @declared_attr
-  def description(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.Text, nullable=False, default=u""),
-                    cls.__name__)
+    @declared_attr
+    def description(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Text, nullable=False, default=u""), cls.__name__)
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('description')
-  _fulltext_attrs = ['description']
-  _sanitize_html = ['description']
-  _aliases = {"description": "Description"}
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('description')
+    _fulltext_attrs = ['description']
+    _sanitize_html = ['description']
+    _aliases = {"description": "Description"}
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Described, cls).indexed_query().options(
-        orm.Load(cls).load_only("description"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Described, cls).indexed_query().options(
+            orm.Load(cls).load_only("description"), )
 
 
 class Noted(object):
-  """Mixin that defines `notes` field."""
+    """Mixin that defines `notes` field."""
 
-  @declared_attr
-  def notes(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.Text, nullable=False, default=u""),
-                    cls.__name__)
+    @declared_attr
+    def notes(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Text, nullable=False, default=u""), cls.__name__)
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('notes')
-  _fulltext_attrs = ['notes']
-  _sanitize_html = ['notes']
-  _aliases = {"notes": "Notes"}
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('notes')
+    _fulltext_attrs = ['notes']
+    _sanitize_html = ['notes']
+    _aliases = {"notes": "Notes"}
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Noted, cls).indexed_query().options(
-        orm.Load(cls).load_only("notes"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Noted, cls).indexed_query().options(
+            orm.Load(cls).load_only("notes"), )
 
 
 class Hierarchical(object):
-  """Mixin that defines `parent` and `child` fields to organize hierarchy."""
+    """Mixin that defines `parent` and `child` fields to organize hierarchy."""
 
-  @declared_attr
-  def parent_id(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(
-        db.Integer, db.ForeignKey('{0}.id'.format(cls.__tablename__))),
-        cls.__name__)
+    @declared_attr
+    def parent_id(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Integer,
+                      db.ForeignKey('{0}.id'.format(cls.__tablename__))),
+            cls.__name__)
 
-  @declared_attr
-  def children(cls):  # pylint: disable=no-self-argument
-    return db.relationship(
-        cls.__name__,
-        backref=db.backref(
-            'parent', remote_side='{0}.id'.format(cls.__name__)),
-    )
+    @declared_attr
+    def children(cls):  # pylint: disable=no-self-argument
+        return db.relationship(
+            cls.__name__,
+            backref=db.backref(
+                'parent', remote_side='{0}.id'.format(cls.__name__)),
+        )
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('children', 'parent')
-  _fulltext_attrs = [
-      'children',
-      'parent',
-  ]
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('children', 'parent')
+    _fulltext_attrs = [
+        'children',
+        'parent',
+    ]
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Hierarchical, cls).indexed_query().options(
-        orm.Load(cls).subqueryload("children"),
-        orm.Load(cls).joinedload("parent"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Hierarchical, cls).indexed_query().options(
+            orm.Load(cls).subqueryload("children"),
+            orm.Load(cls).joinedload("parent"),
+        )
 
-  @classmethod
-  def eager_query(cls):
-    query = super(Hierarchical, cls).eager_query()
-    return query.options(
-        orm.subqueryload('children'),
-        # orm.joinedload('parent'),
-    )
+    @classmethod
+    def eager_query(cls):
+        query = super(Hierarchical, cls).eager_query()
+        return query.options(
+            orm.subqueryload('children'),
+            # orm.joinedload('parent'),
+        )
 
 
 class WithStartDate(object):
-  """Mixin that defines `start_date`."""
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('start_date')
+    """Mixin that defines `start_date`."""
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('start_date')
 
-  _aliases = {
-      "start_date": "Effective Date",
-  }
+    _aliases = {
+        "start_date": "Effective Date",
+    }
 
-  _fulltext_attrs = [
-      attributes.DateFullTextAttr('start_date', 'start_date'),
-  ]
+    _fulltext_attrs = [
+        attributes.DateFullTextAttr('start_date', 'start_date'),
+    ]
 
-  @declared_attr
-  def start_date(cls):
-    return deferred(db.Column(db.Date), cls.__name__)
+    @declared_attr
+    def start_date(cls):
+        return deferred(db.Column(db.Date), cls.__name__)
 
-  @validates('start_date')
-  def validate_date(self, _, value):
-    # pylint: disable=no-self-use
-    return value.date() if isinstance(value, datetime.datetime) else value
+    @validates('start_date')
+    def validate_date(self, _, value):
+        # pylint: disable=no-self-use
+        return value.date() if isinstance(value, datetime.datetime) else value
 
-  @classmethod
-  def indexed_query(cls):
-    return super(WithStartDate, cls).indexed_query().options(
-        orm.Load(cls).load_only("start_date"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(WithStartDate, cls).indexed_query().options(
+            orm.Load(cls).load_only("start_date"), )
 
 
 class WithEndDate(object):
-  """Mixin that defines `end_date`."""
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('end_date')
+    """Mixin that defines `end_date`."""
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('end_date')
 
-  _aliases = {
-      "end_date": "Stop Date",
-  }
+    _aliases = {
+        "end_date": "Stop Date",
+    }
 
-  _fulltext_attrs = [
-      attributes.DateFullTextAttr('end_date', 'end_date'),
-  ]
+    _fulltext_attrs = [
+        attributes.DateFullTextAttr('end_date', 'end_date'),
+    ]
 
-  @declared_attr
-  def end_date(cls):
-    return deferred(db.Column(db.Date), cls.__name__)
+    @declared_attr
+    def end_date(cls):
+        return deferred(db.Column(db.Date), cls.__name__)
 
-  @validates('end_date')
-  def validate_date(self, _, value):
-    # pylint: disable=no-self-use
-    return value.date() if isinstance(value, datetime.datetime) else value
+    @validates('end_date')
+    def validate_date(self, _, value):
+        # pylint: disable=no-self-use
+        return value.date() if isinstance(value, datetime.datetime) else value
 
-  @classmethod
-  def indexed_query(cls):
-    return super(WithEndDate, cls).indexed_query().options(
-        orm.Load(cls).load_only("end_date"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(WithEndDate, cls).indexed_query().options(
+            orm.Load(cls).load_only("end_date"), )
 
 
 class Timeboxed(WithStartDate, WithEndDate):
-  """Mixin that defines `start_date` and `end_date` fields."""
+    """Mixin that defines `start_date` and `end_date` fields."""
 
 
 class WithLastDeprecatedDate(object):
-  """Mixin that defines `last_deprecated_date` field."""
+    """Mixin that defines `last_deprecated_date` field."""
 
-  # pylint: disable=method-hidden ; pylint thinks that last_deprecated_date
-  # is overwritten in validate_status
-  @declared_attr
-  def last_deprecated_date(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.Date), cls.__name__)
+    # pylint: disable=method-hidden ; pylint thinks that last_deprecated_date
+    # is overwritten in validate_status
+    @declared_attr
+    def last_deprecated_date(cls):  # pylint: disable=no-self-argument
+        return deferred(db.Column(db.Date), cls.__name__)
 
-  # pylint: disable=unused-argument,no-self-use
-  @validates('last_deprecated_date')
-  def validate_date(self, key, value):
-    return value.date() if isinstance(value, datetime.datetime) else value
-  # pylint: enable=unused-argument,no-self-use
+    # pylint: disable=unused-argument,no-self-use
+    @validates('last_deprecated_date')
+    def validate_date(self, key, value):
+        return value.date() if isinstance(value, datetime.datetime) else value
 
-  _api_attrs = reflection.ApiAttributes(
-      reflection.Attribute('last_deprecated_date', create=False, update=False),
-  )
+    # pylint: enable=unused-argument,no-self-use
 
-  _aliases = {
-      "last_deprecated_date": {
-          "display_name": "Last Deprecated Date",
-          "view_only": True,
-      },
-  }
+    _api_attrs = reflection.ApiAttributes(
+        reflection.Attribute(
+            'last_deprecated_date', create=False, update=False), )
 
-  _fulltext_attrs = [
-      attributes.DateFullTextAttr('last_deprecated_date',
-                                  'last_deprecated_date'),
-  ]
+    _aliases = {
+        "last_deprecated_date": {
+            "display_name": "Last Deprecated Date",
+            "view_only": True,
+        },
+    }
 
-  @classmethod
-  def indexed_query(cls):
-    return super(WithLastDeprecatedDate, cls).indexed_query().options(
-        orm.Load(cls).load_only("last_deprecated_date"),
-    )
+    _fulltext_attrs = [
+        attributes.DateFullTextAttr('last_deprecated_date',
+                                    'last_deprecated_date'),
+    ]
 
-  AUTO_SETUP_STATUS = "Deprecated"
+    @classmethod
+    def indexed_query(cls):
+        return super(WithLastDeprecatedDate, cls).indexed_query().options(
+            orm.Load(cls).load_only("last_deprecated_date"), )
 
-  @validates('status')
-  def validate_status(self, key, value):
-    """Autosetup current date as last_deprecated_date
+    AUTO_SETUP_STATUS = "Deprecated"
+
+    @validates('status')
+    def validate_status(self, key, value):
+        """Autosetup current date as last_deprecated_date
       if 'Deprecated' status will setup."""
-    # pylint: disable=unused-argument; key is unused but passed in by ORM
-    if hasattr(super(WithLastDeprecatedDate, self), "validate_status"):
-      value = super(WithLastDeprecatedDate, self).validate_status(key, value)
-    if value != self.status and value == self.AUTO_SETUP_STATUS:
-      self.last_deprecated_date = datetime.datetime.now()
-    return value
+        # pylint: disable=unused-argument; key is unused but passed in by ORM
+        if hasattr(super(WithLastDeprecatedDate, self), "validate_status"):
+            value = super(WithLastDeprecatedDate, self).validate_status(
+                key, value)
+        if value != self.status and value == self.AUTO_SETUP_STATUS:
+            self.last_deprecated_date = datetime.datetime.now()
+        return value
 
 
 class LastDeprecatedTimeboxed(Timeboxed):
-  """Mixin that redefines `end_date`'s alias."""
-  _aliases = {
-      "end_date": {
-          "display_name": "Last Deprecated Date",
-          "view_only": True,
-      },
-  }
+    """Mixin that redefines `end_date`'s alias."""
+    _aliases = {
+        "end_date": {
+            "display_name": "Last Deprecated Date",
+            "view_only": True,
+        },
+    }
 
-  _api_attrs = reflection.ApiAttributes(
-      reflection.Attribute('end_date', create=False, update=False),
-  )
+    _api_attrs = reflection.ApiAttributes(
+        reflection.Attribute('end_date', create=False, update=False), )
 
-  AUTO_SETUP_STATUS = "Deprecated"
+    AUTO_SETUP_STATUS = "Deprecated"
 
-  @validates('status')
-  def validate_status(self, key, value):
-    """Autosetup current date as end date if 'Deprecated' status will setup."""
-    superinstance = super(Timeboxed, self)
-    if hasattr(superinstance, "validate_status"):
-      value = superinstance.validate_status(key, value)
-    if value != self.status and value == self.AUTO_SETUP_STATUS:
-      self.end_date = datetime.datetime.now()
-    return value
+    @validates('status')
+    def validate_status(self, key, value):
+        """Autosetup current date as end date if 'Deprecated' status will setup."""
+        superinstance = super(Timeboxed, self)
+        if hasattr(superinstance, "validate_status"):
+            value = superinstance.validate_status(key, value)
+        if value != self.status and value == self.AUTO_SETUP_STATUS:
+            self.end_date = datetime.datetime.now()
+        return value
 
 
 class Stateful(object):
-  """Mixin that defines `status` field and status validation logic.
+    """Mixin that defines `status` field and status validation logic.
 
   TODO: unify with Statusable.
   """
 
-  @declared_attr
-  def status(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(
-        db.String, default=cls.default_status, nullable=False), cls.__name__)
+    @declared_attr
+    def status(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.String, default=cls.default_status, nullable=False),
+            cls.__name__)
 
-  _api_attrs = reflection.ApiAttributes('status')
-  _fulltext_attrs = ['status']
-  _aliases = {
-      "status": {
-          "display_name": "State",
-          "mandatory": False
-      }
-  }
+    _api_attrs = reflection.ApiAttributes('status')
+    _fulltext_attrs = ['status']
+    _aliases = {"status": {"display_name": "State", "mandatory": False}}
 
-  @classmethod
-  def default_status(cls):
-    return cls.valid_statuses()[0]
+    @classmethod
+    def default_status(cls):
+        return cls.valid_statuses()[0]
 
-  @classmethod
-  def valid_statuses(cls):
-    return cls.VALID_STATES
+    @classmethod
+    def valid_statuses(cls):
+        return cls.VALID_STATES
 
-  @validates('status')
-  def validate_status(self, key, value):
-    """Use default status if value is None, check that it is in valid set."""
-    # Sqlalchemy only uses one validator per status (not necessarily the
-    # first) and ignores others. This enables cooperation between validators
-    # since there are other mixins that want to touch 'status'.
-    if hasattr(super(Stateful, self), "validate_status"):
-      value = super(Stateful, self).validate_status(key, value)
-    if value is None:
-      value = self.default_status()
-    if value not in self.valid_statuses():
-      message = u"Invalid state '{}'".format(value)
-      raise ValueError(message)
-    return value
+    @validates('status')
+    def validate_status(self, key, value):
+        """Use default status if value is None, check that it is in valid set."""
+        # Sqlalchemy only uses one validator per status (not necessarily the
+        # first) and ignores others. This enables cooperation between validators
+        # since there are other mixins that want to touch 'status'.
+        if hasattr(super(Stateful, self), "validate_status"):
+            value = super(Stateful, self).validate_status(key, value)
+        if value is None:
+            value = self.default_status()
+        if value not in self.valid_statuses():
+            message = u"Invalid state '{}'".format(value)
+            raise ValueError(message)
+        return value
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Stateful, cls).indexed_query().options(
-        orm.Load(cls).load_only("status"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Stateful, cls).indexed_query().options(
+            orm.Load(cls).load_only("status"), )
 
 
 class FinishedDate(object):
-  """Adds 'Finished Date' which is set when status is set to a finished state.
+    """Adds 'Finished Date' which is set when status is set to a finished state.
 
   Requires Stateful to be mixed in as well.
   """
 
-  NOT_DONE_STATES = None
-  DONE_STATES = {}
+    NOT_DONE_STATES = None
+    DONE_STATES = {}
 
-  # pylint: disable=method-hidden
-  # because validator only sets date per model instance
-  @declared_attr
-  def finished_date(cls):  # pylint: disable=no-self-argument
-    return deferred(
-        db.Column(db.DateTime, nullable=True),
-        cls.__name__
-    )
+    # pylint: disable=method-hidden
+    # because validator only sets date per model instance
+    @declared_attr
+    def finished_date(cls):  # pylint: disable=no-self-argument
+        return deferred(db.Column(db.DateTime, nullable=True), cls.__name__)
 
-  _api_attrs = reflection.ApiAttributes(
-      reflection.Attribute('finished_date', create=False, update=False),
-  )
+    _api_attrs = reflection.ApiAttributes(
+        reflection.Attribute('finished_date', create=False, update=False), )
 
-  _aliases = {
-      "finished_date": "Finished Date"
-  }
+    _aliases = {"finished_date": "Finished Date"}
 
-  _fulltext_attrs = [
-      attributes.DatetimeFullTextAttr('finished_date', 'finished_date'),
-  ]
+    _fulltext_attrs = [
+        attributes.DatetimeFullTextAttr('finished_date', 'finished_date'),
+    ]
 
-  @validates('status')
-  def validate_status(self, key, value):
-    """Update finished_date given the right status change."""
-    # Sqlalchemy only uses one validator per status (not necessarily the
-    # first) and ignores others. This enables cooperation between validators
-    # since 'status' is not defined here.
-    if hasattr(super(FinishedDate, self), "validate_status"):
-      value = super(FinishedDate, self).validate_status(key, value)
-    # pylint: disable=unsupported-membership-test
-    # short circuit
-    if (value in self.DONE_STATES and
-        (self.NOT_DONE_STATES is None or
-         self.status in self.NOT_DONE_STATES)):
-      self.finished_date = datetime.datetime.now()
-    elif ((self.NOT_DONE_STATES is None or
-           value in self.NOT_DONE_STATES) and
-            self.status in self.DONE_STATES):
-      self.finished_date = None
-    return value
+    @validates('status')
+    def validate_status(self, key, value):
+        """Update finished_date given the right status change."""
+        # Sqlalchemy only uses one validator per status (not necessarily the
+        # first) and ignores others. This enables cooperation between validators
+        # since 'status' is not defined here.
+        if hasattr(super(FinishedDate, self), "validate_status"):
+            value = super(FinishedDate, self).validate_status(key, value)
+        # pylint: disable=unsupported-membership-test
+        # short circuit
+        if (value in self.DONE_STATES
+                and (self.NOT_DONE_STATES is None
+                     or self.status in self.NOT_DONE_STATES)):
+            self.finished_date = datetime.datetime.now()
+        elif ((self.NOT_DONE_STATES is None or value in self.NOT_DONE_STATES)
+              and self.status in self.DONE_STATES):
+            self.finished_date = None
+        return value
 
-  @classmethod
-  def indexed_query(cls):
-    return super(FinishedDate, cls).indexed_query().options(
-        orm.Load(cls).load_only("finished_date"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(FinishedDate, cls).indexed_query().options(
+            orm.Load(cls).load_only("finished_date"), )
 
 
 class VerifiedDate(object):
-  """Adds 'Verified Date' which is set when status is set to 'Verified'.
+    """Adds 'Verified Date' which is set when status is set to 'Verified'.
 
   When object is verified the status is overridden to 'Final' and the
   information about verification exposed as the 'verified' boolean.
   Requires Stateful to be mixed in as well.
   """
 
-  VERIFIED_STATES = {u"Verified"}
-  DONE_STATES = {}
+    VERIFIED_STATES = {u"Verified"}
+    DONE_STATES = {}
 
-  # pylint: disable=method-hidden
-  # because validator only sets date per model instance
-  @declared_attr
-  def verified_date(cls):  # pylint: disable=no-self-argument
-    return deferred(
-        db.Column(db.DateTime, nullable=True),
-        cls.__name__
+    # pylint: disable=method-hidden
+    # because validator only sets date per model instance
+    @declared_attr
+    def verified_date(cls):  # pylint: disable=no-self-argument
+        return deferred(db.Column(db.DateTime, nullable=True), cls.__name__)
+
+    @hybrid_property
+    def verified(self):
+        return self.verified_date != None  # noqa
+
+    _api_attrs = reflection.ApiAttributes(
+        reflection.Attribute('verified', create=False, update=False),
+        reflection.Attribute('verified_date', create=False, update=False),
     )
 
-  @hybrid_property
-  def verified(self):
-    return self.verified_date != None  # noqa
+    _aliases = {"verified_date": "Verified Date"}
 
-  _api_attrs = reflection.ApiAttributes(
-      reflection.Attribute('verified', create=False, update=False),
-      reflection.Attribute('verified_date', create=False, update=False),
-  )
+    _fulltext_attrs = [
+        attributes.DatetimeFullTextAttr("verified_date", "verified_date"),
+        "verified",
+    ]
 
-  _aliases = {
-      "verified_date": "Verified Date"
-  }
+    @classmethod
+    def indexed_query(cls):
+        return super(VerifiedDate, cls).indexed_query().options(
+            orm.Load(cls).load_only("verified_date"), )
 
-  _fulltext_attrs = [
-      attributes.DatetimeFullTextAttr("verified_date", "verified_date"),
-      "verified",
-  ]
-
-  @classmethod
-  def indexed_query(cls):
-    return super(VerifiedDate, cls).indexed_query().options(
-        orm.Load(cls).load_only("verified_date"),
-    )
-
-  @validates('status')
-  def validate_status(self, key, value):
-    """Update verified_date on status change, make verified status final."""
-    # Sqlalchemy only uses one validator per status (not necessarily the
-    # first) and ignores others. This enables cooperation between validators
-    # since 'status' is not defined here.
-    if hasattr(super(VerifiedDate, self), "validate_status"):
-      value = super(VerifiedDate, self).validate_status(key, value)
-    if (value in self.VERIFIED_STATES and
-            self.status not in self.VERIFIED_STATES):
-      self.verified_date = datetime.datetime.now()
-      value = self.FINAL_STATE
-    elif (value not in self.END_STATES and
-          (self.status in self.VERIFIED_STATES or
-           self.status in self.DONE_STATES)):
-      self.verified_date = None
-    return value
+    @validates('status')
+    def validate_status(self, key, value):
+        """Update verified_date on status change, make verified status final."""
+        # Sqlalchemy only uses one validator per status (not necessarily the
+        # first) and ignores others. This enables cooperation between validators
+        # since 'status' is not defined here.
+        if hasattr(super(VerifiedDate, self), "validate_status"):
+            value = super(VerifiedDate, self).validate_status(key, value)
+        if (value in self.VERIFIED_STATES
+                and self.status not in self.VERIFIED_STATES):
+            self.verified_date = datetime.datetime.now()
+            value = self.FINAL_STATE
+        elif (value not in self.END_STATES
+              and (self.status in self.VERIFIED_STATES
+                   or self.status in self.DONE_STATES)):
+            self.verified_date = None
+        return value
 
 
 class Slugged(Base):
-
-  """Several classes make use of the common mixins and additional are
+    """Several classes make use of the common mixins and additional are
   "slugged" and have additional fields related to their publishing in the
   system.
   """
 
-  @declared_attr
-  def slug(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.String, nullable=False), cls.__name__)
+    @declared_attr
+    def slug(cls):  # pylint: disable=no-self-argument
+        return deferred(db.Column(db.String, nullable=False), cls.__name__)
 
-  @staticmethod
-  def _extra_table_args(model):
-    if getattr(model, '_slug_uniqueness', True):
-      return (
-          db.UniqueConstraint('slug',
-                              name='uq_{}'.format(model.__tablename__)),
-      )
-    return ()
+    @staticmethod
+    def _extra_table_args(model):
+        if getattr(model, '_slug_uniqueness', True):
+            return (db.UniqueConstraint(
+                'slug', name='uq_{}'.format(model.__tablename__)), )
+        return ()
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('slug')
-  _fulltext_attrs = ['slug']
-  _sanitize_html = ['slug']
-  _aliases = {
-      "slug": {
-          "display_name": "Code",
-          "description": ("Must be unique. Can be left empty for "
-                          "auto generation. If updating or deleting, "
-                          "code is required"),
-      }
-  }
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('slug')
+    _fulltext_attrs = ['slug']
+    _sanitize_html = ['slug']
+    _aliases = {
+        "slug": {
+            "display_name":
+            "Code",
+            "description": ("Must be unique. Can be left empty for "
+                            "auto generation. If updating or deleting, "
+                            "code is required"),
+        }
+    }
 
-  @classmethod
-  def indexed_query(cls):
-    return super(Slugged, cls).indexed_query().options(
-        orm.Load(cls).load_only("slug"),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(Slugged, cls).indexed_query().options(
+            orm.Load(cls).load_only("slug"), )
 
-  @classmethod
-  def generate_slug_for(cls, obj):
-    """Generate unique Slug among the objects of the current class"""
-    _id = getattr(obj, 'id', uuid1())
-    obj.slug = "{0}-{1}".format(cls.generate_slug_prefix(), _id)
-    # We need to make sure the generated slug is not already present in the
-    # database. If it is, we increment the id until we find a slug that is
-    # unique.
-    # A better approach would be to query the database for slug uniqueness
-    # only if the there was a conflict, but because we can't easily catch a
-    # session rollback at this point we are sticking with a
-    # suboptimal solution for now.
-    INCREMENT = 1000
-    while db.session.query(
-            cls.query.filter(cls.slug == obj.slug).exists()).scalar():
-      _id += INCREMENT
-      obj.slug = "{0}-{1}".format(cls.generate_slug_prefix(), _id)
+    @classmethod
+    def generate_slug_for(cls, obj):
+        """Generate unique Slug among the objects of the current class"""
+        _id = getattr(obj, 'id', uuid1())
+        obj.slug = "{0}-{1}".format(cls.generate_slug_prefix(), _id)
+        # We need to make sure the generated slug is not already present in the
+        # database. If it is, we increment the id until we find a slug that is
+        # unique.
+        # A better approach would be to query the database for slug uniqueness
+        # only if the there was a conflict, but because we can't easily catch a
+        # session rollback at this point we are sticking with a
+        # suboptimal solution for now.
+        INCREMENT = 1000
+        while db.session.query(
+                cls.query.filter(cls.slug == obj.slug).exists()).scalar():
+            _id += INCREMENT
+            obj.slug = "{0}-{1}".format(cls.generate_slug_prefix(), _id)
 
-  @classmethod
-  def generate_slug_prefix(cls):
-    return cls.__name__.upper()
+    @classmethod
+    def generate_slug_prefix(cls):
+        return cls.__name__.upper()
 
-  @classmethod
-  def ensure_slug_before_flush(cls, session, flush_context, instances):
-    """Set the slug to a default string so we don't run afoul of the NOT NULL
+    @classmethod
+    def ensure_slug_before_flush(cls, session, flush_context, instances):
+        """Set the slug to a default string so we don't run afoul of the NOT NULL
     constraint.
     """
-    # pylint: disable=unused-argument
-    for o in session.new:
-      if isinstance(o, Slugged) and (o.slug is None or o.slug == ''):
-        o.slug = str(uuid1())
-        o._replace_slug = True  # pylint: disable=protected-access
+        # pylint: disable=unused-argument
+        for o in session.new:
+            if isinstance(o, Slugged) and (o.slug is None or o.slug == ''):
+                o.slug = str(uuid1())
+                o._replace_slug = True  # pylint: disable=protected-access
 
-  @classmethod
-  def ensure_slug_after_flush_postexec(cls, session, flush_context):
-    """Replace the placeholder slug with a real slug that will be set on the
+    @classmethod
+    def ensure_slug_after_flush_postexec(cls, session, flush_context):
+        """Replace the placeholder slug with a real slug that will be set on the
     next flush/commit.
     """
-    # pylint: disable=unused-argument
-    for o in session.identity_map.values():
-      if isinstance(o, Slugged) and hasattr(o, '_replace_slug'):
-        o.generate_slug_for(o)
-        delattr(o, '_replace_slug')
+        # pylint: disable=unused-argument
+        for o in session.identity_map.values():
+            if isinstance(o, Slugged) and hasattr(o, '_replace_slug'):
+                o.generate_slug_for(o)
+                delattr(o, '_replace_slug')
 
 
 event.listen(Session, 'before_flush', Slugged.ensure_slug_before_flush)
-event.listen(
-    Session, 'after_flush_postexec', Slugged.ensure_slug_after_flush_postexec)
+event.listen(Session, 'after_flush_postexec',
+             Slugged.ensure_slug_after_flush_postexec)
 
 
 class WithContact(object):
-  """Mixin that defines `contact` and `secondary_contact` fields."""
+    """Mixin that defines `contact` and `secondary_contact` fields."""
 
-  @declared_attr
-  def contact_id(cls):  # pylint: disable=no-self-argument
-    return deferred(
-        db.Column(db.Integer, db.ForeignKey('people.id')), cls.__name__)
+    @declared_attr
+    def contact_id(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Integer, db.ForeignKey('people.id')), cls.__name__)
 
-  @declared_attr
-  def secondary_contact_id(cls):  # pylint: disable=no-self-argument
-    return deferred(
-        db.Column(db.Integer, db.ForeignKey('people.id')), cls.__name__)
+    @declared_attr
+    def secondary_contact_id(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Integer, db.ForeignKey('people.id')), cls.__name__)
 
-  @declared_attr
-  def contact(cls):  # pylint: disable=no-self-argument
-    return db.relationship(
-        'Person',
-        uselist=False,
-        foreign_keys='{}.contact_id'.format(cls.__name__))
+    @declared_attr
+    def contact(cls):  # pylint: disable=no-self-argument
+        return db.relationship(
+            'Person',
+            uselist=False,
+            foreign_keys='{}.contact_id'.format(cls.__name__))
 
-  @declared_attr
-  def secondary_contact(cls):  # pylint: disable=no-self-argument
-    return db.relationship(
-        'Person',
-        uselist=False,
-        foreign_keys='{}.secondary_contact_id'.format(cls.__name__))
+    @declared_attr
+    def secondary_contact(cls):  # pylint: disable=no-self-argument
+        return db.relationship(
+            'Person',
+            uselist=False,
+            foreign_keys='{}.secondary_contact_id'.format(cls.__name__))
 
-  @staticmethod
-  def _extra_table_args(model):
-    return (
-        db.Index('fk_{}_contact'.format(model.__tablename__), 'contact_id'),
-        db.Index('fk_{}_secondary_contact'.format(
-            model.__tablename__), 'secondary_contact_id'),
-    )
+    @staticmethod
+    def _extra_table_args(model):
+        return (
+            db.Index('fk_{}_contact'.format(model.__tablename__),
+                     'contact_id'),
+            db.Index('fk_{}_secondary_contact'.format(model.__tablename__),
+                     'secondary_contact_id'),
+        )
 
-  _api_attrs = reflection.ApiAttributes('contact', 'secondary_contact')
-  _fulltext_attrs = [
-      attributes.FullTextAttr(
-          "contact",
-          "contact",
-          ["email", "name"]
-      ),
-      attributes.FullTextAttr(
-          'secondary_contact',
-          'secondary_contact',
-          ["email", "name"]),
-  ]
+    _api_attrs = reflection.ApiAttributes('contact', 'secondary_contact')
+    _fulltext_attrs = [
+        attributes.FullTextAttr("contact", "contact", ["email", "name"]),
+        attributes.FullTextAttr('secondary_contact', 'secondary_contact',
+                                ["email", "name"]),
+    ]
 
-  @classmethod
-  def indexed_query(cls):
-    return super(WithContact, cls).indexed_query().options(
-        orm.Load(cls).joinedload(
-            "contact"
-        ).load_only(
-            "name",
-            "email",
-            "id"
-        ),
-        orm.Load(cls).joinedload(
-            "secondary_contact"
-        ).load_only(
-            "name",
-            "email",
-            "id"
-        ),
-    )
+    @classmethod
+    def indexed_query(cls):
+        return super(WithContact, cls).indexed_query().options(
+            orm.Load(cls).joinedload("contact").load_only(
+                "name", "email", "id"),
+            orm.Load(cls).joinedload("secondary_contact").load_only(
+                "name", "email", "id"),
+        )
 
-  _aliases = {
-      "contact": "Primary Contact",
-      "secondary_contact": "Secondary Contact",
-  }
+    _aliases = {
+        "contact": "Primary Contact",
+        "secondary_contact": "Secondary Contact",
+    }
 
 
 class BusinessObject(Stateful, Noted, Described, Titled, Slugged):
-  """Mixin that groups most commonly-used mixins into one."""
-  DRAFT = 'Draft'
-  ACTIVE = 'Active'
-  DEPRECATED = 'Deprecated'
+    """Mixin that groups most commonly-used mixins into one."""
+    DRAFT = 'Draft'
+    ACTIVE = 'Active'
+    DEPRECATED = 'Deprecated'
 
-  VALID_STATES = (DRAFT, ACTIVE, DEPRECATED, )
+    VALID_STATES = (
+        DRAFT,
+        ACTIVE,
+        DEPRECATED,
+    )
 
-  _aliases = {
-      "status": {
-          "display_name": "State",
-          "mandatory": False,
-          "description": "Options are:\n{}".format('\n'.join(VALID_STATES))
-      }
-  }
+    _aliases = {
+        "status": {
+            "display_name": "State",
+            "mandatory": False,
+            "description": "Options are:\n{}".format('\n'.join(VALID_STATES))
+        }
+    }
 
 
 # This class is just a marker interface/mixin to indicate that a model type
@@ -654,94 +613,82 @@ class BusinessObject(Stateful, Noted, Described, Titled, Slugged):
 
 
 class TestPlanned(object):
-  """Mixin that defines `test_plan` field."""
+    """Mixin that defines `test_plan` field."""
 
-  @declared_attr
-  def test_plan(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.Text, nullable=False, default=u""),
-                    cls.__name__)
+    @declared_attr
+    def test_plan(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Text, nullable=False, default=u""), cls.__name__)
 
-  # REST properties
-  _api_attrs = reflection.ApiAttributes('test_plan')
-  _fulltext_attrs = ['test_plan']
-  _sanitize_html = ['test_plan']
-  _aliases = {"test_plan": "Assessment Procedure"}
-
-  @classmethod
-  def indexed_query(cls):
-    return super(TestPlanned, cls).indexed_query().options(
-        orm.Load(cls).load_only("test_plan"),
-    )
-
-
-class Folderable(object):
-  """Mixin adding the ability to attach folders to an object"""
-
-  @declared_attr
-  def folder(cls):
-    return deferred(db.Column(db.Text, nullable=False, default=""),
-                    cls.__name__)
-
-  @classmethod
-  def indexed_query(cls):
-    return super(Folderable, cls).indexed_query().options(
-        orm.Load(cls).load_only("folder"),
-    )
-
-  _api_attrs = reflection.ApiAttributes('folder')
-  _fulltext_attrs = ['folder']
-  _aliases = {"folder": "Folder"}
-
-
-def person_relation_factory(relation_name, fulltext_attr=None, api_attr=None):
-  """Factory that will generate person  """
-
-  def field_declaration(cls):  # pylint: disable=no-self-argument
-    return deferred(db.Column(db.Integer,
-                              db.ForeignKey('people.id'),
-                              nullable=True),
-                    cls.__name__)
-
-  def attr_declaration(cls):
-    return db.relationship(
-        'Person',
-        primaryjoin='{0}.{1}_id == Person.id'.format(cls.__name__,
-                                                     relation_name),
-        foreign_keys='{0}.{1}_id'.format(cls.__name__,
-                                         relation_name),
-        remote_side='Person.id',
-        uselist=False,
-    )
-
-  gen_fulltext_attr = (
-      fulltext_attr or attributes.FullTextAttr(relation_name,
-                                               relation_name,
-                                               ["email", "name"]))
-  api_attr = api_attr or reflection.Attribute(relation_name)
-
-  # pylint: disable=too-few-public-methods,missing-docstring
-  class DecoratedClass(object):
-
-    _api_attrs = reflection.ApiAttributes(api_attr)
-    fulltext_attr = [gen_fulltext_attr]
+    # REST properties
+    _api_attrs = reflection.ApiAttributes('test_plan')
+    _fulltext_attrs = ['test_plan']
+    _sanitize_html = ['test_plan']
+    _aliases = {"test_plan": "Assessment Procedure"}
 
     @classmethod
     def indexed_query(cls):
-      return super(DecoratedClass, cls).indexed_query().options(
-          orm.Load(cls).joinedload(
-              relation_name
-          ).load_only(
-              "name", "email", "id"
-          ),
-      )
+        return super(TestPlanned, cls).indexed_query().options(
+            orm.Load(cls).load_only("test_plan"), )
 
-  return type(
-      "{}_mixin".format(relation_name),
-      (DecoratedClass, ),
-      {
-          "{}_id".format(relation_name): declared_attr(field_declaration),
-          relation_name: declared_attr(attr_declaration),
-      })
+
+class Folderable(object):
+    """Mixin adding the ability to attach folders to an object"""
+
+    @declared_attr
+    def folder(cls):
+        return deferred(
+            db.Column(db.Text, nullable=False, default=""), cls.__name__)
+
+    @classmethod
+    def indexed_query(cls):
+        return super(Folderable, cls).indexed_query().options(
+            orm.Load(cls).load_only("folder"), )
+
+    _api_attrs = reflection.ApiAttributes('folder')
+    _fulltext_attrs = ['folder']
+    _aliases = {"folder": "Folder"}
+
+
+def person_relation_factory(relation_name, fulltext_attr=None, api_attr=None):
+    """Factory that will generate person  """
+
+    def field_declaration(cls):  # pylint: disable=no-self-argument
+        return deferred(
+            db.Column(db.Integer, db.ForeignKey('people.id'), nullable=True),
+            cls.__name__)
+
+    def attr_declaration(cls):
+        return db.relationship(
+            'Person',
+            primaryjoin='{0}.{1}_id == Person.id'.format(
+                cls.__name__, relation_name),
+            foreign_keys='{0}.{1}_id'.format(cls.__name__, relation_name),
+            remote_side='Person.id',
+            uselist=False,
+        )
+
+    gen_fulltext_attr = (fulltext_attr or attributes.FullTextAttr(
+        relation_name, relation_name, ["email", "name"]))
+    api_attr = api_attr or reflection.Attribute(relation_name)
+
+    # pylint: disable=too-few-public-methods,missing-docstring
+    class DecoratedClass(object):
+
+        _api_attrs = reflection.ApiAttributes(api_attr)
+        fulltext_attr = [gen_fulltext_attr]
+
+        @classmethod
+        def indexed_query(cls):
+            return super(DecoratedClass, cls).indexed_query().options(
+                orm.Load(cls).joinedload(relation_name).load_only(
+                    "name", "email", "id"), )
+
+    return type(
+        "{}_mixin".format(relation_name), (DecoratedClass, ), {
+            "{}_id".format(relation_name): declared_attr(field_declaration),
+            relation_name: declared_attr(attr_declaration),
+        })
 
 
 __all__ = [

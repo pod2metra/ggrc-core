@@ -10,144 +10,161 @@ from integration.ggrc import TestCase
 
 
 def get_mapping_names(class_name):
-  """Return set of mapping names for sent model name."""
-  mapping_rules = get_mapping_rules().get(class_name)
-  if mapping_rules is not None:
-    pretty_mapping_rules = (title_from_camelcase(r) for r in mapping_rules)
-    mapping_names = {"map:{}".format(n) for n in pretty_mapping_rules}
-  else:
-    mapping_names = None
-  return mapping_names
+    """Return set of mapping names for sent model name."""
+    mapping_rules = get_mapping_rules().get(class_name)
+    if mapping_rules is not None:
+        pretty_mapping_rules = (title_from_camelcase(r) for r in mapping_rules)
+        mapping_names = {"map:{}".format(n) for n in pretty_mapping_rules}
+    else:
+        mapping_names = None
+    return mapping_names
 
 
 def get_unmapping_names(class_name):
-  """Return set of unmapping names for sent model name."""
-  unmapping_rules = get_unmapping_rules().get(class_name)
-  if unmapping_rules is not None:
-    pretty_unmapping_rules = (title_from_camelcase(r) for r in unmapping_rules)
-    unmapping_names = {"unmap:{}".format(n) for n in pretty_unmapping_rules}
-  else:
-    unmapping_names = None
-  return unmapping_names
+    """Return set of unmapping names for sent model name."""
+    unmapping_rules = get_unmapping_rules().get(class_name)
+    if unmapping_rules is not None:
+        pretty_unmapping_rules = (title_from_camelcase(r)
+                                  for r in unmapping_rules)
+        unmapping_names = {
+            "unmap:{}".format(n)
+            for n in pretty_unmapping_rules
+        }
+    else:
+        unmapping_names = None
+    return unmapping_names
 
 
 class TestWorkflowObjectColumnDefinitions(TestCase):
-  """Test default column difinitions for workflow objcts.
+    """Test default column difinitions for workflow objcts.
   """
 
-  @classmethod
-  def setUpClass(cls):
-    TestCase.clear_data()
+    @classmethod
+    def setUpClass(cls):
+        TestCase.clear_data()
 
-  def setUp(self):
-    pass
+    def setUp(self):
+        pass
 
-  def test_workflow_definitions(self):
-    """ test default headers for Workflow """
-    definitions = get_object_column_definitions(wf_models.Workflow)
-    display_names = {val["display_name"] for val in definitions.itervalues()}
-    expected_names = {
-        "Title",
-        "Description",
-        "Custom email message",
-        "Admin",
-        "Workflow Member",
-        "Unit",
-        "Repeat Every",
-        "Force real-time email updates",
-        "Code",
-        "Delete",
-        "Need Verification",
-        'Created Date',
-        'Last Updated Date',
-        'Last Updated By',
-        'Folder',
-    }
-    self.assertEqual(expected_names, display_names)
-    vals = {val["display_name"]: val for val in definitions.itervalues()}
-    self.assertTrue(vals["Title"]["mandatory"])
-    self.assertTrue(vals["Admin"]["mandatory"])
-    self.assertIn("type", vals["Admin"])
-    self.assertIn("type", vals["Workflow Member"])
-    self.assertEqual(vals["Admin"]["type"], "mapping")
-    self.assertEqual(vals["Workflow Member"]["type"], "mapping")
+    def test_workflow_definitions(self):
+        """ test default headers for Workflow """
+        definitions = get_object_column_definitions(wf_models.Workflow)
+        display_names = {
+            val["display_name"]
+            for val in definitions.itervalues()
+        }
+        expected_names = {
+            "Title",
+            "Description",
+            "Custom email message",
+            "Admin",
+            "Workflow Member",
+            "Unit",
+            "Repeat Every",
+            "Force real-time email updates",
+            "Code",
+            "Delete",
+            "Need Verification",
+            'Created Date',
+            'Last Updated Date',
+            'Last Updated By',
+            'Folder',
+        }
+        self.assertEqual(expected_names, display_names)
+        vals = {val["display_name"]: val for val in definitions.itervalues()}
+        self.assertTrue(vals["Title"]["mandatory"])
+        self.assertTrue(vals["Admin"]["mandatory"])
+        self.assertIn("type", vals["Admin"])
+        self.assertIn("type", vals["Workflow Member"])
+        self.assertEqual(vals["Admin"]["type"], "mapping")
+        self.assertEqual(vals["Workflow Member"]["type"], "mapping")
 
-  def test_task_group_definitions(self):
-    """ test default headers for Task Group """
-    definitions = get_object_column_definitions(wf_models.TaskGroup)
-    display_names = {val["display_name"] for val in definitions.itervalues()}
-    expected_names = {
-        "Summary",
-        "Details",
-        "Assignee",
-        "Code",
-        "Workflow",
-        "Objects",
-        "Delete",
-        'Created Date',
-        'Last Updated Date',
-        'Last Updated By',
-    }
-    self.assertEqual(expected_names, display_names)
-    vals = {val["display_name"]: val for val in definitions.itervalues()}
-    self.assertTrue(vals["Summary"]["mandatory"])
-    self.assertTrue(vals["Assignee"]["mandatory"])
+    def test_task_group_definitions(self):
+        """ test default headers for Task Group """
+        definitions = get_object_column_definitions(wf_models.TaskGroup)
+        display_names = {
+            val["display_name"]
+            for val in definitions.itervalues()
+        }
+        expected_names = {
+            "Summary",
+            "Details",
+            "Assignee",
+            "Code",
+            "Workflow",
+            "Objects",
+            "Delete",
+            'Created Date',
+            'Last Updated Date',
+            'Last Updated By',
+        }
+        self.assertEqual(expected_names, display_names)
+        vals = {val["display_name"]: val for val in definitions.itervalues()}
+        self.assertTrue(vals["Summary"]["mandatory"])
+        self.assertTrue(vals["Assignee"]["mandatory"])
 
-  def test_task_definitions(self):
-    """ test default headers for Task Group Task """
-    definitions = get_object_column_definitions(wf_models.TaskGroupTask)
-    display_names = {val["display_name"] for val in definitions.itervalues()}
-    expected_names = {
-        "Summary",
-        "Task Type",
-        "Task Assignees",
-        "Task Secondary Assignees",
-        "Task Description",
-        "Start Date",
-        "End Date",
-        "Task Group",
-        "Code",
-        "Delete",
-        'Created Date',
-        'Last Updated Date',
-        'Last Updated By',
-    }
-    self.assertEqual(expected_names, display_names)
-    vals = {val["display_name"]: val for val in definitions.itervalues()}
-    self.assertTrue(vals["Summary"]["mandatory"])
-    self.assertTrue(vals["Task Assignees"]["mandatory"])
+    def test_task_definitions(self):
+        """ test default headers for Task Group Task """
+        definitions = get_object_column_definitions(wf_models.TaskGroupTask)
+        display_names = {
+            val["display_name"]
+            for val in definitions.itervalues()
+        }
+        expected_names = {
+            "Summary",
+            "Task Type",
+            "Task Assignees",
+            "Task Secondary Assignees",
+            "Task Description",
+            "Start Date",
+            "End Date",
+            "Task Group",
+            "Code",
+            "Delete",
+            'Created Date',
+            'Last Updated Date',
+            'Last Updated By',
+        }
+        self.assertEqual(expected_names, display_names)
+        vals = {val["display_name"]: val for val in definitions.itervalues()}
+        self.assertTrue(vals["Summary"]["mandatory"])
+        self.assertTrue(vals["Task Assignees"]["mandatory"])
 
-  def test_cycle_task_definitions(self):
-    """ test default headers for Cycle Task Group Object Task """
-    definitions = get_object_column_definitions(
-        wf_models.CycleTaskGroupObjectTask)
-    mapping_names = get_mapping_names(
-        wf_models.CycleTaskGroupObjectTask.__name__)
-    unmapping_names = get_unmapping_names(
-        wf_models.CycleTaskGroupObjectTask.__name__)
-    display_names = {val["display_name"] for val in definitions.itervalues()}
-    element_names = {
-        "Code",
-        "Cycle",
-        "Summary",
-        "Task Type",
-        "Task Assignees",
-        "Task Secondary Assignees",
-        "Task Details",
-        "Start Date",
-        "Due Date",
-        "Actual Verified Date",
-        "Actual Finish Date",
-        "Task Group",
-        "State",
-        "Delete",
-        'Created Date',
-        'Last Updated Date',
-        'Last Updated By',
-        'Last Deprecated Date',
-    }
-    expected_names = element_names.union(mapping_names).union(unmapping_names)
-    self.assertEqual(expected_names, display_names)
-    vals = {val["display_name"]: val for val in definitions.itervalues()}
-    self.assertTrue(vals["Summary"]["mandatory"])
-    self.assertTrue(vals["Task Assignees"]["mandatory"])
+    def test_cycle_task_definitions(self):
+        """ test default headers for Cycle Task Group Object Task """
+        definitions = get_object_column_definitions(
+            wf_models.CycleTaskGroupObjectTask)
+        mapping_names = get_mapping_names(
+            wf_models.CycleTaskGroupObjectTask.__name__)
+        unmapping_names = get_unmapping_names(
+            wf_models.CycleTaskGroupObjectTask.__name__)
+        display_names = {
+            val["display_name"]
+            for val in definitions.itervalues()
+        }
+        element_names = {
+            "Code",
+            "Cycle",
+            "Summary",
+            "Task Type",
+            "Task Assignees",
+            "Task Secondary Assignees",
+            "Task Details",
+            "Start Date",
+            "Due Date",
+            "Actual Verified Date",
+            "Actual Finish Date",
+            "Task Group",
+            "State",
+            "Delete",
+            'Created Date',
+            'Last Updated Date',
+            'Last Updated By',
+            'Last Deprecated Date',
+        }
+        expected_names = element_names.union(mapping_names).union(
+            unmapping_names)
+        self.assertEqual(expected_names, display_names)
+        vals = {val["display_name"]: val for val in definitions.itervalues()}
+        self.assertTrue(vals["Summary"]["mandatory"])
+        self.assertTrue(vals["Task Assignees"]["mandatory"])

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Set ACL roles for Regulation and Objectives snapshots
 
@@ -17,15 +16,15 @@ down_revision = '33d043d8ba29'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  # Enable creation of temp tables
-  op.execute("SET AUTOCOMMIT = 1;")
-  op.execute("""
+    """Upgrade database schema and/or data, creating a new revision."""
+    # Enable creation of temp tables
+    op.execute("SET AUTOCOMMIT = 1;")
+    op.execute("""
       CREATE TEMPORARY TABLE temp_control_snapshots (
         snapshot_id int(11)
       );
   """)
-  op.execute("""
+    op.execute("""
       INSERT INTO temp_control_snapshots(snapshot_id)
       SELECT snap_id
       FROM (
@@ -48,9 +47,9 @@ def upgrade():
       GROUP BY snap_id;
   """)
 
-  # Regulation and Objective snapshots should receive same assignee roles as
-  # Control snapshot to which they mapped
-  op.execute("""
+    # Regulation and Objective snapshots should receive same assignee roles as
+    # Control snapshot to which they mapped
+    op.execute("""
       INSERT INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id
@@ -93,14 +92,14 @@ def upgrade():
         control_acl.parent_id;
   """)
 
-  op.execute("DROP TABLE IF EXISTS temp_control_snapshots;")
-  op.execute("SET AUTOCOMMIT = 0;")
+    op.execute("DROP TABLE IF EXISTS temp_control_snapshots;")
+    op.execute("SET AUTOCOMMIT = 0;")
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute("SET SESSION SQL_SAFE_UPDATES = 0;")
-  op.execute("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute("SET SESSION SQL_SAFE_UPDATES = 0;")
+    op.execute("""
       DELETE acl
       FROM access_control_list acl
       JOIN access_control_roles acr ON acr.id = acl.ac_role_id

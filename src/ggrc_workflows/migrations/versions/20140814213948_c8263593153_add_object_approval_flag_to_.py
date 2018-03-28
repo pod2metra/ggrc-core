@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add object_approval flag to taskgrouptask
 
 Revision ID: c8263593153
@@ -19,14 +17,13 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column(
-      'task_group_tasks',
-      sa.Column('object_approval', sa.Boolean(), nullable=False))
-    op.execute('update task_group_tasks tgt, task_groups tg, '
-      + 'workflows wf set tgt.object_approval = true where '
-      + 'tgt.task_group_id=tg.id and tg.workflow_id=wf.id and '
-      + "wf.object_approval=true and tgt.title like 'Object review %'"
-      )
+    op.add_column('task_group_tasks',
+                  sa.Column('object_approval', sa.Boolean(), nullable=False))
+    op.execute('update task_group_tasks tgt, task_groups tg, ' +
+               'workflows wf set tgt.object_approval = true where ' +
+               'tgt.task_group_id=tg.id and tg.workflow_id=wf.id and ' +
+               "wf.object_approval=true and tgt.title like 'Object review %'")
+
 
 def downgrade():
     op.drop_column('task_group_tasks', 'object_approval')

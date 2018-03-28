@@ -17,8 +17,8 @@ class Facility(Roleable, HasObjectState, PublicDocumentable,
                CustomAttributable, Personable, Relatable, Commentable,
                TestPlanned, LastDeprecatedTimeboxed, BusinessObject, Indexed,
                db.Model):
-  __tablename__ = 'facilities'
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    __tablename__ = 'facilities'
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

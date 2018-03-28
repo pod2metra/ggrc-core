@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add index to context_implications
 
@@ -17,12 +16,14 @@ down_revision = '3bf028a83e79'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.create_index('ix_context_implications_source_id', 'context_implications',
-                  ['source_context_id'], unique=False)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.create_index(
+        'ix_context_implications_source_id',
+        'context_implications', ['source_context_id'],
+        unique=False)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_index('ix_context_implications_source_id',
-                table_name='context_implications')
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_index(
+        'ix_context_implications_source_id', table_name='context_implications')

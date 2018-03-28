@@ -22,38 +22,36 @@ from ggrc.models.person import Person
 
 
 def get_migration_user_id(conn):
-  """Get or create migrator account and return its ID.
+    """Get or create migrator account and return its ID.
 
   If specified migrator doesn't exists a new one will be created using values
   from ``ggrc.settings.MIGRATOR``.
   """
-  meta = sa.MetaData(bind=conn)
-  people = sa.Table('people', meta, autoload=True)
+    meta = sa.MetaData(bind=conn)
+    people = sa.Table('people', meta, autoload=True)
 
-  name, email = parseaddr(settings.MIGRATOR)
-  if not email:
-    raise ValueError('Invalid migrator email. '
-                     'Check MIGRATOR value within settings')
-  if not name:
-    name = email
+    name, email = parseaddr(settings.MIGRATOR)
+    if not email:
+        raise ValueError('Invalid migrator email. '
+                         'Check MIGRATOR value within settings')
+    if not name:
+        name = email
 
-  user_id = sa.select([people.c.id]).where(people.c.email == email)
-  user_id = conn.execute(user_id).scalar()
-  if user_id is not None:
-    return user_id
+    user_id = sa.select([people.c.id]).where(people.c.email == email)
+    user_id = conn.execute(user_id).scalar()
+    if user_id is not None:
+        return user_id
 
-  result = conn.execute(
-      people.insert().values(  # pylint: disable=no-value-for-parameter
-          email=email,
-          name=name,
-          created_at=sa.sql.func.now(),
-          updated_at=sa.sql.func.now(),
-      )
-  )
-  return result.inserted_primary_key[0]
+    result = conn.execute(people.insert().values(  # pylint: disable=no-value-for-parameter
+        email=email,
+        name=name,
+        created_at=sa.sql.func.now(),
+        updated_at=sa.sql.func.now(),
+    ))
+    return result.inserted_primary_key[0]
 
 
 def get_migration_user(connection):
-  """Return migration user object"""
-  migrator_id = get_migration_user_id(connection).id
-  return Person.query.get(migrator_id)
+    """Return migration user object"""
+    migrator_id = get_migration_user_id(connection).id
+    return Person.query.get(migrator_id)

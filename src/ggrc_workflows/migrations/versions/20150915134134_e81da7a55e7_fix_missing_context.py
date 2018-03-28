@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Fix missing context
 
 Revision ID: e81da7a55e7
@@ -18,21 +16,21 @@ from alembic import op
 
 
 def upgrade():
-  op.execute("""
+    op.execute("""
       UPDATE task_groups
       SET context_id =
           (SELECT context_id FROM workflows WHERE id = workflow_id)
       WHERE context_id is NULL;
   """)
 
-  op.execute("""
+    op.execute("""
       UPDATE task_group_tasks
       SET context_id =
           (SELECT context_id FROM task_groups WHERE id = task_group_id)
       WHERE context_id is NULL;
   """)
 
-  op.execute("""
+    op.execute("""
       UPDATE task_group_objects
       SET context_id =
           (SELECT context_id FROM task_groups WHERE id = task_group_id)
@@ -41,4 +39,4 @@ def upgrade():
 
 
 def downgrade():
-  pass
+    pass

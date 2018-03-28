@@ -7,16 +7,15 @@ from integration.ggrc.generator import ObjectGenerator
 
 
 class TestUnmappings(TestCase):
+    def setUp(self):
+        super(TestUnmappings, self).setUp()
+        self.generator = ObjectGenerator()
+        self.client.get("/login")
 
-  def setUp(self):
-    super(TestUnmappings, self).setUp()
-    self.generator = ObjectGenerator()
-    self.client.get("/login")
-
-  def test_policy_basic_import(self):
-    filename = "multi_basic_policy_orggroup_product_with_mappings.csv"
-    self.import_file(filename)
-    self.assertEqual(Relationship.query.count(), 13)
-    filename = "multi_basic_policy_orggroup_product_with_unmappings.csv"
-    self.import_file(filename)
-    self.assertEqual(Relationship.query.count(), 0)
+    def test_policy_basic_import(self):
+        filename = "multi_basic_policy_orggroup_product_with_mappings.csv"
+        self.import_file(filename)
+        self.assertEqual(Relationship.query.count(), 13)
+        filename = "multi_basic_policy_orggroup_product_with_unmappings.csv"
+        self.import_file(filename)
+        self.assertEqual(Relationship.query.count(), 0)

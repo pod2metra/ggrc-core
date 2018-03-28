@@ -130,9 +130,7 @@ permissions = {
             "condition": "is"
         },
     ],
-    "view_object_page": [
-        "__GGRC_ALL__"
-    ],
+    "view_object_page": ["__GGRC_ALL__"],
     "update": [
         {
             "type": "Audit",

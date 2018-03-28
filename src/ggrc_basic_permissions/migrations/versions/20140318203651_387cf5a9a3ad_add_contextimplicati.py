@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add ContextImplication from Program context to Common context
 
 Revision ID: 387cf5a9a3ad
@@ -19,8 +17,8 @@ from datetime import datetime
 from sqlalchemy.sql import table, column, select, insert, and_
 import sqlalchemy as sa
 
-
-context_implications_table = table('context_implications',
+context_implications_table = table(
+    'context_implications',
     column('id', sa.Integer),
     column('context_id', sa.Integer),
     column('source_context_id', sa.Integer),
@@ -28,13 +26,14 @@ context_implications_table = table('context_implications',
     column('source_context_scope', sa.String),
     column('updated_at', sa.DateTime),
     column('modified_by_id', sa.Integer),
-    )
+)
 
-contexts_table = table('contexts',
+contexts_table = table(
+    'contexts',
     column('id', sa.Integer),
     column('related_object_id', sa.Integer),
     column('related_object_type', sa.String),
-    )
+)
 
 
 def upgrade():
@@ -59,25 +58,25 @@ def upgrade():
         connection.execute(select_context_ids_to_skip).fetchall()
 
     # If a matching ContextImplication exists, don't create another
-    context_ids = [x for (x,) in context_ids]
-    context_ids_to_skip = [x for (x,) in context_ids_to_skip]
+    context_ids = [x for (x, ) in context_ids]
+    context_ids_to_skip = [x for (x, ) in context_ids_to_skip]
     context_ids = set(context_ids) - set(context_ids_to_skip)
 
     # Construct the rows to be inserted
     current_datetime = datetime.now()
     values = []
     for context_id in context_ids:
-      values.append({
-        'source_context_id': context_id,
-        'source_context_scope': 'Program',
-        'context_id': None,
-        'context_scope': None,
-        'created_at': current_datetime,
-        'updated_at': current_datetime,
+        values.append({
+            'source_context_id': context_id,
+            'source_context_scope': 'Program',
+            'context_id': None,
+            'context_scope': None,
+            'created_at': current_datetime,
+            'updated_at': current_datetime,
         })
 
     if len(values) > 0:
-      op.bulk_insert(context_implications_table, values)
+        op.bulk_insert(context_implications_table, values)
 
 
 def downgrade():

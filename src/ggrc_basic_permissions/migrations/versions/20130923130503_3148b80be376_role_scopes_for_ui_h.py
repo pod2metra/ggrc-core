@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Role scopes for UI hinting.
 
 Revision ID: 3148b80be376
@@ -17,22 +16,25 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.sql import table, column
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('scope', sa.String),
-    )
+)
+
 
 def upgrade():
-  op.add_column('roles', sa.Column('scope', sa.String(64)))
-  op.execute(roles_table.update()\
-      .where(roles_table.c.name.in_(
-        ['ProgramOwner', 'ProgramEditor', 'ProgramReader',]))\
-      .values(scope='Private Program'))
-  op.execute(roles_table.update()\
-      .where(roles_table.c.name.in_(
-        ['Reader', 'ObjectEditor', 'ProgramCreator',]))\
-      .values(scope='System'))
+    op.add_column('roles', sa.Column('scope', sa.String(64)))
+    op.execute(roles_table.update()\
+        .where(roles_table.c.name.in_(
+          ['ProgramOwner', 'ProgramEditor', 'ProgramReader',]))\
+        .values(scope='Private Program'))
+    op.execute(roles_table.update()\
+        .where(roles_table.c.name.in_(
+          ['Reader', 'ObjectEditor', 'ProgramCreator',]))\
+        .values(scope='System'))
+
 
 def downgrade():
-  op.drop_column('roles', 'scope')
+    op.drop_column('roles', 'scope')

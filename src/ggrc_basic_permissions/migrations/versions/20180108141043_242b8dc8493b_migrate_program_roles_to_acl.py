@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Migrate program roles to ACL
 
@@ -60,37 +59,34 @@ ROLE_PROPAGATION = {
 
 
 def _check_new_role_names(connection):
-  """Check if new role names already exist in the acr table.
+    """Check if new role names already exist in the acr table.
      Throws an exception and stops the migratoin if they do"""
-  res = connection.execute(
-      text("""
+    res = connection.execute(
+        text("""
           SELECT name
           FROM access_control_roles
           WHERE name IN :assignee_roles
       """),
-      assignee_roles=ALL_ROLES.keys()
-  ).fetchone()
+        assignee_roles=ALL_ROLES.keys()).fetchone()
 
-  if res:
-    raise Exception(
-        "Custom Role with name '{}' already exists in db. "
-        "Migration will be stopped".format(res[0])
-    )
+    if res:
+        raise Exception("Custom Role with name '{}' already exists in db. "
+                        "Migration will be stopped".format(res[0]))
 
 
 def _create_new_roles(connection):
-  """Inserts new roles based on ALL_ROLES list"""
-  for role in (
-      "Program Managers",
-      "Program Editors",
-      "Program Readers",
-      "Program Managers Mapped",
-      "Program Editors Mapped",
-      "Program Readers Mapped",
-  ):
-    permissions = ALL_ROLES[role]
-    connection.execute(
-        text("""
+    """Inserts new roles based on ALL_ROLES list"""
+    for role in (
+            "Program Managers",
+            "Program Editors",
+            "Program Readers",
+            "Program Managers Mapped",
+            "Program Editors Mapped",
+            "Program Readers Mapped",
+    ):
+        permissions = ALL_ROLES[role]
+        connection.execute(
+            text("""
             INSERT INTO access_control_roles(
                 name, object_type, created_at, updated_at, `read`, `update`,
                 `delete`, mandatory, non_editable, internal, my_work,
@@ -102,25 +98,25 @@ def _create_new_roles(connection):
                 :default_to_current_user
             );
         """),
-        role=role,
-        object_type=permissions.object_type,
-        read=permissions.read,
-        update=permissions.update,
-        delete=permissions.delete,
-        mandatory=permissions.mandatory,
-        my_work=permissions.my_work,
-        default_to_current_user=permissions.default_to_current_user,
-        non_editable="1",
-        internal="1" if role in MAPPED_ROLES else "0",
-    )
+            role=role,
+            object_type=permissions.object_type,
+            read=permissions.read,
+            update=permissions.update,
+            delete=permissions.delete,
+            mandatory=permissions.mandatory,
+            my_work=permissions.my_work,
+            default_to_current_user=permissions.default_to_current_user,
+            non_editable="1",
+            internal="1" if role in MAPPED_ROLES else "0",
+        )
 
 
 def _migrate_program_roles(connection):
-  """Migrate Auditors from user roles to access_control_list"""
-  # 1. Migrate user_roles for all program roles
-  for old_role, new_role in ROLE_MIGRATION.items():
-    connection.execute(
-        text("""
+    """Migrate Auditors from user roles to access_control_list"""
+    # 1. Migrate user_roles for all program roles
+    for old_role, new_role in ROLE_MIGRATION.items():
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id)
@@ -135,10 +131,10 @@ def _migrate_program_roles(connection):
 
 
 def _insert_acl_from_mapped(tables, connection):
-  """Insert access_control_list rows from multiple tables"""
-  for table in tables:
-    connection.execute(
-        text("""
+    """Insert access_control_list rows from multiple tables"""
+    for table in tables:
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -154,12 +150,12 @@ def _insert_acl_from_mapped(tables, connection):
 
 
 def _insert_acl_from_second_level(tables, connection):
-  """Add acls for second level objects (Documents & Comments)"""
-  for table in tables:
+    """Add acls for second level objects (Documents & Comments)"""
+    for table in tables:
 
-    # Mapped through source:
-    connection.execute(
-        text("""
+        # Mapped through source:
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -175,9 +171,9 @@ def _insert_acl_from_second_level(tables, connection):
       AND (r.destination_type = '{type}');
     """.format(**table._asdict())))
 
-    # Mapped through destination:
-    connection.execute(
-        text("""
+        # Mapped through destination:
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -195,16 +191,16 @@ def _insert_acl_from_second_level(tables, connection):
 
 
 def _propagate_to_mapped(connection):
-  """Propagate Program Roles to mapped objects
+    """Propagate Program Roles to mapped objects
 
      - Mapped objects (through relationships)
        - Comments & Documents
   """
 
-  for _, new_role in ROLE_MIGRATION.items():
-    # Mapped through source:
-    connection.execute(
-        text("""
+    for _, new_role in ROLE_MIGRATION.items():
+        # Mapped through source:
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -218,9 +214,9 @@ def _propagate_to_mapped(connection):
       ON r.source_id = acl.object_id AND r.source_type = acl.object_type;
     """.format(new_role, ROLE_PROPAGATION[new_role])))
 
-    # Mapped through destination:
-    connection.execute(
-        text("""
+        # Mapped through destination:
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -235,11 +231,11 @@ def _propagate_to_mapped(connection):
      AND r.destination_type = acl.object_type;
     """.format(new_role, ROLE_PROPAGATION[new_role])))
 
-    # Documents/Comments of mapped objects:
-    for table in ('Document', 'Comment'):
-      # Mapped through source:
-      connection.execute(
-          text("""
+        # Documents/Comments of mapped objects:
+        for table in ('Document', 'Comment'):
+            # Mapped through source:
+            connection.execute(
+                text("""
       INSERT IGNORE INTO access_control_list(
           person_id, ac_role_id, object_id, object_type,
           created_at, updated_at, context_id, parent_id)
@@ -254,9 +250,9 @@ def _propagate_to_mapped(connection):
         AND (r.destination_type = '{table}');
       """.format(role=ROLE_PROPAGATION[new_role], table=table)))
 
-      # Mapped through destination:
-      connection.execute(
-          text("""
+            # Mapped through destination:
+            connection.execute(
+                text("""
       INSERT IGNORE INTO access_control_list(
           person_id, ac_role_id, object_id, object_type,
           created_at, updated_at, context_id, parent_id)
@@ -273,7 +269,7 @@ def _propagate_to_mapped(connection):
 
 
 def _propagate_to_audit(connection):
-  """Propagates the audit part
+    """Propagates the audit part
 
      - Audit
        - Assessment Templates
@@ -283,10 +279,10 @@ def _propagate_to_audit(connection):
        - Issues
          - Comments & Documents
   """
-  for _, new_role in ROLE_MIGRATION.items():
-    # Program Roles -> Audit
-    connection.execute(
-        text("""
+    for _, new_role in ROLE_MIGRATION.items():
+        # Program Roles -> Audit
+        connection.execute(
+            text("""
     INSERT IGNORE INTO access_control_list(
         person_id, ac_role_id, object_id, object_type,
         created_at, updated_at, context_id, parent_id)
@@ -300,59 +296,49 @@ def _propagate_to_audit(connection):
       ON a.program_id = acl.object_id AND acl.object_type = 'Program';
     """.format(new_role, ROLE_PROPAGATION[new_role])))
 
-  # Program Audit Roles -> Snapshots, Assessments, Issues, Assessment Templates
-  for role in ROLE_PROPAGATION.values():
-    _insert_acl_from_mapped([
-        AC_TABLE("Snapshot", "snapshots", role,
-                 role),
-        AC_TABLE("Assessment", "assessments", role,
-                 role),
-        AC_TABLE("Issue", "issues", role,
-                 role),
-        AC_TABLE("AssessmentTemplate", "assessment_templates", role,
-                 role),
-    ], connection)
+    # Program Audit Roles -> Snapshots, Assessments, Issues, Assessment Templates
+    for role in ROLE_PROPAGATION.values():
+        _insert_acl_from_mapped([
+            AC_TABLE("Snapshot", "snapshots", role, role),
+            AC_TABLE("Assessment", "assessments", role, role),
+            AC_TABLE("Issue", "issues", role, role),
+            AC_TABLE("AssessmentTemplate", "assessment_templates", role, role),
+        ], connection)
 
-  # Program Assessment & Issues Roles -> Documents and Comments
-  for role in ROLE_PROPAGATION.values():
-    _insert_acl_from_second_level([
-        AC_TABLE("Document", "Assessment", role,
-                 role),
-        AC_TABLE("Comment", "Assessment", role,
-                 role),
-        AC_TABLE("Document", "Issue", role,
-                 role),
-        AC_TABLE("Comment", "Issue", role,
-                 role)
-    ], connection)
+    # Program Assessment & Issues Roles -> Documents and Comments
+    for role in ROLE_PROPAGATION.values():
+        _insert_acl_from_second_level([
+            AC_TABLE("Document", "Assessment", role, role),
+            AC_TABLE("Comment", "Assessment", role, role),
+            AC_TABLE("Document", "Issue", role, role),
+            AC_TABLE("Comment", "Issue", role, role)
+        ], connection)
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  connection = op.get_bind()
-  _check_new_role_names(connection)
-  _create_new_roles(connection)
-  _migrate_program_roles(connection)
-  _propagate_to_mapped(connection)
-  _propagate_to_audit(connection)
+    """Upgrade database schema and/or data, creating a new revision."""
+    connection = op.get_bind()
+    _check_new_role_names(connection)
+    _create_new_roles(connection)
+    _migrate_program_roles(connection)
+    _propagate_to_mapped(connection)
+    _propagate_to_audit(connection)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  connection = op.get_bind()
-  connection.execute(
-      text("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    connection = op.get_bind()
+    connection.execute(
+        text("""
           DELETE acl
           FROM access_control_list acl
           JOIN access_control_roles acr ON acr.id = acl.ac_role_id
           WHERE acr.name IN :assignee_types
       """),
-      assignee_types=ALL_ROLES.keys()
-  )
-  connection.execute(
-      text("""
+        assignee_types=ALL_ROLES.keys())
+    connection.execute(
+        text("""
           DELETE FROM access_control_roles
           WHERE name IN :assignee_types
       """),
-      assignee_types=ALL_ROLES.keys()
-  )
+        assignee_types=ALL_ROLES.keys())

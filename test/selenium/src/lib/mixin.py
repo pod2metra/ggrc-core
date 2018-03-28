@@ -5,4 +5,4 @@ from lib import meta
 
 
 class MetaTestDecorator(meta.RequireDocs, meta.DecorateFlakyTests):
-  """Composition of multiple metaclasses"""
+    """Composition of multiple metaclasses"""

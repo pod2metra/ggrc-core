@@ -1,62 +1,57 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Generate rules for snapshoting"""
 
 from ggrc.snapshotter.datastructures import Attr
 
 
 class Types(object):
-  """Get default types for snapshotting"""
+    """Get default types for snapshotting"""
 
-  # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods
 
-  all = {
-      "AccessGroup",
-      "Clause",
-      "Contract",
-      "Control",
-      "DataAsset",
-      "Facility",
-      "Market",
-      "Objective",
-      "OrgGroup",
-      "Policy",
-      "Process",
-      "Product",
-      "Regulation",
-      "Section",
-      "Standard",
-      "System",
-      "Vendor",
-      "Risk",
-      "Threat",
-  }
+    all = {
+        "AccessGroup",
+        "Clause",
+        "Contract",
+        "Control",
+        "DataAsset",
+        "Facility",
+        "Market",
+        "Objective",
+        "OrgGroup",
+        "Policy",
+        "Process",
+        "Product",
+        "Regulation",
+        "Section",
+        "Standard",
+        "System",
+        "Vendor",
+        "Risk",
+        "Threat",
+    }
 
-  parents = {
-      "Audit",
-  }
+    parents = {
+        "Audit",
+    }
 
-  scoped = {
-      "Assessment",
-  }
+    scoped = {
+        "Assessment",
+    }
 
-  trans_scope = {
-      "Issue",
-  }
+    trans_scope = {
+        "Issue",
+    }
 
-  ignore = {
-      "Assessment",
-      "AssessmentTemplate",
-      "Issue",
-      "Workflow",
-      "Audit",
-      "Person"
-  }
+    ignore = {
+        "Assessment", "AssessmentTemplate", "Issue", "Workflow", "Audit",
+        "Person"
+    }
 
 
 class Rules(object):
-  """Returns a dictionary of rules
+    """Returns a dictionary of rules
 
   Expected format of rule_list is the following:
 
@@ -90,36 +85,27 @@ class Rules(object):
 
   """
 
-  # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods
 
-  def __init__(self, rule_list):
-    self.rules = dict()
+    def __init__(self, rule_list):
+        self.rules = dict()
 
-    for parents, fstdeg, snddeg in rule_list:
-      for parent in parents:
-        self.rules[parent] = {
-            "fst": fstdeg,
-            "snd": snddeg
-        }
+        for parents, fstdeg, snddeg in rule_list:
+            for parent in parents:
+                self.rules[parent] = {"fst": fstdeg, "snd": snddeg}
 
 
-DEFAULT_RULE_LIST = [
-    [
-        {"Audit"},
-        {Attr("program")},
-        Types.all - Types.ignore
-    ]
-]
+DEFAULT_RULE_LIST = [[{"Audit"}, {Attr("program")}, Types.all - Types.ignore]]
 
 
 def get_rules(rule_list=None):
-  """Get the rules governing the snapshot creation
+    """Get the rules governing the snapshot creation
 
   Args:
     rule_list: List of rules
   Returns:
     Rules object with attribute `rules`. See Rules object for detailed doc.
   """
-  if not rule_list:
-    rule_list = DEFAULT_RULE_LIST
-  return Rules(rule_list)
+    if not rule_list:
+        rule_list = DEFAULT_RULE_LIST
+    return Rules(rule_list)

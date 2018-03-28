@@ -25,50 +25,51 @@ from ggrc_workflows.notification.notification_handler import (
 
 
 def empty_notification(*agrs):
-  """ Used for ignoring notifications of a certain type """
-  return {}
+    """ Used for ignoring notifications of a certain type """
+    return {}
 
 
 def contributed_notifications():
-  """ return handler functions for all object types
+    """ return handler functions for all object types
   """
-  return {
-      'Cycle': get_cycle_data,
-      'Workflow': get_workflow_data,
-      'TaskGroupTask': empty_notification,
-      'CycleTaskGroupObjectTask': get_cycle_task_data,
-  }
+    return {
+        'Cycle': get_cycle_data,
+        'Workflow': get_workflow_data,
+        'TaskGroupTask': empty_notification,
+        'CycleTaskGroupObjectTask': get_cycle_task_data,
+    }
 
 
 def register_listeners():
+    @signals.Restful.model_put.connect_via(Workflow)
+    def workflow_put_listener(sender, obj=None, src=None, service=None):
+        handle_workflow_modify(sender, obj, src, service)
+        if not inspect(obj).attrs.status.history.has_changes():
+            return
+        new = inspect(obj).attrs.status.history.added[0]
+        old = inspect(obj).attrs.status.history.deleted[-1]
+        # first activate wf
+        if (old, new) == (obj.DRAFT, obj.ACTIVE) and obj.cycles:
+            handle_cycle_created(obj.cycles[0], False)
 
-  @signals.Restful.model_put.connect_via(Workflow)
-  def workflow_put_listener(sender, obj=None, src=None, service=None):
-    handle_workflow_modify(sender, obj, src, service)
-    if not inspect(obj).attrs.status.history.has_changes():
-      return
-    new = inspect(obj).attrs.status.history.added[0]
-    old = inspect(obj).attrs.status.history.deleted[-1]
-    # first activate wf
-    if (old, new) == (obj.DRAFT, obj.ACTIVE) and obj.cycles:
-      handle_cycle_created(obj.cycles[0], False)
+    @signals.Restful.model_put.connect_via(CycleTaskGroupObjectTask)
+    def cycle_task_group_object_task_put_listener(sender,
+                                                  obj=None,
+                                                  src=None,
+                                                  service=None):
+        handle_cycle_task_group_object_task_put(obj)
 
-  @signals.Restful.model_put.connect_via(CycleTaskGroupObjectTask)
-  def cycle_task_group_object_task_put_listener(
-          sender, obj=None, src=None, service=None):
-    handle_cycle_task_group_object_task_put(obj)
+    @signals.Restful.model_put.connect_via(Cycle)
+    def cycle_put_listener(sender, obj=None, src=None, service=None):
+        handle_cycle_modify(obj)
 
-  @signals.Restful.model_put.connect_via(Cycle)
-  def cycle_put_listener(sender, obj=None, src=None, service=None):
-    handle_cycle_modify(obj)
+    @signals.Restful.model_posted.connect_via(Cycle)
+    def cycle_post_listener(sender, obj=None, src=None, service=None):
+        handle_cycle_created(obj, True)
 
-  @signals.Restful.model_posted.connect_via(Cycle)
-  def cycle_post_listener(sender, obj=None, src=None, service=None):
-    handle_cycle_created(obj, True)
-
-  @Signals.status_change.connect_via(CycleTaskGroupObjectTask)
-  def cycle_task_status_change_listener(sender, objs=None):
-    handle_cycle_task_status_change(*[o.instance for o in objs])
+    @Signals.status_change.connect_via(CycleTaskGroupObjectTask)
+    def cycle_task_status_change_listener(sender, objs=None):
+        handle_cycle_task_status_change(*[o.instance for o in objs])
 
 
 """

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Collects all permissions for Global Creator role."""
 
 # pylint: disable=invalid-name
@@ -79,7 +78,8 @@ owner_update = owner_base + [
 ]
 
 permissions = {
-    "read": owner_read,
+    "read":
+    owner_read,
     "create": [
         {
             "type": "Audit",
@@ -186,7 +186,10 @@ permissions = {
             "condition": "is"
         },
     ],
-    "view_object_page": owner_read,
-    "update": owner_update,
-    "delete": owner_update,
+    "view_object_page":
+    owner_read,
+    "update":
+    owner_update,
+    "delete":
+    owner_update,
 }

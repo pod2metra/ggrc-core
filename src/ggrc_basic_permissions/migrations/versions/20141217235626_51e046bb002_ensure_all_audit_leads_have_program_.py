@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Ensure all Audit Leads have Program Editor role or better
 
 Revision ID: 51e046bb002

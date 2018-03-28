@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Bring vendors' start_date and end_date columns into conformity with the model
 
@@ -18,16 +17,32 @@ down_revision = '24b94ce0860c'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.alter_column('vendors', 'start_date', type_=mysql.DATE(),
-                  existing_type=mysql.DATETIME(), nullable=True)
-  op.alter_column('vendors', 'end_date', type_=mysql.DATE(),
-                  existing_type=mysql.DATETIME(), nullable=True)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.alter_column(
+        'vendors',
+        'start_date',
+        type_=mysql.DATE(),
+        existing_type=mysql.DATETIME(),
+        nullable=True)
+    op.alter_column(
+        'vendors',
+        'end_date',
+        type_=mysql.DATE(),
+        existing_type=mysql.DATETIME(),
+        nullable=True)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.alter_column('vendors', 'start_date', type_=mysql.DATETIME(),
-                  existing_type=mysql.DATE(), nullable=True)
-  op.alter_column('vendors', 'end_date', type_=mysql.DATETIME(),
-                  existing_type=mysql.DATE(), nullable=True)
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.alter_column(
+        'vendors',
+        'start_date',
+        type_=mysql.DATETIME(),
+        existing_type=mysql.DATE(),
+        nullable=True)
+    op.alter_column(
+        'vendors',
+        'end_date',
+        type_=mysql.DATETIME(),
+        existing_type=mysql.DATE(),
+        nullable=True)

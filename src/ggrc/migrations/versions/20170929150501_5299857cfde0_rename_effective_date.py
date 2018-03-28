@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Rename Effective Date to Due Date for Assessment
 
@@ -15,8 +14,8 @@ down_revision = 'a153c7b1b41'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.execute("""
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.execute("""
       UPDATE assessments asmt
       JOIN custom_attribute_values cav ON cav.attributable_id = asmt.id
       JOIN custom_attribute_definitions cad ON cad.id = cav.custom_attribute_id
@@ -28,7 +27,7 @@ def upgrade():
           cad.definition_type = 'assessment' AND
           cad.attribute_type = 'Date';
   """)
-  op.execute("""
+    op.execute("""
       # CAVs will be removed cascade
       DELETE FROM custom_attribute_definitions
       WHERE title = 'Due Date' AND
@@ -37,15 +36,15 @@ def upgrade():
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute("""
       INSERT INTO custom_attribute_definitions(
         created_at, updated_at, title, definition_type,
         attribute_type, mandatory
       )
       VALUES(now(), now(), 'Due Date', 'assessment', 'Date', 0)
   """)
-  op.execute("""
+    op.execute("""
       INSERT INTO custom_attribute_values(
         created_at, updated_at, custom_attribute_id, attributable_id,
         attributable_type, attribute_value
@@ -58,7 +57,7 @@ def downgrade():
           a.start_date IS NOT NULL
       GROUP BY cad.id, a.id, start_date;  -- Process case when CADs duplicated
   """)
-  op.execute("""
+    op.execute("""
       UPDATE assessments
       SET start_date = NULL;
   """)

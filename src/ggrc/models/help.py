@@ -8,15 +8,15 @@ from ggrc.models import reflection
 
 
 class Help(Titled, Slugged, db.Model):
-  __tablename__ = 'helps'
-  _title_uniqueness = False
+    __tablename__ = 'helps'
+    _title_uniqueness = False
 
-  content = deferred(db.Column(db.Text, nullable=False, default=u""), 'Help')
+    content = deferred(db.Column(db.Text, nullable=False, default=u""), 'Help')
 
-  _fulltext_attrs = [
-      'content',
-  ]
-  _api_attrs = reflection.ApiAttributes('content')
-  _sanitize_html = [
-      'content',
-  ]
+    _fulltext_attrs = [
+        'content',
+    ]
+    _api_attrs = reflection.ApiAttributes('content')
+    _sanitize_html = [
+        'content',
+    ]

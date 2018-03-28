@@ -22,14 +22,14 @@ target_metadata = db.metadata
 
 
 def include_symbol(tablename, schema=None):
-  """Exclude some tables from consideration by alembic's 'autogenerate'.
+    """Exclude some tables from consideration by alembic's 'autogenerate'.
   """
-  # Exclude `*_alembic_version` tables
-  if re.match(r'.*_alembic_version$', tablename):
-    return False
+    # Exclude `*_alembic_version` tables
+    if re.match(r'.*_alembic_version$', tablename):
+        return False
 
-  # If the tablename didn't match any exclusion cases, return True
-  return True
+    # If the tablename didn't match any exclusion cases, return True
+    return True
 
 
 def run_migrations_offline():
@@ -44,9 +44,7 @@ def run_migrations_offline():
     script output.
     """
     url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        include_symbol=include_symbol)
+    context.configure(url=url, include_symbol=include_symbol)
 
     with context.begin_transaction():
         context.run_migrations()
@@ -71,6 +69,7 @@ def run_migrations_online():
             context.run_migrations()
     finally:
         connection.close()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

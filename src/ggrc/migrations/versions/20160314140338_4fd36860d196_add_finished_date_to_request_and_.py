@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 add finished date to request and assessment
 
@@ -13,24 +12,23 @@ import sqlalchemy as sa
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '4fd36860d196'
 down_revision = '39aec99639d5'
 
 
 def upgrade_table(table):
-  """Add columns finished_date and verified_date and populate them."""
-  op.add_column(table,
-                sa.Column('finished_date', sa.DateTime(), nullable=True))
-  op.add_column(table,
-                sa.Column('verified_date', sa.DateTime(), nullable=True))
-  op.execute("""
+    """Add columns finished_date and verified_date and populate them."""
+    op.add_column(table,
+                  sa.Column('finished_date', sa.DateTime(), nullable=True))
+    op.add_column(table,
+                  sa.Column('verified_date', sa.DateTime(), nullable=True))
+    op.execute("""
       UPDATE {}
       SET finished_date = updated_at
       WHERE status in ("Finished", "Verified", "Final")
   """.format(table))
-  op.execute("""
+    op.execute("""
       UPDATE {}
       SET verified_date = updated_at, status = "Final"
       WHERE status = "Verified"
@@ -38,13 +36,13 @@ def upgrade_table(table):
 
 
 def upgrade():
-  upgrade_table('requests')
-  upgrade_table('assessments')
+    upgrade_table('requests')
+    upgrade_table('assessments')
 
 
 def downgrade():
-  """Remove verified_date and finished_date columns."""
-  op.drop_column('assessments', 'verified_date')
-  op.drop_column('assessments', 'finished_date')
-  op.drop_column('requests', 'verified_date')
-  op.drop_column('requests', 'finished_date')
+    """Remove verified_date and finished_date columns."""
+    op.drop_column('assessments', 'verified_date')
+    op.drop_column('assessments', 'finished_date')
+    op.drop_column('requests', 'verified_date')
+    op.drop_column('requests', 'finished_date')

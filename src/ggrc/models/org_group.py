@@ -13,15 +13,14 @@ from .relationship import Relatable
 from .track_object_state import HasObjectState
 
 
-class OrgGroup(Roleable, HasObjectState, CustomAttributable,
-               Personable, Relatable, LastDeprecatedTimeboxed, Commentable,
-               TestPlanned, PublicDocumentable, BusinessObject,
-               Indexed, db.Model):
-  __tablename__ = 'org_groups'
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+class OrgGroup(Roleable, HasObjectState, CustomAttributable, Personable,
+               Relatable, LastDeprecatedTimeboxed, Commentable, TestPlanned,
+               PublicDocumentable, BusinessObject, Indexed, db.Model):
+    __tablename__ = 'org_groups'
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  def __str__(self):
-    return self.title
+    def __str__(self):
+        return self.title

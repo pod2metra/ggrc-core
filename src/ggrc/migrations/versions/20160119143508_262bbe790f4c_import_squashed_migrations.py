@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Import all squashed migrations from 0.9.5-Zucchini-P1.
 
 Revision ID: 262bbe790f4c
@@ -52,12 +51,12 @@ down_revision = None
 
 
 def upgrade():
-  """Import squashed migrations."""
-  dirname = os.path.dirname(os.path.realpath(__file__))
-  dump_file = os.path.join(dirname, "ggrcdev_ggrc.sql")
-  dump = open(dump_file, "r")
-  op.execute(dump.read())
+    """Import squashed migrations."""
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    dump_file = os.path.join(dirname, "ggrcdev_ggrc.sql")
+    dump = open(dump_file, "r")
+    op.execute(dump.read())
 
 
 def downgrade():
-  pass
+    pass

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Remove cycle_task_group_objects
 
@@ -13,24 +12,25 @@ import sqlalchemy as sa
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = 'e807dc2ce1a'
 down_revision = '4cb78ab9a321'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.drop_constraint("cycle_task_group_object_tasks_ibfk_3",
-                     "cycle_task_group_object_tasks",
-                     type_="foreignkey")
-  op.drop_column("cycle_task_group_object_tasks", "cycle_task_group_object_id")
-  op.drop_table("cycle_task_group_objects")
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.drop_constraint(
+        "cycle_task_group_object_tasks_ibfk_3",
+        "cycle_task_group_object_tasks",
+        type_="foreignkey")
+    op.drop_column("cycle_task_group_object_tasks",
+                   "cycle_task_group_object_id")
+    op.drop_table("cycle_task_group_objects")
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute("""
       CREATE TABLE `cycle_task_group_objects` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `cycle_task_group_id` int(11) NOT NULL,
@@ -70,12 +70,11 @@ def downgrade():
                 ON DELETE CASCADE
       )
   """)
-  op.add_column(
-      "cycle_task_group_object_tasks",
-      sa.Column("cycle_task_group_object_id", sa.Integer(), nullable=True),
-  )
-  op.create_foreign_key("cycle_task_group_object_tasks_ibfk_3",
-                        "cycle_task_group_object_tasks",
-                        "cycle_task_group_objects",
-                        ["cycle_task_group_object_id"],
-                        ["id"])
+    op.add_column(
+        "cycle_task_group_object_tasks",
+        sa.Column("cycle_task_group_object_id", sa.Integer(), nullable=True),
+    )
+    op.create_foreign_key("cycle_task_group_object_tasks_ibfk_3",
+                          "cycle_task_group_object_tasks",
+                          "cycle_task_group_objects",
+                          ["cycle_task_group_object_id"], ["id"])

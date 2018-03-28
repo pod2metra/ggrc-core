@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add CycleTaskGroupObject.object
 
 Revision ID: 26d9c9c91542
@@ -19,8 +17,11 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('cycle_task_group_objects', sa.Column('object_id', sa.Integer(), nullable=False))
-    op.add_column('cycle_task_group_objects', sa.Column('object_type', sa.String(length=250), nullable=False))
+    op.add_column('cycle_task_group_objects',
+                  sa.Column('object_id', sa.Integer(), nullable=False))
+    op.add_column('cycle_task_group_objects',
+                  sa.Column(
+                      'object_type', sa.String(length=250), nullable=False))
 
     op.execute('''
         UPDATE cycle_task_group_objects

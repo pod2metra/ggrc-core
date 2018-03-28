@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Fix tracking columns (SLOW!)
 
@@ -14,17 +13,16 @@ from ggrc.migrations.utils.fix_tracking_columns import (
     downgrade_tables,
 )
 
-
 # revision identifiers, used by Alembic.
 revision = '29c8b9c5d34b'
 down_revision = '1269660b288b'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  upgrade_tables("ggrc")
+    """Upgrade database schema and/or data, creating a new revision."""
+    upgrade_tables("ggrc")
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  downgrade_tables("ggrc")
+    """Downgrade database schema and/or data back to the previous revision."""
+    downgrade_tables("ggrc")

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """ This module is used for import and export of data with csv files """
 
 from ggrc.extensions import get_extension_modules
@@ -8,23 +7,23 @@ from ggrc.models import all_models
 
 
 def get_shared_unique_rules():
-  """ get rules for all cross checks betveen classes
+    """ get rules for all cross checks betveen classes
 
   used for checking unique constraints on colums such as code and title
   """
 
-  shared_tables = [
-      (all_models.System, all_models.Process),
-      (all_models.Section, all_models.Clause),
-      (all_models.Policy, all_models.Regulation,
-       all_models.Standard, all_models.Contract),
-  ]
-  rules = {}
-  for tables in shared_tables:
-    for table in tables:
-      rules[table] = tables
+    shared_tables = [
+        (all_models.System, all_models.Process),
+        (all_models.Section, all_models.Clause),
+        (all_models.Policy, all_models.Regulation, all_models.Standard,
+         all_models.Contract),
+    ]
+    rules = {}
+    for tables in shared_tables:
+        for table in tables:
+            rules[table] = tables
 
-  return rules
+    return rules
 
 
 GGRC_IMPORTABLE = {
@@ -68,32 +67,32 @@ GGRC_EXPORTABLE = {
 
 
 def _get_types(attr):
-  """Get contributed attribute types.
+    """Get contributed attribute types.
 
   Args:
     attr: String containing selected type. Either contributed_importables or
       contributed_exportables.
   """
-  res = {}
-  for extension_module in get_extension_modules():
-    contributed = getattr(extension_module, attr, None)
-    if callable(contributed):
-      res.update(contributed())
-    elif isinstance(contributed, dict):
-      res.update(contributed)
-  return res
+    res = {}
+    for extension_module in get_extension_modules():
+        contributed = getattr(extension_module, attr, None)
+        if callable(contributed):
+            res.update(contributed())
+        elif isinstance(contributed, dict):
+            res.update(contributed)
+    return res
 
 
 def get_importables():
-  """ Get a dict of all importable objects from all modules """
-  importable = GGRC_IMPORTABLE
-  importable.update(_get_types("contributed_importables"))
-  return importable
+    """ Get a dict of all importable objects from all modules """
+    importable = GGRC_IMPORTABLE
+    importable.update(_get_types("contributed_importables"))
+    return importable
 
 
 def get_exportables():
-  """ Get a dict of all exportable objects from all modules """
-  exportable = GGRC_EXPORTABLE
-  exportable.update(get_importables())
-  exportable.update(_get_types("contributed_exportables"))
-  return exportable
+    """ Get a dict of all exportable objects from all modules """
+    exportable = GGRC_EXPORTABLE
+    exportable.update(get_importables())
+    exportable.update(_get_types("contributed_exportables"))
+    return exportable

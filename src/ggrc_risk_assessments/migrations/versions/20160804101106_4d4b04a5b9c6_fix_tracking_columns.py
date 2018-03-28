@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Fix tracking columns (SLOW!)
 
@@ -20,10 +19,10 @@ down_revision = '5b29b4becf8'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  upgrade_tables("ggrc_risk_assessments")
+    """Upgrade database schema and/or data, creating a new revision."""
+    upgrade_tables("ggrc_risk_assessments")
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  downgrade_tables("ggrc_risk_assessments")
+    """Downgrade database schema and/or data back to the previous revision."""
+    downgrade_tables("ggrc_risk_assessments")

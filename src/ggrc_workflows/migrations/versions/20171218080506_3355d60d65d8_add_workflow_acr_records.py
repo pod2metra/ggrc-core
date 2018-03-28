@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add workflow ACL roles
 
@@ -13,11 +12,9 @@ import datetime
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision = '3355d60d65d8'
 down_revision = '14b87f599ede'
-
 
 ACR_TABLE = sa.sql.table(
     'access_control_roles',
@@ -35,7 +32,6 @@ ACR_TABLE = sa.sql.table(
     sa.sql.column('internal', sa.Boolean),
 )
 
-
 DELETE_SQL = """
 DELETE FROM access_control_roles
 WHERE object_type = 'Workflow'
@@ -43,65 +39,62 @@ WHERE object_type = 'Workflow'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.bulk_insert(
-      ACR_TABLE,
-      [{
-          'name': 'Admin',
-          'object_type': 'Workflow',
-          'read': True,
-          'update': True,
-          'delete': True,
-          'my_work': True,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': True,
-          'default_to_current_user': True,
-          'non_editable': True,
-          'internal': False
-      }, {
-          'name': 'Admin Mapped',
-          'object_type': 'Workflow',
-          'read': True,
-          'update': True,
-          'delete': True,
-          'my_work': False,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': False,
-          'default_to_current_user': False,
-          'non_editable': True,
-          'internal': True
-      }, {
-          'name': 'Workflow Member',
-          'object_type': 'Workflow',
-          'read': True,
-          'update': False,
-          'delete': False,
-          'my_work': False,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': False,
-          'default_to_current_user': False,
-          'non_editable': True,
-          'internal': False
-      }, {
-          'name': 'Workflow Member Mapped',
-          'object_type': 'Workflow',
-          'read': True,
-          'update': False,
-          'delete': False,
-          'my_work': False,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': False,
-          'default_to_current_user': False,
-          'non_editable': True,
-          'internal': True
-      }]
-  )
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.bulk_insert(ACR_TABLE, [{
+        'name': 'Admin',
+        'object_type': 'Workflow',
+        'read': True,
+        'update': True,
+        'delete': True,
+        'my_work': True,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': True,
+        'default_to_current_user': True,
+        'non_editable': True,
+        'internal': False
+    }, {
+        'name': 'Admin Mapped',
+        'object_type': 'Workflow',
+        'read': True,
+        'update': True,
+        'delete': True,
+        'my_work': False,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': False,
+        'default_to_current_user': False,
+        'non_editable': True,
+        'internal': True
+    }, {
+        'name': 'Workflow Member',
+        'object_type': 'Workflow',
+        'read': True,
+        'update': False,
+        'delete': False,
+        'my_work': False,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': False,
+        'default_to_current_user': False,
+        'non_editable': True,
+        'internal': False
+    }, {
+        'name': 'Workflow Member Mapped',
+        'object_type': 'Workflow',
+        'read': True,
+        'update': False,
+        'delete': False,
+        'my_work': False,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': False,
+        'default_to_current_user': False,
+        'non_editable': True,
+        'internal': True
+    }])
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute(DELETE_SQL)
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute(DELETE_SQL)

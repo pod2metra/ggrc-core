@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Integration tests for WithSimilarityScore logic.
 
 These tests use a bit more complex test case generation with DDT in order for
@@ -19,7 +18,7 @@ from integration.ggrc.models.test_assessment_base import TestAssessmentBase
 
 
 def expand_test_cases(*argv):
-  """Expand the DDT test cases to a more suitable form.
+    """Expand the DDT test cases to a more suitable form.
 
   This function expands a test case in form of
 
@@ -56,16 +55,16 @@ def expand_test_cases(*argv):
     more complexity to understand the code, but with the benefit of easier to
     read and understand tests.
   """
-  for related_assessments, relationships in argv:
-    for assessment in related_assessments:
-      expected_assessments = list(related_assessments)
-      expected_assessments.remove(assessment)
-      yield assessment, expected_assessments, relationships
+    for related_assessments, relationships in argv:
+        for assessment in related_assessments:
+            expected_assessments = list(related_assessments)
+            expected_assessments.remove(assessment)
+            yield assessment, expected_assessments, relationships
 
 
 @ddt.ddt
 class TestRelatedAssessments(TestAssessmentBase):
-  """Comprehensive tests for all related assessment cases.
+    """Comprehensive tests for all related assessment cases.
 
   For easier reading these tests will utilize DDT with complex setup data.
   All data in the test will be referred to by its title and all titles will be
@@ -135,104 +134,109 @@ class TestRelatedAssessments(TestAssessmentBase):
     to ensure that all cases are covered.
   """
 
-  def _create_obj(self, factory, title, **kwargs):
-    """Create an object and store it to local object_map dict."""
-    obj = factory(title=title, **kwargs)
-    self.object_map[title] = obj
-    return obj
+    def _create_obj(self, factory, title, **kwargs):
+        """Create an object and store it to local object_map dict."""
+        obj = factory(title=title, **kwargs)
+        self.object_map[title] = obj
+        return obj
 
-  def _create_assessments(self, audit, types, offset=1):
-    """Create one assessment for each assessment type in a given audit."""
-    user = models.Person.query.first()
+    def _create_assessments(self, audit, types, offset=1):
+        """Create one assessment for each assessment type in a given audit."""
+        user = models.Person.query.first()
 
-    for i, type_ in enumerate(types):
-      assessment = self._create_obj(
-          factories.AssessmentFactory,
-          "Assessment {}".format(i + offset),
-          audit=audit,
-          assessment_type=type_,
-      )
-      if i % 2 == 0:
-        factories.RelationshipFactory(source=audit, destination=assessment)
-      else:
-        factories.RelationshipFactory(source=assessment, destination=audit)
+        for i, type_ in enumerate(types):
+            assessment = self._create_obj(
+                factories.AssessmentFactory,
+                "Assessment {}".format(i + offset),
+                audit=audit,
+                assessment_type=type_,
+            )
+            if i % 2 == 0:
+                factories.RelationshipFactory(
+                    source=audit, destination=assessment)
+            else:
+                factories.RelationshipFactory(
+                    source=assessment, destination=audit)
 
-      factories.AccessControlListFactory(
-          ac_role_id=self.assignee_roles["Assignees"],
-          person=user,
-          object=assessment
-      )
-      factories.AccessControlListFactory(
-          ac_role_id=self.assignee_roles["Creators"],
-          person=user,
-          object=assessment
-      )
+            factories.AccessControlListFactory(
+                ac_role_id=self.assignee_roles["Assignees"],
+                person=user,
+                object=assessment)
+            factories.AccessControlListFactory(
+                ac_role_id=self.assignee_roles["Creators"],
+                person=user,
+                object=assessment)
 
-  def _create_relationship(self, pair):
-    """Create a single relationship with object title pairs."""
-    factories.RelationshipFactory(
-        source=self.object_map[pair[0]],
-        destination=self.object_map[pair[1]],
-    )
+    def _create_relationship(self, pair):
+        """Create a single relationship with object title pairs."""
+        factories.RelationshipFactory(
+            source=self.object_map[pair[0]],
+            destination=self.object_map[pair[1]],
+        )
 
-  def _create_relationships(self, pairs):
-    """Create relationships between object pairs."""
-    with factories.single_commit():
-      for pair in pairs:
-        self._create_relationship(pair)
+    def _create_relationships(self, pairs):
+        """Create relationships between object pairs."""
+        with factories.single_commit():
+            for pair in pairs:
+                self._create_relationship(pair)
 
-  def setUp(self):
-    super(TestRelatedAssessments, self).setUp()
-    self.client.get("/login")
-    self.object_map = {}
+    def setUp(self):
+        super(TestRelatedAssessments, self).setUp()
+        self.client.get("/login")
+        self.object_map = {}
 
-    # pylint: disable=invalid-name
-    # this is just to keep simple names for controls and sections such as c1,
-    # c2 and so on for cleaner code. The names are only used in the setUp stage
-    # so it should be fine to disable pylint in this case.
+        # pylint: disable=invalid-name
+        # this is just to keep simple names for controls and sections such as c1,
+        # c2 and so on for cleaner code. The names are only used in the setUp stage
+        # so it should be fine to disable pylint in this case.
 
-    with factories.single_commit():
-      program_1 = factories.ProgramFactory(title="Program 1")
-      program_2 = factories.ProgramFactory(title="Program 2")
-      audit_1 = factories.AuditFactory(title="Audit 1", program=program_1)
-      audit_2 = factories.AuditFactory(title="Audit 2", program=program_1)
-      audit_3 = factories.AuditFactory(title="Audit 3", program=program_2)
+        with factories.single_commit():
+            program_1 = factories.ProgramFactory(title="Program 1")
+            program_2 = factories.ProgramFactory(title="Program 2")
+            audit_1 = factories.AuditFactory(
+                title="Audit 1", program=program_1)
+            audit_2 = factories.AuditFactory(
+                title="Audit 2", program=program_1)
+            audit_3 = factories.AuditFactory(
+                title="Audit 3", program=program_2)
 
-      types = ["Control", "Control", "Control",
-               "Section", "Section", "Standard"]
-      self._create_assessments(audit_1, types, offset=1)
+            types = [
+                "Control", "Control", "Control", "Section", "Section",
+                "Standard"
+            ]
+            self._create_assessments(audit_1, types, offset=1)
 
-      types = ["Control", "Control"]
-      self._create_assessments(audit_2, types, offset=7)
+            types = ["Control", "Control"]
+            self._create_assessments(audit_2, types, offset=7)
 
-      types = ["Control", "Section"]
-      self._create_assessments(audit_3, types, offset=9)
+            types = ["Control", "Section"]
+            self._create_assessments(audit_3, types, offset=9)
 
-      c1 = self._create_obj(factories.ControlFactory, "Control 1")
-      c2 = self._create_obj(factories.ControlFactory, "Control 2")
-      s1 = self._create_obj(factories.SectionFactory, "Section 1")
-      s2 = self._create_obj(factories.SectionFactory, "Section 2")
+            c1 = self._create_obj(factories.ControlFactory, "Control 1")
+            c2 = self._create_obj(factories.ControlFactory, "Control 2")
+            s1 = self._create_obj(factories.SectionFactory, "Section 1")
+            s2 = self._create_obj(factories.SectionFactory, "Section 2")
 
-    snapshots = []
-    snapshots.extend(self._create_snapshots(audit_1, [c1, c2, s1, s2]))
+        snapshots = []
+        snapshots.extend(self._create_snapshots(audit_1, [c1, c2, s1, s2]))
 
-    c2.description = "edited"
-    # pylint: disable=protected-access
-    factories.ModelFactory._log_event(c2, "PUT")
-    db.session.commit()
+        c2.description = "edited"
+        # pylint: disable=protected-access
+        factories.ModelFactory._log_event(c2, "PUT")
+        db.session.commit()
 
-    snapshots.extend(self._create_snapshots(audit_2, [c1, c2]))
-    snapshots.extend(self._create_snapshots(audit_3, [c1, c2, s1, s2]))
+        snapshots.extend(self._create_snapshots(audit_2, [c1, c2]))
+        snapshots.extend(self._create_snapshots(audit_3, [c1, c2, s1, s2]))
 
-    for snapshot in snapshots:
-      title = "Snapshot {} {}".format(
-          snapshot.parent.title,
-          snapshot.revision.content["title"],
-      )
-      self.object_map[title] = snapshot
+        for snapshot in snapshots:
+            title = "Snapshot {} {}".format(
+                snapshot.parent.title,
+                snapshot.revision.content["title"],
+            )
+            self.object_map[title] = snapshot
 
-  def _get_related_assessments(self, assessment):
-    """Get all assessments related to a given assessment in order.
+    def _get_related_assessments(self, assessment):
+        """Get all assessments related to a given assessment in order.
 
     Args:
       assessment: Title of the assessment for which we want related
@@ -242,156 +246,172 @@ class TestRelatedAssessments(TestAssessmentBase):
       Titles of related assessments in given order.
     """
 
-    query = [{
-        "object_name": "Assessment",
-        "filters": {
-            "expression": {
-                "object_name": "Assessment",
-                "op": {"name": "similar"},
-                "ids": [self.object_map[assessment].id]
-            }
-        },
-        "order_by":[
-            {"name": "finished_date", "desc": True},
-            {"name": "created_at", "desc": True},
-        ],
-        "limit": [0, 5],
-        "type": "ids",  # This is added just for easier testing
-    }]
-    response = self.client.post(
-        "/query",
-        data=json.dumps(query),
-        headers={"Content-Type": "application/json"},
-    )
+        query = [{
+            "object_name":
+            "Assessment",
+            "filters": {
+                "expression": {
+                    "object_name": "Assessment",
+                    "op": {
+                        "name": "similar"
+                    },
+                    "ids": [self.object_map[assessment].id]
+                }
+            },
+            "order_by": [
+                {
+                    "name": "finished_date",
+                    "desc": True
+                },
+                {
+                    "name": "created_at",
+                    "desc": True
+                },
+            ],
+            "limit": [0, 5],
+            "type":
+            "ids",  # This is added just for easier testing
+        }]
+        response = self.client.post(
+            "/query",
+            data=json.dumps(query),
+            headers={"Content-Type": "application/json"},
+        )
 
-    ids = response.json[0]["Assessment"]["ids"]
-    if not ids:
-      return []
+        ids = response.json[0]["Assessment"]["ids"]
+        if not ids:
+            return []
 
-    assessments = models.Assessment.query.filter(models.Assessment.id.in_(ids))
-    id_title_map = {
-        assessment.id: assessment.title
-        for assessment in assessments
-    }
-    return [id_title_map[id_] for id_ in ids]
+        assessments = models.Assessment.query.filter(
+            models.Assessment.id.in_(ids))
+        id_title_map = {
+            assessment.id: assessment.title
+            for assessment in assessments
+        }
+        return [id_title_map[id_] for id_ in ids]
 
-  @ddt.data(*expand_test_cases(
-      # No related assessments
-      (["Assessment 1"], []),
-      (["Assessment 1"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Snapshot Audit 1 Control 2", "Assessment 1"),
-      ]),
-      (["Assessment 1"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Snapshot Audit 1 Control 2", "Assessment 2"),
-      ]),
-      (["Assessment 1"], [  # Not related: assessment type != snapshot type
-          ("Assessment 1", "Snapshot Audit 1 Section 1"),
-          ("Assessment 2", "Snapshot Audit 1 Section 1"),
-      ]),
-      (["Assessment 1"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Assessment 1", "Snapshot Audit 1 Section 1"),
-          ("Assessment 2", "Snapshot Audit 1 Control 2"),
-          ("Assessment 7", "Snapshot Audit 2 Control 2"),
-          ("Assessment 8", "Snapshot Audit 3 Section 1"),
-          ("Assessment 9", "Snapshot Audit 3 Control 2"),
-      ]),
-      (["Assessment 1"], [  # source and destination swapped
-          ("Snapshot Audit 1 Control 1", "Assessment 1"),
-          ("Snapshot Audit 1 Section 1", "Assessment 1"),
-          ("Snapshot Audit 1 Control 2", "Assessment 2"),
-          ("Snapshot Audit 2 Control 2", "Assessment 7"),
-          ("Snapshot Audit 3 Section 1", "Assessment 8"),
-          ("Snapshot Audit 3 Control 2", "Assessment 9"),
-      ]),
+    @ddt.data(
+        *expand_test_cases(
+            # No related assessments
+            (["Assessment 1"], []),
+            (["Assessment 1"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Snapshot Audit 1 Control 2", "Assessment 1"),
+            ]),
+            (["Assessment 1"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Snapshot Audit 1 Control 2", "Assessment 2"),
+            ]),
+            (
+                ["Assessment 1"],
+                [  # Not related: assessment type != snapshot type
+                    ("Assessment 1", "Snapshot Audit 1 Section 1"),
+                    ("Assessment 2", "Snapshot Audit 1 Section 1"),
+                ]),
+            (["Assessment 1"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Assessment 1", "Snapshot Audit 1 Section 1"),
+                ("Assessment 2", "Snapshot Audit 1 Control 2"),
+                ("Assessment 7", "Snapshot Audit 2 Control 2"),
+                ("Assessment 8", "Snapshot Audit 3 Section 1"),
+                ("Assessment 9", "Snapshot Audit 3 Control 2"),
+            ]),
+            (
+                ["Assessment 1"],
+                [  # source and destination swapped
+                    ("Snapshot Audit 1 Control 1", "Assessment 1"),
+                    ("Snapshot Audit 1 Section 1", "Assessment 1"),
+                    ("Snapshot Audit 1 Control 2", "Assessment 2"),
+                    ("Snapshot Audit 2 Control 2", "Assessment 7"),
+                    ("Snapshot Audit 3 Section 1", "Assessment 8"),
+                    ("Snapshot Audit 3 Control 2", "Assessment 9"),
+                ]),
 
+            # Assessments related with the same object
 
-      # Assessments related with the same object
+            # Assessment 1 and 2 related to the same snapshot.
+            # Src and dst swapped
+            (["Assessment 1", "Assessment 2"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Snapshot Audit 1 Control 1", "Assessment 2"),
+            ]),
+            (["Assessment 1", "Assessment 2"], [
+                ("Snapshot Audit 1 Control 1", "Assessment 1"),
+                ("Assessment 2", "Snapshot Audit 1 Control 1"),
+            ]),
 
-      # Assessment 1 and 2 related to the same snapshot.
-      # Src and dst swapped
-      (["Assessment 1", "Assessment 2"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Snapshot Audit 1 Control 1", "Assessment 2"),
-      ]),
-      (["Assessment 1", "Assessment 2"], [
-          ("Snapshot Audit 1 Control 1", "Assessment 1"),
-          ("Assessment 2", "Snapshot Audit 1 Control 1"),
-      ]),
+            # Assessments 4 and 5 related to sames snapshots
+            # Src and dst swapped
+            (["Assessment 4", "Assessment 5"], [
+                ("Assessment 4", "Snapshot Audit 1 Section 1"),
+                ("Snapshot Audit 1 Section 1", "Assessment 5"),
+            ]),
+            (["Assessment 4", "Assessment 5"], [
+                ("Snapshot Audit 1 Section 1", "Assessment 4"),
+                ("Assessment 5", "Snapshot Audit 1 Section 1"),
+            ]),
 
-      # Assessments 4 and 5 related to sames snapshots
-      # Src and dst swapped
-      (["Assessment 4", "Assessment 5"], [
-          ("Assessment 4", "Snapshot Audit 1 Section 1"),
-          ("Snapshot Audit 1 Section 1", "Assessment 5"),
-      ]),
-      (["Assessment 4", "Assessment 5"], [
-          ("Snapshot Audit 1 Section 1", "Assessment 4"),
-          ("Assessment 5", "Snapshot Audit 1 Section 1"),
-      ]),
+            # Assessment 1, 4, and 5 mapped to same Section
+            # Assessment 1 is excluded because it has a different type
+            (["Assessment 4", "Assessment 5"], [
+                ("Assessment 1", "Snapshot Audit 1 Section 2"),
+                ("Assessment 4", "Snapshot Audit 1 Section 1"),
+                ("Snapshot Audit 1 Section 1", "Assessment 1"),
+                ("Snapshot Audit 1 Section 1", "Assessment 5"),
+            ]),
 
-      # Assessment 1, 4, and 5 mapped to same Section
-      # Assessment 1 is excluded because it has a different type
-      (["Assessment 4", "Assessment 5"], [
-          ("Assessment 1", "Snapshot Audit 1 Section 2"),
-          ("Assessment 4", "Snapshot Audit 1 Section 1"),
-          ("Snapshot Audit 1 Section 1", "Assessment 1"),
-          ("Snapshot Audit 1 Section 1", "Assessment 5"),
-      ]),
+            # Assessment 1, 2, and 3 related to the same snapshot.
+            (["Assessment 1", "Assessment 2", "Assessment 3"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Snapshot Audit 1 Control 1", "Assessment 2"),
+                ("Assessment 3", "Snapshot Audit 1 Control 1"),
+            ]),
 
-      # Assessment 1, 2, and 3 related to the same snapshot.
-      (["Assessment 1", "Assessment 2", "Assessment 3"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Snapshot Audit 1 Control 1", "Assessment 2"),
-          ("Assessment 3", "Snapshot Audit 1 Control 1"),
-      ]),
+            # Assessment 1, 2, 7, and 9 related to different snapshot of the same
+            # object. Assessment 10 is excluded because it has a different type.
+            (["Assessment 1", "Assessment 2", "Assessment 7", "Assessment 9"],
+             [
+                 ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                 ("Snapshot Audit 1 Control 1", "Assessment 2"),
+                 ("Assessment 7", "Snapshot Audit 2 Control 1"),
+                 ("Snapshot Audit 3 Control 1", "Assessment 9"),
+                 ("Snapshot Audit 3 Control 1", "Assessment 10"),
+             ]),
 
-      # Assessment 1, 2, 7, and 9 related to different snapshot of the same
-      # object. Assessment 10 is excluded because it has a different type.
-      (["Assessment 1", "Assessment 2", "Assessment 7", "Assessment 9"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Snapshot Audit 1 Control 1", "Assessment 2"),
-          ("Assessment 7", "Snapshot Audit 2 Control 1"),
-          ("Snapshot Audit 3 Control 1", "Assessment 9"),
-          ("Snapshot Audit 3 Control 1", "Assessment 10"),
-      ]),
-
-      # Assessments mapped to snapshots of two different related objects
-      # diagram 2 from the new related assessments spec.
-
-      (["Assessment 1", "Assessment 2"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 1"),
-          ("Assessment 2", "Snapshot Audit 1 Control 2"),
-          ("Control 1", "Control 2"),
-      ]),
-      (["Assessment 1", "Assessment 2"], [
-          ("Snapshot Audit 1 Control 1", "Assessment 1"),
-          ("Assessment 2", "Snapshot Audit 1 Control 2"),
-          ("Control 2", "Control 1"),
-      ]),
-      (["Assessment 1", "Assessment 2"], [
-          ("Snapshot Audit 1 Control 1", "Assessment 1"),
-          ("Snapshot Audit 1 Control 2", "Assessment 2"),
-          ("Control 2", "Control 1"),
-      ]),
-      (["Assessment 1", "Assessment 2", "Assessment 7", "Assessment 9"], [
-          ("Assessment 1", "Snapshot Audit 1 Control 2"),
-          ("Snapshot Audit 1 Control 1", "Assessment 2"),
-          ("Assessment 7", "Snapshot Audit 2 Control 2"),
-          ("Snapshot Audit 3 Control 1", "Assessment 9"),
-          ("Snapshot Audit 3 Control 1", "Assessment 10"),
-          ("Snapshot Audit 3 Control 2", "Assessment 10"),
-          ("Control 2", "Control 1"),
-          ("Section 2", "Control 1"),
-          ("Section 1", "Control 1"),
-      ]),
-  ))
-  @ddt.unpack
-  # NOTE: Function parameters are generated! See expand_test_cases
-  def test_no_related(self, assessment, related_assessments, relationships):
-    """Test related assessments with the given set of relationships.
+            # Assessments mapped to snapshots of two different related objects
+            # diagram 2 from the new related assessments spec.
+            (["Assessment 1", "Assessment 2"], [
+                ("Assessment 1", "Snapshot Audit 1 Control 1"),
+                ("Assessment 2", "Snapshot Audit 1 Control 2"),
+                ("Control 1", "Control 2"),
+            ]),
+            (["Assessment 1", "Assessment 2"], [
+                ("Snapshot Audit 1 Control 1", "Assessment 1"),
+                ("Assessment 2", "Snapshot Audit 1 Control 2"),
+                ("Control 2", "Control 1"),
+            ]),
+            (["Assessment 1", "Assessment 2"], [
+                ("Snapshot Audit 1 Control 1", "Assessment 1"),
+                ("Snapshot Audit 1 Control 2", "Assessment 2"),
+                ("Control 2", "Control 1"),
+            ]),
+            (["Assessment 1", "Assessment 2", "Assessment 7", "Assessment 9"],
+             [
+                 ("Assessment 1", "Snapshot Audit 1 Control 2"),
+                 ("Snapshot Audit 1 Control 1", "Assessment 2"),
+                 ("Assessment 7", "Snapshot Audit 2 Control 2"),
+                 ("Snapshot Audit 3 Control 1", "Assessment 9"),
+                 ("Snapshot Audit 3 Control 1", "Assessment 10"),
+                 ("Snapshot Audit 3 Control 2", "Assessment 10"),
+                 ("Control 2", "Control 1"),
+                 ("Section 2", "Control 1"),
+                 ("Section 1", "Control 1"),
+             ]),
+        ))
+    @ddt.unpack
+    # NOTE: Function parameters are generated! See expand_test_cases
+    def test_no_related(self, assessment, related_assessments, relationships):
+        """Test related assessments with the given set of relationships.
 
     This test checks that all and only related assessments are returned with
     the related assessments query.
@@ -405,8 +425,8 @@ class TestRelatedAssessments(TestAssessmentBase):
         created before running the tests. First item in the pair is a title for
         the source object, second item is the title for the destination object.
     """
-    self._create_relationships(relationships)
-    self.assertItemsEqual(
-        self._get_related_assessments(assessment),
-        related_assessments,
-    )
+        self._create_relationships(relationships)
+        self.assertItemsEqual(
+            self._get_related_assessments(assessment),
+            related_assessments,
+        )

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add sort_index to CycleTaskGroupObjectTask
 
 Revision ID: 580d2ac5bc2d
@@ -19,7 +17,9 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('cycle_task_group_object_tasks', sa.Column('sort_index', sa.String(length=250), nullable=False))
+    op.add_column('cycle_task_group_object_tasks',
+                  sa.Column(
+                      'sort_index', sa.String(length=250), nullable=False))
 
 
 def downgrade():

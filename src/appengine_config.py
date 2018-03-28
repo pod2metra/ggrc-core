@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """`appengine_config.py` is automatically loaded when Google App Engine starts
 a new instance of your application. This runs before any WSGI applications
 specified in app.yaml are loaded.

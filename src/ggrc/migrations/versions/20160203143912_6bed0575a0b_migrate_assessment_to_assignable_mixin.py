@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Migrate Assessment to Assignable mixin
 
 Revision ID: 6bed0575a0b
@@ -20,7 +19,7 @@ down_revision = '1abb0a2e8ca0'
 
 
 def upgrade():
-  op.execute("""
+    op.execute("""
       INSERT IGNORE INTO relationships (
         modified_by_id, created_at, updated_at,
         source_id, source_type, destination_id, destination_type,
@@ -34,7 +33,7 @@ def upgrade():
       WHERE oo.ownable_type = 'Assessment'
   """)
 
-  op.execute("""
+    op.execute("""
       INSERT IGNORE INTO relationship_attrs (
         relationship_id, attr_name, attr_value
       )
@@ -45,8 +44,8 @@ def upgrade():
       AND r.source_id = oo.ownable_id AND r.source_type = 'Assessment';
   """)
 
-  op.execute("""UPDATE assessments SET status = 'Open'""")
-  op.execute("""ALTER TABLE assessments
+    op.execute("""UPDATE assessments SET status = 'Open'""")
+    op.execute("""ALTER TABLE assessments
                 CHANGE status status
                 ENUM("Open","In Progress","Finished","Verified","Final")
                 DEFAULT "Open"
@@ -55,4 +54,4 @@ def upgrade():
 
 
 def downgrade():
-  pass
+    pass

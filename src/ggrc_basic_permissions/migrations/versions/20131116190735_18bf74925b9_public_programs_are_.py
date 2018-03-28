@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Public programs are ownable.
 
 Revision ID: 18bf74925b9
@@ -20,7 +18,8 @@ from alembic import op
 from datetime import datetime
 from sqlalchemy.sql import table, column
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('permissions_json', sa.Text),
@@ -29,7 +28,8 @@ roles_table = table('roles',
     column('created_at', sa.DateTime),
     column('updated_at', sa.DateTime),
     column('context_id', sa.Integer),
-    )
+)
+
 
 def upgrade():
     op.execute(roles_table.update()\
@@ -61,6 +61,7 @@ def upgrade():
             }))\
         .where(roles_table.c.name=='ProgramCreator'))
 
+
 def downgrade():
     op.execute(roles_table.update()\
         .values(
@@ -69,4 +70,3 @@ def downgrade():
             "view_object_page": ["__GGRC_ALL__"],
             }))\
         .where(roles_table.c.name=='ProgramCreator'))
-

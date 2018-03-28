@@ -9,8 +9,7 @@ LOGIN_DISABLED = False
 PRODUCTION = False
 HOST = '0.0.0.0'
 SQLALCHEMY_DATABASE_URI = 'mysql+mysqldb://root:root@{}/ggrcdevtest'.format(
-    os.environ.get('GGRC_DATABASE_HOST', 'localhost')
-)
+    os.environ.get('GGRC_DATABASE_HOST', 'localhost'))
 FULLTEXT_INDEXER = 'ggrc.fulltext.mysql.MysqlIndexer'
 LOGIN_MANAGER = 'ggrc.login.noop'
 # SQLALCHEMY_ECHO = True

@@ -2,7 +2,6 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 """Counters constants."""
 
-
 PAGINATION_CTRLS_COUNT = 2
 
 # number of objects in a batch

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Required Risk fields.
 
 Revision ID: dca3c8d9d68
@@ -17,8 +16,10 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
+
 def upgrade():
-    op.add_column('risks', sa.Column('contact_id', sa.Integer(), nullable=True))
+    op.add_column('risks', sa.Column(
+        'contact_id', sa.Integer(), nullable=True))
     op.add_column('risks', sa.Column('description', sa.Text(), nullable=False))
 
 

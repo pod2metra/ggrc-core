@@ -3,7 +3,6 @@
 
 # disable Invalid constant name pylint warning for mandatory Alembic variables.
 # pylint: disable=invalid-name
-
 """
 Fix tracking columns.
 
@@ -20,7 +19,6 @@ These helpers is used by the following migrations:
 
 import sqlalchemy as sa
 from alembic import op
-
 
 tables = {
     "ggrc": [
@@ -102,9 +100,9 @@ tables = {
 
 
 def upgrade_tables(module):
-  """Updgrade tables from given module."""
-  for table in tables[module]:
-    op.execute("""
+    """Updgrade tables from given module."""
+    for table in tables[module]:
+        op.execute("""
         UPDATE %s
         SET
             created_at = IF(
@@ -119,12 +117,12 @@ def upgrade_tables(module):
             )
         WHERE created_at IS NULL OR updated_at IS NULL
     """ % table)
-    op.alter_column(table, "created_at", type_=sa.DateTime, nullable=False)
-    op.alter_column(table, "updated_at", type_=sa.DateTime, nullable=False)
+        op.alter_column(table, "created_at", type_=sa.DateTime, nullable=False)
+        op.alter_column(table, "updated_at", type_=sa.DateTime, nullable=False)
 
 
 def downgrade_tables(module):
-  """Downgrade tables from given module."""
-  for table in tables[module]:
-    op.alter_column(table, "created_at", type_=sa.DateTime, nullable=True)
-    op.alter_column(table, "updated_at", type_=sa.DateTime, nullable=True)
+    """Downgrade tables from given module."""
+    for table in tables[module]:
+        op.alter_column(table, "created_at", type_=sa.DateTime, nullable=True)
+        op.alter_column(table, "updated_at", type_=sa.DateTime, nullable=True)

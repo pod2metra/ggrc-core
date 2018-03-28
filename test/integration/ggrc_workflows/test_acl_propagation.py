@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Test acl role propagation on workflows."""
 
 # pylint: disable=invalid-name
@@ -18,55 +17,60 @@ from integration.ggrc_workflows.generator import WorkflowsGenerator
 
 
 class TestWorkflowAclPropagation(TestCase):
-  """Test acl role propagation on workflows."""
+    """Test acl role propagation on workflows."""
 
-  def setUp(self):
-    super(TestWorkflowAclPropagation, self).setUp()
-    self.generator = WorkflowsGenerator()
-    with factories.single_commit():
-      self.people_ids = [
-          factories.PersonFactory(
-              name="user {}".format(i),
-              email="user{}@example.com".format(i),
-          ).id
-          for i in range(10)
-      ]
+    def setUp(self):
+        super(TestWorkflowAclPropagation, self).setUp()
+        self.generator = WorkflowsGenerator()
+        with factories.single_commit():
+            self.people_ids = [
+                factories.PersonFactory(
+                    name="user {}".format(i),
+                    email="user{}@example.com".format(i),
+                ).id for i in range(10)
+            ]
 
-    acr = all_models.AccessControlRole
-    self.acr_name_map = dict(db.session.query(
-        acr.name,
-        acr.id,
-    ).filter(
-        acr.object_type == all_models.Workflow.__name__,
-    ))
+        acr = all_models.AccessControlRole
+        self.acr_name_map = dict(
+            db.session.query(
+                acr.name,
+                acr.id,
+            ).filter(acr.object_type == all_models.Workflow.__name__, ))
 
-    self.weekly_wf = {
-        "title": "weekly thingy",
-        "description": "start this many a time",
-        "access_control_list": [
-            {
+        self.weekly_wf = {
+            "title":
+            "weekly thingy",
+            "description":
+            "start this many a time",
+            "access_control_list": [{
                 "ac_role_id": self.acr_name_map["Admin"],
-                "person": {"type": "Person", "id": self.people_ids[i]},
-            }
-            for i in range(5)
-        ],
-        "unit": "week",
-        "repeat_every": 1,
-        "task_groups": [{
-            "title": "weekly task group",
-            "task_group_tasks": [
+                "person": {
+                    "type": "Person",
+                    "id": self.people_ids[i]
+                },
+            } for i in range(5)],
+            "unit":
+            "week",
+            "repeat_every":
+            1,
+            "task_groups": [
                 {
-                    "title": "weekly task {}".format(i),
-                    "start_date": datetime.date(2016, 6, 10),
-                    "end_date": datetime.date(2016, 6, 13),
-                }
-                for i in range(3)
-            ]},
-        ]
-    }
+                    "title":
+                    "weekly task group",
+                    "task_group_tasks": [{
+                        "title":
+                        "weekly task {}".format(i),
+                        "start_date":
+                        datetime.date(2016, 6, 10),
+                        "end_date":
+                        datetime.date(2016, 6, 13),
+                    } for i in range(3)]
+                },
+            ]
+        }
 
-  def test_async_role_propagation(self):
-    """Test asynchronous acl propagations.
+    def test_async_role_propagation(self):
+        """Test asynchronous acl propagations.
 
     This test just ensures that simultaneous updates to a single workflow work.
     The test checks this by first creating a workflow with first 5 out of 10
@@ -84,56 +88,55 @@ class TestWorkflowAclPropagation(TestCase):
     same people can have the same role on a workflow multiple times and each of
     those will have correct role propagation.
     """
-    number_of_threads = 10
+        number_of_threads = 10
 
-    def change_assignees(workflow, assignees):
-      """Change workflow assignees."""
-      response = self.generator.api.put(workflow, {
-          "access_control_list": [
-              {
-                  "ac_role_id": self.acr_name_map["Admin"],
-                  "person": {"type": "Person", "id": self.people_ids[i]},
-              }
-              for i in assignees
-          ],
-      })
-      self.assert200(response)
+        def change_assignees(workflow, assignees):
+            """Change workflow assignees."""
+            response = self.generator.api.put(
+                workflow, {
+                    "access_control_list": [{
+                        "ac_role_id":
+                        self.acr_name_map["Admin"],
+                        "person": {
+                            "type": "Person",
+                            "id": self.people_ids[i]
+                        },
+                    } for i in assignees],
+                })
+            self.assert200(response)
 
-    updated_wf = deepcopy(self.weekly_wf)
+        updated_wf = deepcopy(self.weekly_wf)
 
-    with freeze_time("2016-6-10 13:00:00"):  # Friday, 6/10/2016
-      _, wf = self.generator.generate_workflow(updated_wf)
-      self.generator.activate_workflow(wf)
+        with freeze_time("2016-6-10 13:00:00"):  # Friday, 6/10/2016
+            _, wf = self.generator.generate_workflow(updated_wf)
+            self.generator.activate_workflow(wf)
 
-      threads = []
+            threads = []
 
-      for i in range(number_of_threads):
-        assignees = [i % 4 + 5, i % 4 + 6]
-        threads.append(Thread(target=change_assignees, args=(wf, assignees)))
+            for i in range(number_of_threads):
+                assignees = [i % 4 + 5, i % 4 + 6]
+                threads.append(
+                    Thread(target=change_assignees, args=(wf, assignees)))
 
-      for t in threads:
-        t.start()
-      for t in threads:
-        t.join()
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
 
-      acl = all_models.AccessControlList
+            acl = all_models.AccessControlList
 
-      workflow_role_count = acl.query.filter(
-          acl.object_type == all_models.Workflow.__name__
-      ).count()
+            workflow_role_count = acl.query.filter(
+                acl.object_type == all_models.Workflow.__name__).count()
 
-      propagated_role_count = acl.query.filter(
-          acl.parent_id.isnot(None)
-      ).count()
+            propagated_role_count = acl.query.filter(
+                acl.parent_id.isnot(None)).count()
 
-      # 1 cycle
-      # 1 cycle task group
-      # 3 cycle tasks
-      # 1 task group
-      # 3 tasks
-      number_of_wf_objects = 1 + 1 + 3 + 1 + 3
+            # 1 cycle
+            # 1 cycle task group
+            # 3 cycle tasks
+            # 1 task group
+            # 3 tasks
+            number_of_wf_objects = 1 + 1 + 3 + 1 + 3
 
-      self.assertEqual(
-          workflow_role_count * number_of_wf_objects,
-          propagated_role_count
-      )
+            self.assertEqual(workflow_role_count * number_of_wf_objects,
+                             propagated_role_count)

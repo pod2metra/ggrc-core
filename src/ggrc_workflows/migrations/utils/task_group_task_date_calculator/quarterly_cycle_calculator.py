@@ -12,24 +12,26 @@ from ggrc_workflows.migrations.utils.task_group_task_date_calculator import \
 
 
 class QuarterlyCycleCalculator(cycle_calculator.CycleCalculator):
-  """CycleCalculator implementation for quarterly workflows.
+    """CycleCalculator implementation for quarterly workflows.
 
   Quarterly workflows have a specific date domain that also requires a bit more
   math. Option 1 is for Jan/Apr/Jul/Oct, option 2 is for Feb/May/Aug/Nov and
   option 3 is for Mar/Jun/Sep/Dec. Each task can go UP TO three
   months (non-inclusive).
   """
-  time_delta = relativedelta.relativedelta(months=3)
+    time_delta = relativedelta.relativedelta(months=3)
 
-  date_domain = {
-      1: {1, 4, 7, 10},  # Jan/Apr/Jul/Oct
-      2: {2, 5, 8, 11},  # Feb/May/Aug/Nov
-      3: {3, 6, 9, 12}  # Mar/Jun/Sep/Dec
-  }
+    date_domain = {
+        1: {1, 4, 7, 10},  # Jan/Apr/Jul/Oct
+        2: {2, 5, 8, 11},  # Feb/May/Aug/Nov
+        3: {3, 6, 9, 12}  # Mar/Jun/Sep/Dec
+    }
 
-  def relative_day_to_date(self, relative_day, relative_month=None,
-                           base_date=None):
-    """Converts a quarterly representation of a day into concrete date object.
+    def relative_day_to_date(self,
+                             relative_day,
+                             relative_month=None,
+                             base_date=None):
+        """Converts a quarterly representation of a day into concrete date object.
 
     Relative month is not the best description, but we have to standardize on
     something (better would be relative_quarter) to ensure consistent calls
@@ -67,17 +69,17 @@ class QuarterlyCycleCalculator(cycle_calculator.CycleCalculator):
     Afterwards we repeat the math similar to monthly cycle calculator and
     ensure that the day is not overflowing to the next month.
     """
-    date_adj = False
-    shift_t = [[0, -1, -2], [-2, 0, -1], [-1, -2, 0]]
-    index_t = {0: 2, 2: 1, 1: 0}
-    month_shift = shift_t[relative_month - 1][index_t[base_date.month % 3]]
+        date_adj = False
+        shift_t = [[0, -1, -2], [-2, 0, -1], [-1, -2, 0]]
+        index_t = {0: 2, 2: 1, 1: 0}
+        month_shift = shift_t[relative_month - 1][index_t[base_date.month % 3]]
 
-    start_date = (datetime.date(base_date.year, base_date.month, 1) +
-                  relativedelta.relativedelta(months=month_shift))
-    ddate = start_date + relativedelta.relativedelta(days=relative_day - 1)
+        start_date = (datetime.date(base_date.year, base_date.month, 1) +
+                      relativedelta.relativedelta(months=month_shift))
+        ddate = start_date + relativedelta.relativedelta(days=relative_day - 1)
 
-    # We want to go up to the end of the month and not over
-    if ddate.month != start_date.month:
-      ddate = ddate - relativedelta.relativedelta(days=ddate.day)
-      date_adj = True
-    return ddate, date_adj
+        # We want to go up to the end of the month and not over
+        if ddate.month != start_date.month:
+            ddate = ddate - relativedelta.relativedelta(days=ddate.day)
+            date_adj = True
+        return ddate, date_adj

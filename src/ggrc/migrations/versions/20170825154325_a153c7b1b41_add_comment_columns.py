@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add comment notification columns
 
@@ -38,24 +37,22 @@ table_models = {
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  # Updates due to added commentable mixin
-  for name in table_models.keys():
-    op.add_column(
-        name,
-        sa.Column('recipients', sa.String(length=250), nullable=True)
-    )
-    op.add_column(
-        name,
-        sa.Column('send_by_default', sa.Boolean(), nullable=True)
-    )
-  rename_ca_title("Recipients", table_models.values())
-  rename_ca_title("Send by default", table_models.values())
+    """Upgrade database schema and/or data, creating a new revision."""
+    # Updates due to added commentable mixin
+    for name in table_models.keys():
+        op.add_column(name,
+                      sa.Column(
+                          'recipients', sa.String(length=250), nullable=True))
+        op.add_column(name,
+                      sa.Column(
+                          'send_by_default', sa.Boolean(), nullable=True))
+    rename_ca_title("Recipients", table_models.values())
+    rename_ca_title("Send by default", table_models.values())
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  # Updates due to added commentable mixin
-  for name in table_models.keys():
-    op.drop_column(name, 'send_by_default')
-    op.drop_column(name, 'recipients')
+    """Downgrade database schema and/or data back to the previous revision."""
+    # Updates due to added commentable mixin
+    for name in table_models.keys():
+        op.drop_column(name, 'send_by_default')
+        op.drop_column(name, 'recipients')

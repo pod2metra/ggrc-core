@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Risk module"""
 
 from flask import Blueprint
@@ -24,69 +23,63 @@ blueprint = Blueprint(
     static_url_path='/static/ggrc_risks',
 )
 
-
 _risk_object_types = [
-    "Program",
-    "Regulation", "Standard", "Policy", "Contract",
-    "Objective", "Control", "Section", "Clause",
-    "System", "Process",
-    "DataAsset", "Facility", "Market", "Product", "Project"
+    "Program", "Regulation", "Standard", "Policy", "Contract", "Objective",
+    "Control", "Section", "Clause", "System", "Process", "DataAsset",
+    "Facility", "Market", "Product", "Project"
 ]
 
 for type_ in _risk_object_types:
-  model = getattr(all_models, type_)
-  model.__bases__ = (
-      models.risk_object.Riskable,
-  ) + model.__bases__
-  model.late_init_riskable()
+    model = getattr(all_models, type_)
+    model.__bases__ = (models.risk_object.Riskable, ) + model.__bases__
+    model.late_init_riskable()
 
 
 def get_public_config(current_user):
-  """Expose additional permissions-dependent config to client.
+    """Expose additional permissions-dependent config to client.
   """
-  return {}
+    return {}
 
 
 def contributed_services():
-  return [
-      service('risks', models.Risk),
-      service('risk_objects', models.RiskObject),
-      service('threats', models.Threat),
-  ]
+    return [
+        service('risks', models.Risk),
+        service('risk_objects', models.RiskObject),
+        service('threats', models.Threat),
+    ]
 
 
 def contributed_object_views():
-  from . import models
-  from ggrc.views.registry import object_view
-  return [
-      object_view(models.Risk),
-      object_view(models.Threat),
-  ]
+    from . import models
+    from ggrc.views.registry import object_view
+    return [
+        object_view(models.Risk),
+        object_view(models.Threat),
+    ]
 
 
 # Initialize non-RESTful views
 def init_extra_views(app):
-  ggrc_risks.views.init_extra_views(app)
+    ggrc_risks.views.init_extra_views(app)
 
 
 class RiskRoleContributions(RoleContributions):
-  contributions = {
-      'Creator': {
-          'read': [],
-          'create': ['Threat', 'Risk'],
-      },
-      'Editor': {
-          'read': ['Threat', 'Risk'],
-          'create': ['Threat', 'Risk'],
-      },
-      'Reader': {
-          'read': ['Threat', 'Risk'],
-          'create': ['Threat', 'Risk'],
-      },
-  }
+    contributions = {
+        'Creator': {
+            'read': [],
+            'create': ['Threat', 'Risk'],
+        },
+        'Editor': {
+            'read': ['Threat', 'Risk'],
+            'create': ['Threat', 'Risk'],
+        },
+        'Reader': {
+            'read': ['Threat', 'Risk'],
+            'create': ['Threat', 'Risk'],
+        },
+    }
 
 
 ROLE_CONTRIBUTIONS = RiskRoleContributions()
-
 
 contributed_importables = IMPORTABLE

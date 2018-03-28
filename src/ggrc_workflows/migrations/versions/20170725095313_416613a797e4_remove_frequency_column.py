@@ -45,218 +45,224 @@ notification_types = sa.sql.table(
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.execute(
-      workflows.update().
-      where(~workflows.c.frequency.is_(None)).
-      values({
-          "unit": case([
-              (workflows.c.frequency == "one_time", None),
-              (workflows.c.frequency == "weekly", "week"),
-              (workflows.c.frequency == "monthly", "month"),
-              (workflows.c.frequency == "quarterly", "month"),
-              (workflows.c.frequency == "annually", "month"),
-          ], else_=None),
-          "repeat_every": case([
-              (workflows.c.frequency == "one_time", None),
-              (workflows.c.frequency == "weekly", 1),
-              (workflows.c.frequency == "monthly", 1),
-              (workflows.c.frequency == "quarterly", 3),
-              (workflows.c.frequency == "annually", 12),
-          ], else_=None)
-      })
-  )
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.execute(
+        workflows.update().where(~workflows.c.frequency.is_(None)).values({
+            "unit":
+            case(
+                [
+                    (workflows.c.frequency == "one_time", None),
+                    (workflows.c.frequency == "weekly", "week"),
+                    (workflows.c.frequency == "monthly", "month"),
+                    (workflows.c.frequency == "quarterly", "month"),
+                    (workflows.c.frequency == "annually", "month"),
+                ],
+                else_=None),
+            "repeat_every":
+            case(
+                [
+                    (workflows.c.frequency == "one_time", None),
+                    (workflows.c.frequency == "weekly", 1),
+                    (workflows.c.frequency == "monthly", 1),
+                    (workflows.c.frequency == "quarterly", 3),
+                    (workflows.c.frequency == "annually", 12),
+                ],
+                else_=None)
+        }))
 
-  # migrate notification_types data since it's bound to frequency
-  # add day notification_types
-  op.bulk_insert(
-      notification_types,
-      [{
-          # cycle created notifiction
-          "name": "day_cycle_task_due_in",
-          "description": "Notify task assignee his task is due in X days",
-          "template": "cycle_task_due_in",
-          "advance_notice": 1,
-          "instant": False,
-      }, {
-          # workflow starts in notification
-          "name": "day_workflow_starts_in",
-          "description": "Advanced notification for a recurring workflow.",
-          "template": "day_workflow_starts_in",
-          "advance_notice": 1,
-          "instant": False,
-      }, ]
-  )
+    # migrate notification_types data since it's bound to frequency
+    # add day notification_types
+    op.bulk_insert(
+        notification_types,
+        [
+            {
+                # cycle created notifiction
+                "name": "day_cycle_task_due_in",
+                "description":
+                "Notify task assignee his task is due in X days",
+                "template": "cycle_task_due_in",
+                "advance_notice": 1,
+                "instant": False,
+            },
+            {
+                # workflow starts in notification
+                "name": "day_workflow_starts_in",
+                "description":
+                "Advanced notification for a recurring workflow.",
+                "template": "day_workflow_starts_in",
+                "advance_notice": 1,
+                "instant": False,
+            },
+        ])
 
-  # modify weekly, monthly notification_types to week, month
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('weekly_cycle_task_due_in')).
-      values({'name': op.inline_literal('week_cycle_task_due_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('monthly_cycle_task_due_in')).
-      values({'name': op.inline_literal('month_cycle_task_due_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('weekly_workflow_starts_in')).
-      values({'name': op.inline_literal('week_workflow_starts_in'),
-              'template': op.inline_literal('week_workflow_starts_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('monthly_workflow_starts_in')).
-      values({'name': op.inline_literal('month_workflow_starts_in'),
-              'template': op.inline_literal('month_workflow_starts_in')})
-  )
+    # modify weekly, monthly notification_types to week, month
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'weekly_cycle_task_due_in')).values({
+                'name':
+                op.inline_literal('week_cycle_task_due_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'monthly_cycle_task_due_in')).values({
+                'name':
+                op.inline_literal('month_cycle_task_due_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'weekly_workflow_starts_in')).values({
+                'name':
+                op.inline_literal('week_workflow_starts_in'),
+                'template':
+                op.inline_literal('week_workflow_starts_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'monthly_workflow_starts_in')).values({
+                'name':
+                op.inline_literal('month_workflow_starts_in'),
+                'template':
+                op.inline_literal('month_workflow_starts_in')
+            }))
 
-  # migrate notification_types in notifications with types being deleted
-  # quarterly_, annually_ -> month_
-  cycle_types_list = [
-      "quarterly_cycle_task_due_in",
-      "annually_cycle_task_due_in",
-  ]
-  workflow_types_list = [
-      "quarterly_workflow_starts_in",
-      "annually_workflow_starts_in",
-  ]
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(cycle_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-              [notification_types.c.id]).where(notification_types.c.name ==
-              op.inline_literal('month_cycle_task_due_in')), })
-  )
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(workflow_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-              [notification_types.c.id]).where(notification_types.c.name ==
-              op.inline_literal('month_workflow_starts_in')), })
-  )
+    # migrate notification_types in notifications with types being deleted
+    # quarterly_, annually_ -> month_
+    cycle_types_list = [
+        "quarterly_cycle_task_due_in",
+        "annually_cycle_task_due_in",
+    ]
+    workflow_types_list = [
+        "quarterly_workflow_starts_in",
+        "annually_workflow_starts_in",
+    ]
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(cycle_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'month_cycle_task_due_in')),
+                }))
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(workflow_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'month_workflow_starts_in')),
+                }))
 
-  # delete deprecated notification_types
-  op.execute(
-      notification_types.delete().where(notification_types.c.name.in_(
-          cycle_types_list + workflow_types_list))
-  )
+    # delete deprecated notification_types
+    op.execute(notification_types.delete().where(
+        notification_types.c.name.in_(cycle_types_list + workflow_types_list)))
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  # migrate notification_types in notifications with types being deleted
-  # day_ -> month_
-  delete_types_list = [
-      "day_cycle_task_due_in",
-      "day_workflow_starts_in",
-  ]
-  cycle_types_list = [
-      "quarterly_cycle_task_due_in",
-      "annually_cycle_task_due_in",
-  ]
-  workflow_types_list = [
-      "quarterly_workflow_starts_in",
-      "annually_workflow_starts_in",
-  ]
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(cycle_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-          [notification_types.c.id]).where(
-              notification_types.c.name ==
-              op.inline_literal('month_cycle_task_due_in')), })
-  )
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(workflow_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-          [notification_types.c.id]).where(
-              notification_types.c.name ==
-              op.inline_literal('month_workflow_starts_in')), })
-  )
+    """Downgrade database schema and/or data back to the previous revision."""
+    # migrate notification_types in notifications with types being deleted
+    # day_ -> month_
+    delete_types_list = [
+        "day_cycle_task_due_in",
+        "day_workflow_starts_in",
+    ]
+    cycle_types_list = [
+        "quarterly_cycle_task_due_in",
+        "annually_cycle_task_due_in",
+    ]
+    workflow_types_list = [
+        "quarterly_workflow_starts_in",
+        "annually_workflow_starts_in",
+    ]
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(cycle_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'month_cycle_task_due_in')),
+                }))
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(workflow_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'month_workflow_starts_in')),
+                }))
 
-  # then delete day_ notification_types
-  op.execute(
-      notification_types.delete().
-      where(notification_types.c.name.in_(delete_types_list))
-  )
+    # then delete day_ notification_types
+    op.execute(notification_types.delete().where(
+        notification_types.c.name.in_(delete_types_list)))
 
-  # modify weekly, monthly notification_types to week, month
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('week_cycle_task_due_in')).
-      values({'name': op.inline_literal('weekly_cycle_task_due_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('month_cycle_task_due_in')).
-      values({'name': op.inline_literal('monthly_cycle_task_due_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('week_workflow_starts_in')).
-      values({'name': op.inline_literal('weekly_workflow_starts_in'),
-              'template': op.inline_literal('weekly_workflow_starts_in')})
-  )
-  op.execute(
-      notification_types.update().
-      where(notification_types.c.name ==
-            op.inline_literal('month_workflow_starts_in')).
-      values({'name': op.inline_literal('monthly_workflow_starts_in'),
-              'template': op.inline_literal('monthly_workflow_starts_in')})
-  )
+    # modify weekly, monthly notification_types to week, month
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'week_cycle_task_due_in')).values({
+                'name':
+                op.inline_literal('weekly_cycle_task_due_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'month_cycle_task_due_in')).values({
+                'name':
+                op.inline_literal('monthly_cycle_task_due_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'week_workflow_starts_in')).values({
+                'name':
+                op.inline_literal('weekly_workflow_starts_in'),
+                'template':
+                op.inline_literal('weekly_workflow_starts_in')
+            }))
+    op.execute(notification_types.update().where(
+        notification_types.c.name == op.inline_literal(
+            'month_workflow_starts_in')).values({
+                'name':
+                op.inline_literal('monthly_workflow_starts_in'),
+                'template':
+                op.inline_literal('monthly_workflow_starts_in')
+            }))
 
-  # migrate notification_types in notifications with types being deleted
-  # we can not recover data precisely after once upgraded, because
-  # users could create workflows which do not correspond to old types
-  # month_ -> monthly_
-  cycle_types_list = [
-      "month_cycle_task_due_in",
-  ]
-  workflow_types_list = [
-      "month_workflow_starts_in",
-  ]
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(cycle_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-          [notification_types.c.id]).where(
-              notification_types.c.name ==
-              op.inline_literal('monthly_cycle_task_due_in')), })
-  )
-  op.execute(
-      notifications.update().
-      where(notifications.c.notification_type_id.in_(
-          sa.sql.select([notification_types.c.id]).
-          where(notification_types.c.name.in_(workflow_types_list)))).
-      values({"notification_type_id": sa.sql.select(
-          [notification_types.c.id]).where(
-              notification_types.c.name ==
-              op.inline_literal('monthly_workflow_starts_in')), })
-  )
+    # migrate notification_types in notifications with types being deleted
+    # we can not recover data precisely after once upgraded, because
+    # users could create workflows which do not correspond to old types
+    # month_ -> monthly_
+    cycle_types_list = [
+        "month_cycle_task_due_in",
+    ]
+    workflow_types_list = [
+        "month_workflow_starts_in",
+    ]
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(cycle_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'monthly_cycle_task_due_in')),
+                }))
+    op.execute(notifications.update().where(
+        notifications.c.notification_type_id.in_(
+            sa.sql.select([notification_types.c.id]).where(
+                notification_types.c.name.in_(workflow_types_list)))).values({
+                    "notification_type_id":
+                    sa.sql.select([
+                        notification_types.c.id
+                    ]).where(notification_types.c.name == op.inline_literal(
+                        'monthly_workflow_starts_in')),
+                }))
 
-  # delete deprecated notification_types
-  op.execute(
-      notification_types.delete().
-      where(notification_types.c.name.in_(
-          cycle_types_list + workflow_types_list))
-  )
+    # delete deprecated notification_types
+    op.execute(notification_types.delete().where(
+        notification_types.c.name.in_(cycle_types_list + workflow_types_list)))

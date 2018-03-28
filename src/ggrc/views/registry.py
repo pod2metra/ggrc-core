@@ -4,13 +4,10 @@
 from collections import namedtuple
 from ggrc.views.common import BaseObjectView
 
-
-ObjectViewEntry = namedtuple(
-    'ObjectViewEntry', 'url model_class service_class')
+ObjectViewEntry = namedtuple('ObjectViewEntry',
+                             'url model_class service_class')
 
 
 def object_view(model_class, service_class=BaseObjectView):
-  return ObjectViewEntry(
-      model_class._inflector.table_plural,
-      model_class,
-      service_class)
+    return ObjectViewEntry(model_class._inflector.table_plural, model_class,
+                           service_class)

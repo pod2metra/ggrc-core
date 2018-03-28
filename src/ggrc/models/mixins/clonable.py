@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """A mixin for objects that can be cloned"""
 
 import itertools
@@ -23,87 +22,93 @@ from ggrc.utils.log_event import log_event
 # TODO: Clonning of Audit should be done with MultiClonable mixin and
 # SingleClonable should be removed
 class SingleClonable(object):
-  """Old Clonable mixin.
+    """Old Clonable mixin.
 
   It's deprecated now, for clonning use MultiClonnable mixin
   """
 
-  __lazy_init__ = True
+    __lazy_init__ = True
 
-  CLONEABLE_CHILDREN = {}
+    CLONEABLE_CHILDREN = {}
 
-  _operation_data = {}
+    _operation_data = {}
 
-  @classmethod
-  def init(cls, model):
-    cls.set_handlers(model)
+    @classmethod
+    def init(cls, model):
+        cls.set_handlers(model)
 
-  @classmethod
-  def set_handlers(cls, model):
-    """Set up handlers for cloning"""
-    # pylint: disable=unused-argument, unused-variable
-    @signals.Restful.collection_posted.connect_via(model)
-    def handle_model_clone(sender, objects=None, sources=None):
-      """Process cloning of objects"""
-      for obj, src in itertools.izip(objects, sources):
-        if src.get("operation") == "clone":
-          options = src.get("cloneOptions")
-          mapped_objects = options.get("mappedObjects", [])
-          source_id = int(options.get("sourceObjectId"))
-          obj.clone(
-              source_id=source_id,
-              mapped_objects={obj for obj in mapped_objects
-                              if obj in model.CLONEABLE_CHILDREN})
+    @classmethod
+    def set_handlers(cls, model):
+        """Set up handlers for cloning"""
+        # pylint: disable=unused-argument, unused-variable
+        @signals.Restful.collection_posted.connect_via(model)
+        def handle_model_clone(sender, objects=None, sources=None):
+            """Process cloning of objects"""
+            for obj, src in itertools.izip(objects, sources):
+                if src.get("operation") == "clone":
+                    options = src.get("cloneOptions")
+                    mapped_objects = options.get("mappedObjects", [])
+                    source_id = int(options.get("sourceObjectId"))
+                    obj.clone(
+                        source_id=source_id,
+                        mapped_objects={
+                            obj
+                            for obj in mapped_objects
+                            if obj in model.CLONEABLE_CHILDREN
+                        })
 
-    @signals.Restful.model_posted_after_commit.connect_via(model)
-    def handle_scope_clone(sender, obj=None, src=None, service=None,
-                           event=None):
-      """Process cloning of objects"""
-      if src.get("operation") == "clone":
-        from ggrc.snapshotter import clone_scope
+        @signals.Restful.model_posted_after_commit.connect_via(model)
+        def handle_scope_clone(sender,
+                               obj=None,
+                               src=None,
+                               service=None,
+                               event=None):
+            """Process cloning of objects"""
+            if src.get("operation") == "clone":
+                from ggrc.snapshotter import clone_scope
 
-        options = src.get("cloneOptions")
-        source_id = int(options.get("sourceObjectId"))
-        base_object = model.query.get(source_id)
-        clone_scope(base_object, obj, event)
+                options = src.get("cloneOptions")
+                source_id = int(options.get("sourceObjectId"))
+                base_object = model.query.get(source_id)
+                clone_scope(base_object, obj, event)
 
-  def generate_attribute(self, attribute):
-    """Generate a new unique attribute as a copy of original"""
-    attr = getattr(self, attribute)
+    def generate_attribute(self, attribute):
+        """Generate a new unique attribute as a copy of original"""
+        attr = getattr(self, attribute)
 
-    def count_values(key, value):
-      return self.query.filter_by(**{key: value}).count()
+        def count_values(key, value):
+            return self.query.filter_by(**{key: value}).count()
 
-    i = 1
-    generated_attr_value = "{0} - copy {1}".format(attr, i)
-    while count_values(attribute, generated_attr_value):
-      i += 1
-      generated_attr_value = "{0} - copy {1}".format(attr, i)
-    return generated_attr_value
+        i = 1
+        generated_attr_value = "{0} - copy {1}".format(attr, i)
+        while count_values(attribute, generated_attr_value):
+            i += 1
+            generated_attr_value = "{0} - copy {1}".format(attr, i)
+        return generated_attr_value
 
-  def clone_custom_attribute_values(self, obj):
-    """Copy object's custom attribute values"""
-    ca_values = obj.custom_attribute_values
+    def clone_custom_attribute_values(self, obj):
+        """Copy object's custom attribute values"""
+        ca_values = obj.custom_attribute_values
 
-    for value in ca_values:
-      value._clone(self)  # pylint: disable=protected-access
+        for value in ca_values:
+            value._clone(self)  # pylint: disable=protected-access
 
-  def update_attrs(self, values):
-    for key, value in values.items():
-      setattr(self, key, value)
+    def update_attrs(self, values):
+        for key, value in values.items():
+            setattr(self, key, value)
 
 
 # TODO: This should be renamed to Clonable when Audit clone logic will be
 # refactored and SingleClonable will be removed
 class MultiClonable(object):
-  """Clonable mixin"""
+    """Clonable mixin"""
 
-  CLONEABLE_CHILDREN = {}  # Types of related objects to clone with base one
-  RETURN_OBJ_JSON = False  # Return json for created object
+    CLONEABLE_CHILDREN = {}  # Types of related objects to clone with base one
+    RETURN_OBJ_JSON = False  # Return json for created object
 
-  @classmethod
-  def _parse_query(cls, query):
-    """Parse cloning parameters from input query.
+    @classmethod
+    def _parse_query(cls, query):
+        """Parse cloning parameters from input query.
 
     Args:
         query: Dict with cloning parameters.
@@ -112,34 +117,35 @@ class MultiClonable(object):
         Tuple that include list objects to clone, destination object and
         list of possible mapped types (source_objs, destination, mapped_types).
     """
-    if not query:
-      raise exceptions.BadRequest()
+        if not query:
+            raise exceptions.BadRequest()
 
-    source_ids = query.get("sourceObjectIds", [])
-    if not source_ids:
-      raise exceptions.BadRequest("sourceObjectIds parameter wasn't provided")
-    source_objs = cls.query.options(
-        sa.orm.subqueryload('custom_attribute_definitions'),
-        sa.orm.subqueryload('custom_attribute_values'),
-    ).filter(cls.id.in_(source_ids)).all()
+        source_ids = query.get("sourceObjectIds", [])
+        if not source_ids:
+            raise exceptions.BadRequest(
+                "sourceObjectIds parameter wasn't provided")
+        source_objs = cls.query.options(
+            sa.orm.subqueryload('custom_attribute_definitions'),
+            sa.orm.subqueryload('custom_attribute_values'),
+        ).filter(cls.id.in_(source_ids)).all()
 
-    dest_query = query.get("destination", {})
-    destination = None
-    if dest_query and dest_query.get("type") and dest_query.get("id"):
-      destination_cls = inflector.get_model(dest_query.get("type"))
-      destination = destination_cls.query.filter_by(
-          id=dest_query.get("id")
-      ).first()
+        dest_query = query.get("destination", {})
+        destination = None
+        if dest_query and dest_query.get("type") and dest_query.get("id"):
+            destination_cls = inflector.get_model(dest_query.get("type"))
+            destination = destination_cls.query.filter_by(
+                id=dest_query.get("id")).first()
 
-    mapped_types = {
-        type_ for type_ in query.get("mappedObjects", [])
-        if type_ in cls.CLONEABLE_CHILDREN
-    }
-    return source_objs, destination, mapped_types
+        mapped_types = {
+            type_
+            for type_ in query.get("mappedObjects", [])
+            if type_ in cls.CLONEABLE_CHILDREN
+        }
+        return source_objs, destination, mapped_types
 
-  @classmethod
-  def handle_model_clone(cls, query):
-    """Process cloning of objects.
+    @classmethod
+    def handle_model_clone(cls, query):
+        """Process cloning of objects.
 
     Args:
         query: Dict with parameters for cloning procedure. It should have
@@ -154,43 +160,42 @@ class MultiClonable(object):
         Response with status code 200 in case of success and 400 if provided
         parameters are invalid.
     """
-    source_objs, destination, mapped_types = cls._parse_query(query)
+        source_objs, destination, mapped_types = cls._parse_query(query)
 
-    clonned_objs = {}
-    for source_obj in source_objs:
-      if (
-          not permissions.is_allowed_read_for(source_obj) or
-          not permissions.is_allowed_create(
-              source_obj.type, source_obj.id, destination.context_id
-          )
-      ):
-        raise exceptions.Forbidden()
-      clonned_objs[source_obj] = cls._copy_obj(source_obj, destination)
+        clonned_objs = {}
+        for source_obj in source_objs:
+            if (not permissions.is_allowed_read_for(source_obj)
+                    or not permissions.is_allowed_create(
+                        source_obj.type, source_obj.id,
+                        destination.context_id)):
+                raise exceptions.Forbidden()
+            clonned_objs[source_obj] = cls._copy_obj(source_obj, destination)
 
-    for target, mapped_obj in cls._collect_mapped(source_objs, mapped_types):
-      clonned_objs[mapped_obj] = cls._copy_obj(mapped_obj, target)
+        for target, mapped_obj in cls._collect_mapped(source_objs,
+                                                      mapped_types):
+            clonned_objs[mapped_obj] = cls._copy_obj(mapped_obj, target)
 
-    cls._set_parent_context(clonned_objs.values(), destination)
-    db.session.flush()
+        cls._set_parent_context(clonned_objs.values(), destination)
+        db.session.flush()
 
-    for source, clonned in clonned_objs.items():
-      cls._clone_cads(source, clonned)
+        for source, clonned in clonned_objs.items():
+            cls._clone_cads(source, clonned)
 
-    if clonned_objs:
-      db.session.add(log_event(db.session, flush=False))
-    db.session.commit()
+        if clonned_objs:
+            db.session.add(log_event(db.session, flush=False))
+        db.session.commit()
 
-    from ggrc.query import views
-    collections = []
-    if cls.RETURN_OBJ_JSON:
-      for obj in clonned_objs:
-        collections.append(
-            views.build_collection_representation(cls, obj.log_json())
-        )
-    return views.json_success_response(collections, datetime.datetime.now())
+        from ggrc.query import views
+        collections = []
+        if cls.RETURN_OBJ_JSON:
+            for obj in clonned_objs:
+                collections.append(
+                    views.build_collection_representation(cls, obj.log_json()))
+        return views.json_success_response(collections,
+                                           datetime.datetime.now())
 
-  def _clone(self, target=None):
-    """Create a copy of self.
+    def _clone(self, target=None):
+        """Create a copy of self.
 
     This method should be overridden for class that implement Clonable mixin.
 
@@ -200,11 +205,11 @@ class MultiClonable(object):
     Returns:
       Instance of object copy.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @classmethod
-  def _copy_obj(cls, source, target=None):
-    """Make object copy of source into target as destination.
+    @classmethod
+    def _copy_obj(cls, source, target=None):
+        """Make object copy of source into target as destination.
 
     Source will be cloned and mapped to target if it's provided.
 
@@ -215,32 +220,33 @@ class MultiClonable(object):
     Returns:
         Cloned object.
     """
-    # pylint: disable=protected-access
-    clonned_object = source._clone(target)
-    if target:
-      db.session.add(relationship.Relationship(
-          source=target,
-          destination=clonned_object,
-      ))
-    return clonned_object
+        # pylint: disable=protected-access
+        clonned_object = source._clone(target)
+        if target:
+            db.session.add(
+                relationship.Relationship(
+                    source=target,
+                    destination=clonned_object,
+                ))
+        return clonned_object
 
-  @classmethod
-  def _clone_cads(cls, source, target):
-    """Clone CADs from source to target.
+    @classmethod
+    def _clone_cads(cls, source, target):
+        """Clone CADs from source to target.
 
     Args:
         source: Object with CADs.
         target: Object in which CADs should be copied.
     """
-    for cad in source.custom_attribute_definitions:
-      # Copy only local CADs
-      if cad.definition_id:
-        # pylint: disable=protected-access
-        cad._clone(target)
+        for cad in source.custom_attribute_definitions:
+            # Copy only local CADs
+            if cad.definition_id:
+                # pylint: disable=protected-access
+                cad._clone(target)
 
-  @classmethod
-  def _collect_mapped(cls, source_objs, mapped_types):
-    """Collect mapped objects.
+    @classmethod
+    def _collect_mapped(cls, source_objs, mapped_types):
+        """Collect mapped objects.
 
     Args:
         source_objs: List of objects for which mapped should be collected.
@@ -250,42 +256,40 @@ class MultiClonable(object):
         List of tuples containing source and mapped object
         [(source1, mapped1), (source2, mapped2), ...].
     """
-    if not mapped_types:
-      return []
+        if not mapped_types:
+            return []
 
-    source_ids = {obj.id: obj for obj in source_objs}
-    related_data = db.session.query(
-        relationship.Relationship.source_id,
-        relationship.Relationship.destination_type,
-        relationship.Relationship.destination_id,
-    ).filter(
-        relationship.Relationship.source_type == cls.__name__,
-        relationship.Relationship.source_id.in_(source_ids),
-        relationship.Relationship.destination_type.in_(mapped_types)
-    ).union_all(
-        db.session.query(
-            relationship.Relationship.destination_id,
-            relationship.Relationship.source_type,
+        source_ids = {obj.id: obj for obj in source_objs}
+        related_data = db.session.query(
             relationship.Relationship.source_id,
+            relationship.Relationship.destination_type,
+            relationship.Relationship.destination_id,
         ).filter(
-            relationship.Relationship.destination_type == cls.__name__,
-            relationship.Relationship.destination_id.in_(source_ids),
-            relationship.Relationship.source_type.in_(mapped_types)
-        )
-    ).all()
+            relationship.Relationship.source_type == cls.__name__,
+            relationship.Relationship.source_id.in_(source_ids),
+            relationship.Relationship.destination_type.in_(mapped_types)
+        ).union_all(
+            db.session.query(
+                relationship.Relationship.destination_id,
+                relationship.Relationship.source_type,
+                relationship.Relationship.source_id,
+            ).filter(
+                relationship.Relationship.destination_type == cls.__name__,
+                relationship.Relationship.destination_id.in_(source_ids),
+                relationship.Relationship.source_type.in_(
+                    mapped_types))).all()
 
-    related_objs = cls.load_objs(related_data)
+        related_objs = cls.load_objs(related_data)
 
-    source_related_objs = []
-    for src_id, rel_type, rel_id in related_data:
-      source_related_objs.append(
-          (source_ids[src_id], related_objs[rel_type][rel_id])
-      )
-    return source_related_objs
+        source_related_objs = []
+        for src_id, rel_type, rel_id in related_data:
+            source_related_objs.append((source_ids[src_id],
+                                        related_objs[rel_type][rel_id]))
+        return source_related_objs
 
-  @classmethod
-  def load_objs(cls, data):
-    """Load objects by their ids and types.
+    @classmethod
+    def load_objs(cls, data):
+        """Load objects by their ids and types.
 
     Args:
         data: List of stubs [(_, type, id),] for objects to load.
@@ -293,32 +297,32 @@ class MultiClonable(object):
     Returns:
         Dict with object type and id as keys and instance as value.
     """
-    # Combine ids of one type together to load in one query
-    type_ids = defaultdict(set)
-    for _, type_, id_ in data:
-      type_ids[type_].add(id_)
+        # Combine ids of one type together to load in one query
+        type_ids = defaultdict(set)
+        for _, type_, id_ in data:
+            type_ids[type_].add(id_)
 
-    type_id_objs = defaultdict(dict)
-    # We can't load all objects with different types in one step, so we
-    # load them for each type separately
-    for type_, ids in type_ids.items():
-      related_model = inflector.get_model(type_)
-      related_query = related_model.query.options(
-          sa.orm.subqueryload('custom_attribute_definitions'),
-      ).filter(related_model.id.in_(ids))
-      for related in related_query:
-        type_id_objs[type_][related.id] = related
-    return type_id_objs
+        type_id_objs = defaultdict(dict)
+        # We can't load all objects with different types in one step, so we
+        # load them for each type separately
+        for type_, ids in type_ids.items():
+            related_model = inflector.get_model(type_)
+            related_query = related_model.query.options(
+                sa.orm.subqueryload('custom_attribute_definitions'), ).filter(
+                    related_model.id.in_(ids))
+            for related in related_query:
+                type_id_objs[type_][related.id] = related
+        return type_id_objs
 
-  @classmethod
-  def _set_parent_context(cls, objs, parent):
-    """Set up parent context to child objects.
+    @classmethod
+    def _set_parent_context(cls, objs, parent):
+        """Set up parent context to child objects.
 
     Args:
         clonned_objs: List of objects where context should be changed.
         parent: Parent object which determine context for children.
     """
-    if not getattr(parent, "context_id", None):
-      return
-    for clonned in objs:
-      clonned.context_id = parent.context_id
+        if not getattr(parent, "context_id", None):
+            return
+        for clonned in objs:
+            clonned.context_id = parent.context_id

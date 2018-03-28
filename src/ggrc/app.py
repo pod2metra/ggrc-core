@@ -1,8 +1,6 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Sets up Flask app."""
-
 
 import re
 import time
@@ -30,21 +28,20 @@ from ggrc.utils import benchmark
 from ggrc.utils.issue_tracker_mock import init_issue_tracker_mock
 
 if settings.ISSUE_TRACKER_MOCK and not settings.PRODUCTION:
-  init_issue_tracker_mock()
+    init_issue_tracker_mock()
 
 setup_logging(settings.LOGGING)
 
 # pylint: disable=invalid-name
 logger = getLogger(__name__)
 
-
 app = Flask('ggrc', instance_relative_config=True)  # noqa: valid constant name
 app.config.from_object(settings)
 if "public_config" not in app.config:
-  app.config.public_config = {}
+    app.config.public_config = {}
 
 for key in settings.exports:
-  app.config.public_config[key] = app.config[key]
+    app.config.public_config[key] = app.config[key]
 
 # Configure Flask-SQLAlchemy for app
 db.app = app
@@ -57,230 +54,229 @@ from ggrc import contributions  # noqa  # pylint: disable=unused-import,wrong-im
 
 @app.before_request
 def _ensure_session_teardown():
-  """Ensure db.session is correctly removed
+    """Ensure db.session is correctly removed
 
   Occasionally requests are terminated without calling the teardown methods,
   namely with DeadlineExceededError on App Engine.
   """
-  if db.session.registry.has():
-    db.session.remove()
+    if db.session.registry.has():
+        db.session.remove()
 
 
 @app.before_request
 def setup_user_timezone_offset():
-  """Setup user timezon for current request
+    """Setup user timezon for current request
 
   It will setup from request header `X-UserTimezoneOffset`
   offset will be sent in minutes.
   """
-  from flask import g
-  g.user_timezone_offset = request.headers.get("X-UserTimezoneOffset")
+    from flask import g
+    g.user_timezone_offset = request.headers.get("X-UserTimezoneOffset")
 
 
 @app.before_request
 def check_if_under_maintenance():
-  """Check if the site is in maintenance mode."""
-  with benchmark('Check for maintenance'):
-    from ggrc.models.maintenance import Maintenance
-    try:
-      db_row = db.session.query(Maintenance).get(1)
-    except sqlalchemy.exc.ProgrammingError as e:
-      if re.search(r"""\(1146, "Table '.+' doesn't exist"\)$""", e.message):
-        db_row = None
-      else:
-        raise
-    condition = (db_row and
-                 db_row.under_maintenance and
-                 request.path != url_for('maintenance_') and
-                 request.path != '/_ah/start')
-    if condition:
-      return redirect(url_for('maintenance_'))
+    """Check if the site is in maintenance mode."""
+    with benchmark('Check for maintenance'):
+        from ggrc.models.maintenance import Maintenance
+        try:
+            db_row = db.session.query(Maintenance).get(1)
+        except sqlalchemy.exc.ProgrammingError as e:
+            if re.search(r"""\(1146, "Table '.+' doesn't exist"\)$""",
+                         e.message):
+                db_row = None
+            else:
+                raise
+        condition = (db_row and db_row.under_maintenance
+                     and request.path != url_for('maintenance_')
+                     and request.path != '/_ah/start')
+        if condition:
+            return redirect(url_for('maintenance_'))
 
 
 @app.route('/maintenance_')
 def maintenance_():
-  """Render a maintenance page while on maintenance mode."""
-  return render_template("maintenance/maintenance.html")
+    """Render a maintenance page while on maintenance mode."""
+    return render_template("maintenance/maintenance.html")
 
 
 def setup_error_handlers(app_):
-  from ggrc.utils import error_handlers
-  error_handlers.register_handlers(app_)
+    from ggrc.utils import error_handlers
+    error_handlers.register_handlers(app_)
 
 
 def init_models(app_):
-  import ggrc.models
-  ggrc.models.init_app(app_)
+    import ggrc.models
+    ggrc.models.init_app(app_)
 
 
 def configure_flask_login(app_):
-  import ggrc.login
-  ggrc.login.init_app(app_)
+    import ggrc.login
+    ggrc.login.init_app(app_)
 
 
 def configure_webassets(app_):
-  """Add basic webassets configuration."""
-  from ggrc import assets
-  app_.jinja_env.add_extension('webassets.ext.jinja2.assets')
-  app_.jinja_env.assets_environment = assets.environment
+    """Add basic webassets configuration."""
+    from ggrc import assets
+    app_.jinja_env.add_extension('webassets.ext.jinja2.assets')
+    app_.jinja_env.assets_environment = assets.environment
 
 
 def configure_jinja(app_):
-  """Add basic jinja configuration."""
-  app_.jinja_env.add_extension('jinja2.ext.autoescape')
-  app_.jinja_env.autoescape = True
-  app_.jinja_env.add_extension('jinja2.ext.with_')
-  app_.jinja_env.add_extension('hamlpy.ext.HamlPyExtension')
+    """Add basic jinja configuration."""
+    app_.jinja_env.add_extension('jinja2.ext.autoescape')
+    app_.jinja_env.autoescape = True
+    app_.jinja_env.add_extension('jinja2.ext.with_')
+    app_.jinja_env.add_extension('hamlpy.ext.HamlPyExtension')
 
 
 def init_services(app_):
-  import ggrc.services
-  ggrc.services.init_all_services(app_)
+    import ggrc.services
+    ggrc.services.init_all_services(app_)
 
 
 def init_views(app_):
-  import ggrc.views
-  ggrc.views.init_all_views(app_)
+    import ggrc.views
+    ggrc.views.init_all_views(app_)
 
 
 def init_extension_blueprints(app_):
-  for extension_module in extensions.get_extension_modules():
-    if hasattr(extension_module, 'blueprint'):
-      app_.register_blueprint(extension_module.blueprint)
+    for extension_module in extensions.get_extension_modules():
+        if hasattr(extension_module, 'blueprint'):
+            app_.register_blueprint(extension_module.blueprint)
 
 
 def init_permissions_provider():
-  from ggrc.rbac import permissions
-  permissions.get_permissions_provider()
+    from ggrc.rbac import permissions
+    permissions.get_permissions_provider()
 
 
 def init_extra_listeners():
-  """Initializes listeners for additional services"""
-  from ggrc.automapper import register_automapping_listeners
-  from ggrc.snapshotter.listeners import register_snapshot_listeners
-  from ggrc.fulltext import listeners
-  register_automapping_listeners()
-  register_snapshot_listeners()
-  listeners.register_fulltext_listeners()
+    """Initializes listeners for additional services"""
+    from ggrc.automapper import register_automapping_listeners
+    from ggrc.snapshotter.listeners import register_snapshot_listeners
+    from ggrc.fulltext import listeners
+    register_automapping_listeners()
+    register_snapshot_listeners()
+    listeners.register_fulltext_listeners()
 
 
 def _enable_debug_toolbar():
-  """Enable flask debug toolbar for benchmarking requests."""
-  if getattr(settings, "FLASK_DEBUGTOOLBAR", False):
-    from flask_debugtoolbar import DebugToolbarExtension
-    DebugToolbarExtension(app)
+    """Enable flask debug toolbar for benchmarking requests."""
+    if getattr(settings, "FLASK_DEBUGTOOLBAR", False):
+        from flask_debugtoolbar import DebugToolbarExtension
+        DebugToolbarExtension(app)
 
 
 def _enable_jasmine():
-  """Set jasmine sources and specs if it's enabled.
+    """Set jasmine sources and specs if it's enabled.
 
   Jasmine is used for javascript tests and is not installed on the production
   environment, that is why we must check if it enabled before tying to import
   it.
   """
-  if getattr(settings, "ENABLE_JASMINE", False):
-    from flask.ext.jasmine import Asset
-    from flask.ext.jasmine import Jasmine
-    # Configure Flask-Jasmine, for dev mode unit testing
-    jasmine = Jasmine(app)
+    if getattr(settings, "ENABLE_JASMINE", False):
+        from flask.ext.jasmine import Asset
+        from flask.ext.jasmine import Jasmine
+        # Configure Flask-Jasmine, for dev mode unit testing
+        jasmine = Jasmine(app)
 
-    jasmine.sources(
-        Asset("dashboard-js-templates"))
+        jasmine.sources(Asset("dashboard-js-templates"))
 
 
 def _set_display_queries(report_type):
-  """Set the app request handler for displaying sql queries.
+    """Set the app request handler for displaying sql queries.
 
   Args:
     report_type: String specifying if we should display entire queries, just
       slow ones, just counts or none at all.
   """
-  # pylint: disable=unused-variable
-  @app.after_request
-  def display_queries(response):
-    """Display database queries
+    # pylint: disable=unused-variable
+    @app.after_request
+    def display_queries(response):
+        """Display database queries
 
     Prints out SQL queries, EXPLAINs for queries above slow_threshold, and
     a final count of queries after every HTTP request
     """
-    if report_type not in ('slow', 'all'):
-      return response
+        if report_type not in ('slow', 'all'):
+            return response
 
-    slow_threshold = 0.5  # EXPLAIN queries that ran for more than 0.5s
-    queries = get_debug_queries()
+        slow_threshold = 0.5  # EXPLAIN queries that ran for more than 0.5s
+        queries = get_debug_queries()
 
-    # We have to copy the queries list below otherwise queries executed
-    # in the for loop will be appended causing an endless loop
-    for query in queries[:]:
-      if report_type == 'slow' and query.duration < slow_threshold:
-        continue
-      logger.info(
-          "%.8f %s\n%s\n%s",
-          query.duration,
-          query.context,
-          query.statement,
-          query.parameters)
-      is_select = bool(re.match('SELECT', query.statement, re.I))
-      if query.duration > slow_threshold and is_select:
-        try:
-          statement = "EXPLAIN " + query.statement
-          engine = SQLAlchemy().get_engine(app)
-          result = engine.execute(statement, query.parameters)
-          logger.info(tabulate(result.fetchall(), headers=result.keys()))
-        except:  # pylint: disable=bare-except
-          logger.warning("Statement failed: %s", statement, exc_info=True)
-    return response
+        # We have to copy the queries list below otherwise queries executed
+        # in the for loop will be appended causing an endless loop
+        for query in queries[:]:
+            if report_type == 'slow' and query.duration < slow_threshold:
+                continue
+            logger.info("%.8f %s\n%s\n%s", query.duration, query.context,
+                        query.statement, query.parameters)
+            is_select = bool(re.match('SELECT', query.statement, re.I))
+            if query.duration > slow_threshold and is_select:
+                try:
+                    statement = "EXPLAIN " + query.statement
+                    engine = SQLAlchemy().get_engine(app)
+                    result = engine.execute(statement, query.parameters)
+                    logger.info(
+                        tabulate(result.fetchall(), headers=result.keys()))
+                except:  # pylint: disable=bare-except
+                    logger.warning(
+                        "Statement failed: %s", statement, exc_info=True)
+        return response
 
 
 def _display_sql_queries():
-  """Set up display database queries
+    """Set up display database queries
 
   This function makes sure we display the sql queries if the record setting is
   enabled.
   """
-  report_type = getattr(settings, "SQLALCHEMY_RECORD_QUERIES", False)
-  valid_types = ('count', 'slow', 'all')
-  if report_type:
-    if report_type not in valid_types:
-      raise Exception("""Invalid SQLALCHEMY_RECORD_QUERIES value specified.
+    report_type = getattr(settings, "SQLALCHEMY_RECORD_QUERIES", False)
+    valid_types = ('count', 'slow', 'all')
+    if report_type:
+        if report_type not in valid_types:
+            raise Exception(
+                """Invalid SQLALCHEMY_RECORD_QUERIES value specified.
         Possible options: {}""".format(', '.join(valid_types)))
 
-    _set_display_queries(report_type)
+        _set_display_queries(report_type)
 
 
 def _display_request_time():
-  """Request time logger
+    """Request time logger
 
   Logs request time for every request, highlighting the ones that were slow"""
 
-  # pylint: disable=unused-variable
-  @app.before_request
-  def before_request():
-    """Mesure time when before the request starts"""
-    flask.g.request_start = (time.time(), time.clock())
+    # pylint: disable=unused-variable
+    @app.before_request
+    def before_request():
+        """Mesure time when before the request starts"""
+        flask.g.request_start = (time.time(), time.clock())
 
-  @app.after_request
-  def after_request(response):
-    """Print out requst time"""
-    queries = get_debug_queries()
-    query_time = sum(query.duration for query in queries)
-    start_time, start_clock = flask.g.request_start
-    total = time.time() - start_time
-    total_cpu = time.clock() - start_clock
-    str_ = u"%.2fs (%.2fs CPU and %.2fs for %-2s db queries) '%s %s' %s"
-    payload = (total, total_cpu, query_time, len(queries),
-               request.method, request.path, response.status)
+    @app.after_request
+    def after_request(response):
+        """Print out requst time"""
+        queries = get_debug_queries()
+        query_time = sum(query.duration for query in queries)
+        start_time, start_clock = flask.g.request_start
+        total = time.time() - start_time
+        total_cpu = time.clock() - start_clock
+        str_ = u"%.2fs (%.2fs CPU and %.2fs for %-2s db queries) '%s %s' %s"
+        payload = (total, total_cpu, query_time, len(queries), request.method,
+                   request.path, response.status)
 
-    performance_logger = getLogger("ggrc.performance")
-    if getattr(settings, "PRODUCTION", True):
-      # Always use INFO level in production
-      performance_logger.info(str_, *payload)
-      return response
-    if total > 1:
-      performance_logger.warning(str_, *payload)
-    else:
-      performance_logger.info(str_, *payload)
-    return response
+        performance_logger = getLogger("ggrc.performance")
+        if getattr(settings, "PRODUCTION", True):
+            # Always use INFO level in production
+            performance_logger.info(str_, *payload)
+            return response
+        if total > 1:
+            performance_logger.warning(str_, *payload)
+        else:
+            performance_logger.info(str_, *payload)
+        return response
+
 
 setup_error_handlers(app)
 init_models(app)

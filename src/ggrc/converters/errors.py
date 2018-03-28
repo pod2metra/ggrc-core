@@ -1,8 +1,6 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """List of all error and warning messages for imports."""
-
 
 WRONG_FILE_TYPE = (u"Line {line}: Wrong file type. Only .csv files are"
                    u" supported. Please upload a .csv file.")
@@ -30,8 +28,7 @@ DUPLICATE_VALUE = (u"Line {line}: {column_name} '{value}' already exists."
 DUPLICATE_IN_MULTI_VALUE = (
     u"Line {line}: {column_name} contains duplicate values. Only a single "
     u"value from each group of identical values will be used. "
-    u"Duplicates: {duplicates}"
-)
+    u"Duplicates: {duplicates}")
 
 DUPLICATE_VALUE_IN_CSV = (u"Lines {line_list} have same {column_name}"
                           u" '{value}'. Line{s} {ignore_lines} will be"

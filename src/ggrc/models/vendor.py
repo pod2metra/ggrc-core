@@ -16,9 +16,9 @@ from .track_object_state import HasObjectState
 class Vendor(Roleable, HasObjectState, CustomAttributable, Personable,
              Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
              Commentable, TestPlanned, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'vendors'
+    __tablename__ = 'vendors'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Login handler for using App Engine authentication with Flask-Login
 
 Assumes app.yaml is configured with:
@@ -30,71 +29,73 @@ from ggrc.utils.user_generator import is_external_app_user_email
 
 
 def get_user():
-  """Get current user using appengine authentication."""
-  ae_user = users.get_current_user()
-  email = ae_user.email()
-  nickname = ae_user.nickname()
-  user = find_or_create_user_by_email(email, name=nickname)
-  return user
+    """Get current user using appengine authentication."""
+    ae_user = users.get_current_user()
+    email = ae_user.email()
+    nickname = ae_user.nickname()
+    user = find_or_create_user_by_email(email, name=nickname)
+    return user
 
 
 def login():
-  """Log in current user."""
-  user = get_user()
-  if user.system_wide_role != 'No Access':
-    flask_login.login_user(user)
-    return flask.redirect(common.get_next_url(
-        flask.request, default_url=flask.url_for('dashboard')))
+    """Log in current user."""
+    user = get_user()
+    if user.system_wide_role != 'No Access':
+        flask_login.login_user(user)
+        return flask.redirect(
+            common.get_next_url(
+                flask.request, default_url=flask.url_for('dashboard')))
 
-  flask.flash(u'You do not have access. Please contact your administrator.',
-              'alert alert-info')
-  return flask.redirect('/')
+    flask.flash(u'You do not have access. Please contact your administrator.',
+                'alert alert-info')
+    return flask.redirect('/')
 
 
 def logout():
-  flask_login.logout_user()
-  return flask.redirect(users.create_logout_url(common.get_next_url(
-      flask.request, default_url=flask.url_for('index'))))
+    flask_login.logout_user()
+    return flask.redirect(
+        users.create_logout_url(
+            common.get_next_url(
+                flask.request, default_url=flask.url_for('index'))))
 
 
 def request_loader(request):
-  """Get the user provided in X-GGRC-user if whitelisted Appid provided."""
+    """Get the user provided in X-GGRC-user if whitelisted Appid provided."""
 
-  whitelist = settings.ALLOWED_QUERYAPI_APP_IDS
-  inbound_appid = request.headers.get("X-Appengine-Inbound-Appid")
-  if not inbound_appid:
-    # don't check X-GGRC-user if the request doesn't come from another app
-    return None
+    whitelist = settings.ALLOWED_QUERYAPI_APP_IDS
+    inbound_appid = request.headers.get("X-Appengine-Inbound-Appid")
+    if not inbound_appid:
+        # don't check X-GGRC-user if the request doesn't come from another app
+        return None
 
-  if inbound_appid not in whitelist:
-    # by default, we don't allow incoming app2app connections from
-    # non-whitelisted apps
-    raise exceptions.BadRequest("X-Appengine-Inbound-Appid header contains "
-                                "untrusted application id: {}"
-                                .format(inbound_appid))
+    if inbound_appid not in whitelist:
+        # by default, we don't allow incoming app2app connections from
+        # non-whitelisted apps
+        raise exceptions.BadRequest(
+            "X-Appengine-Inbound-Appid header contains "
+            "untrusted application id: {}".format(inbound_appid))
 
-  user = request.headers.get("X-GGRC-user")
-  if not user:
-    # no user provided
-    raise exceptions.BadRequest("X-GGRC-user should be set, contains {!r} "
-                                "instead."
-                                .format(user))
+    user = request.headers.get("X-GGRC-user")
+    if not user:
+        # no user provided
+        raise exceptions.BadRequest("X-GGRC-user should be set, contains {!r} "
+                                    "instead.".format(user))
 
-  try:
-    user = json.loads(user)
-    email = str(user["email"])
-  except (TypeError, ValueError, KeyError):
-    # user provided in invalid syntax
-    raise exceptions.BadRequest("X-GGRC-user should have JSON object like "
-                                "{{'email': str}}, contains {!r} instead."
-                                .format(user))
+    try:
+        user = json.loads(user)
+        email = str(user["email"])
+    except (TypeError, ValueError, KeyError):
+        # user provided in invalid syntax
+        raise exceptions.BadRequest("X-GGRC-user should have JSON object like "
+                                    "{{'email': str}}, contains {!r} instead."
+                                    .format(user))
 
-  # External Application User should be created if doesn't exist.
-  if is_external_app_user_email(email):
-    db_user = find_or_create_ext_app_user()
-  else:
-    db_user = all_models.Person.query.filter_by(email=email).first()
-  if not db_user:
-    raise exceptions.BadRequest("No user with such email: {}"
-                                .format(email))
-  return db_user
+    # External Application User should be created if doesn't exist.
+    if is_external_app_user_email(email):
+        db_user = find_or_create_ext_app_user()
+    else:
+        db_user = all_models.Person.query.filter_by(email=email).first()
+    if not db_user:
+        raise exceptions.BadRequest(
+            "No user with such email: {}".format(email))
+    return db_user

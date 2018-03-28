@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add test_plan field to set of models
 
@@ -36,16 +35,16 @@ table_models = {
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  for table in table_models.keys():
-    op.add_column(
-        table,
-        sa.Column("test_plan", sa.Text, nullable=True),
-    )
-  rename_ca_title("Assessment Procedure", table_models.values())
+    """Upgrade database schema and/or data, creating a new revision."""
+    for table in table_models.keys():
+        op.add_column(
+            table,
+            sa.Column("test_plan", sa.Text, nullable=True),
+        )
+    rename_ca_title("Assessment Procedure", table_models.values())
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  for table in table_models.keys():
-    op.drop_column(table, "test_plan")
+    """Downgrade database schema and/or data back to the previous revision."""
+    for table in table_models.keys():
+        op.drop_column(table, "test_plan")

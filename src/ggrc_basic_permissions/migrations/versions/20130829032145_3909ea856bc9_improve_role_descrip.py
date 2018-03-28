@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Improve role descriptions.
 
 Revision ID: 3909ea856bc9
@@ -17,10 +16,12 @@ down_revision = '5a2eeba0b192'
 from alembic import op
 import sqlalchemy as sa
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('name', sa.String),
     column('description', sa.Text),
-    )
+)
+
 
 def upgrade():
     op.execute(roles_table.update()\
@@ -52,6 +53,7 @@ def upgrade():
           'This is essentially a view only role. A person with this role can '
           'access and view an otherwise private program, but they cannot map '
           'to or edit that program in any way.'))
+
 
 def downgrade():
     op.execute(roles_table.update()\

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Remove prohibitive foreign key constraints
 
 Revision ID: 32221e9f330c
@@ -26,13 +24,11 @@ def upgrade():
     op.drop_constraint(
         'cycle_task_group_object_tasks_ibfk_4',
         table_name='cycle_task_group_object_tasks',
-        type_='foreignkey'
-        )
+        type_='foreignkey')
     op.drop_constraint(
         'cycle_task_group_objects_ibfk_4',
         table_name='cycle_task_group_objects',
-        type_='foreignkey'
-        )
+        type_='foreignkey')
 
 
 def downgrade():

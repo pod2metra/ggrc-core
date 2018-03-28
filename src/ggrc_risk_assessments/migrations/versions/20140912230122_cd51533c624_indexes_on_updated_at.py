@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Indexes on updated_at
 
 Revision ID: cd51533c624
@@ -19,8 +17,12 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.create_index('ix_risk_assessments_updated_at', 'risk_assessments', ['updated_at'], unique=False)
+    op.create_index(
+        'ix_risk_assessments_updated_at',
+        'risk_assessments', ['updated_at'],
+        unique=False)
 
 
 def downgrade():
-    op.drop_index('ix_risk_assessments_updated_at', table_name='risk_assessments')
+    op.drop_index(
+        'ix_risk_assessments_updated_at', table_name='risk_assessments')

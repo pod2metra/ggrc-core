@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add unique constraint on attributes table
 
@@ -17,19 +16,14 @@ down_revision = '951213087c6'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.execute("TRUNCATE TABLE attributes")
-  op.create_unique_constraint(
-      'uq_attributes',
-      'attributes', [
-          'object_id',
-          'object_type',
-          'attribute_definition_id',
-          'attribute_template_id'
-      ]
-  )
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.execute("TRUNCATE TABLE attributes")
+    op.create_unique_constraint('uq_attributes', 'attributes', [
+        'object_id', 'object_type', 'attribute_definition_id',
+        'attribute_template_id'
+    ])
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_constraint('uq_attributes', 'attributes')
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_constraint('uq_attributes', 'attributes')

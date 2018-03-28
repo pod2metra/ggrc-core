@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Handlers comment entries."""
 
 from ggrc import db
@@ -12,44 +11,44 @@ from ggrc.login import get_current_user_id
 
 
 class CommentColumnHandler(ColumnHandler):
-  """ Handler for comments """
+    """ Handler for comments """
 
-  COMMENTS_SEPARATOR = ";;"
+    COMMENTS_SEPARATOR = ";;"
 
-  @staticmethod
-  def split_comments(raw_value):
-    """Split comments"""
-    res = [comment.strip() for comment in
-           raw_value.rsplit(CommentColumnHandler.COMMENTS_SEPARATOR)
-           if comment.strip()]
-    return res
+    @staticmethod
+    def split_comments(raw_value):
+        """Split comments"""
+        res = [
+            comment.strip() for comment in raw_value.rsplit(
+                CommentColumnHandler.COMMENTS_SEPARATOR) if comment.strip()
+        ]
+        return res
 
-  def parse_item(self):
-    """Parse a list of comments to be mapped.
+    def parse_item(self):
+        """Parse a list of comments to be mapped.
 
     Parse a COMMENTS_SEPARATOR separated list of comments
 
     Returns:
       list of comments
     """
-    comments = self.split_comments(self.raw_value)
-    if self.raw_value and not comments:
-      self.add_warning(errors.WRONG_VALUE,
-                       column_name=self.display_name)
-    return comments
+        comments = self.split_comments(self.raw_value)
+        if self.raw_value and not comments:
+            self.add_warning(errors.WRONG_VALUE, column_name=self.display_name)
+        return comments
 
-  def get_value(self):
-    return ""
+    def get_value(self):
+        return ""
 
-  def set_obj_attr(self):
-    """ Create comments """
-    if self.dry_run or not self.value:
-      return
-    current_obj = self.row_converter.obj
-    for description in self.value:
-      comment = all_models.Comment(description=description,
-                                   modified_by_id=get_current_user_id())
-      db.session.add(comment)
-      mapping = all_models.Relationship(source=current_obj,
-                                        destination=comment)
-      db.session.add(mapping)
+    def set_obj_attr(self):
+        """ Create comments """
+        if self.dry_run or not self.value:
+            return
+        current_obj = self.row_converter.obj
+        for description in self.value:
+            comment = all_models.Comment(
+                description=description, modified_by_id=get_current_user_id())
+            db.session.add(comment)
+            mapping = all_models.Relationship(
+                source=current_obj, destination=comment)
+            db.session.add(mapping)

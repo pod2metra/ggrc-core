@@ -16,8 +16,8 @@ from .track_object_state import HasObjectState
 class Project(Roleable, HasObjectState, CustomAttributable, Personable,
               Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
               Commentable, TestPlanned, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'projects'
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    __tablename__ = 'projects'
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

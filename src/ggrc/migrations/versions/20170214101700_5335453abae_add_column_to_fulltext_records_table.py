@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add 'subproperty' column into 'fulltext_record_properties' table to make
 search by property subtype bypossible.
@@ -26,11 +25,14 @@ down_revision = '4c5be77c5da3'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.add_column('fulltext_record_properties',
-                sa.Column('subproperty', mysql.VARCHAR(length=64),
-                          nullable=False, server_default=''))
-  op.execute("""
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.add_column('fulltext_record_properties',
+                  sa.Column(
+                      'subproperty',
+                      mysql.VARCHAR(length=64),
+                      nullable=False,
+                      server_default=''))
+    op.execute("""
       ALTER TABLE fulltext_record_properties
       DROP PRIMARY KEY,
       ADD PRIMARY KEY (`key`, `type`, property, subproperty);
@@ -38,8 +40,8 @@ def upgrade():
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute("""
       TRUNCATE TABLE fulltext_record_properties;
   """)
-  op.drop_column('fulltext_record_properties', 'subproperty')
+    op.drop_column('fulltext_record_properties', 'subproperty')

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Make sure cycle_task_groups always have status
 
 Revision ID: 527e6b728b44
@@ -19,7 +17,7 @@ import sqlalchemy as sa
 
 
 def upgrade():
-  op.execute("""
+    op.execute("""
     UPDATE cycle_task_groups
     SET status='Assigned'
     WHERE status IS NULL
@@ -27,7 +25,7 @@ def upgrade():
 
 
 def downgrade():
-  op.execute("""
+    op.execute("""
     UPDATE cycle_task_groups
     SET status=NULL
     WHERE status='Assigned'

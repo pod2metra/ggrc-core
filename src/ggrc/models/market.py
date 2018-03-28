@@ -16,8 +16,8 @@ from .track_object_state import HasObjectState
 class Market(Roleable, HasObjectState, CustomAttributable, Personable,
              Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
              Commentable, TestPlanned, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'markets'
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    __tablename__ = 'markets'
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

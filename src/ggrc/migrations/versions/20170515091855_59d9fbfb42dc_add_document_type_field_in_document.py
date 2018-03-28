@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 add document_type field in Document
 
@@ -12,11 +11,9 @@ Create Date: 2017-05-15 09:18:55.392080
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
 revision = '59d9fbfb42dc'
 down_revision = '59a7bd61e36a'
-
 
 INSERT_REL_SQL = """
 INSERT INTO relationships (
@@ -58,19 +55,18 @@ INSERT INTO relationships (
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.add_column(
-      'documents',
-      sa.Column('document_type',
-                sa.Enum(u'URL', u'EVIDENCE'),
-                nullable=False,
-                default=u"URL")
-  )
-  op.execute('Update documents set document_type = "EVIDENCE" where id in '
-             '(select document_id from object_documents);')
-  op.execute(INSERT_REL_SQL)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.add_column('documents',
+                  sa.Column(
+                      'document_type',
+                      sa.Enum(u'URL', u'EVIDENCE'),
+                      nullable=False,
+                      default=u"URL"))
+    op.execute('Update documents set document_type = "EVIDENCE" where id in '
+               '(select document_id from object_documents);')
+    op.execute(INSERT_REL_SQL)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_column('documents', 'document_type')
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_column('documents', 'document_type')

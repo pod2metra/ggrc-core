@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """add missing columns to risks
 
 Revision ID: 44d5969c897b
@@ -20,7 +19,8 @@ import sqlalchemy as sa
 def upgrade():
     op.add_column('risks', sa.Column('start_date', sa.Date(), nullable=True))
     op.add_column('risks', sa.Column('end_date', sa.Date(), nullable=True))
-    op.add_column('risks', sa.Column('status', sa.String(length=250), nullable=True))
+    op.add_column('risks',
+                  sa.Column('status', sa.String(length=250), nullable=True))
 
 
 def downgrade():

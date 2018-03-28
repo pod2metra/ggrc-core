@@ -7,21 +7,21 @@ from lib.constants import locator
 
 
 class CloneAuditModal(base.Modal):
-  """Modal for clone Audits."""
-  _locators = locator.ModalCloneAudit
+    """Modal for clone Audits."""
+    _locators = locator.ModalCloneAudit
 
-  def __init__(self, driver):
-    super(CloneAuditModal, self).__init__(driver)
-    self.title_modal = base.Label(driver, self._locators.MODAL_TITLE)
-    self.checkbox_clone_asmt_tmpls = base.Checkbox(
-        driver, self._locators.CHECKBOX_CLONE_ASMT_TMPLS)
-    self.button_clone = base.Button(driver, self._locators.BUTTON_CONFIRM)
+    def __init__(self, driver):
+        super(CloneAuditModal, self).__init__(driver)
+        self.title_modal = base.Label(driver, self._locators.MODAL_TITLE)
+        self.checkbox_clone_asmt_tmpls = base.Checkbox(
+            driver, self._locators.CHECKBOX_CLONE_ASMT_TMPLS)
+        self.button_clone = base.Button(driver, self._locators.BUTTON_CONFIRM)
 
-  @decorator.wait_for_redirect
-  def confirm_clone(self, is_full=False):
-    """Confirm clone Audit not including Assessment Templates
+    @decorator.wait_for_redirect
+    def confirm_clone(self, is_full=False):
+        """Confirm clone Audit not including Assessment Templates
     if 'is_full'=False and including if 'is_full'=True.
     """
-    if is_full is True:
-      self.checkbox_clone_asmt_tmpls.click()
-    self.button_clone.click()
+        if is_full is True:
+            self.checkbox_clone_asmt_tmpls.click()
+        self.button_clone.click()

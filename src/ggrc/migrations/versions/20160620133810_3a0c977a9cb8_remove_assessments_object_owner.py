@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Remove Assessments object_owner
 
@@ -18,8 +17,8 @@ down_revision = 'e258ae7cdb5'
 
 
 def upgrade():
-  """Replace Assessment owners with Creator role."""
-  op.execute("""
+    """Replace Assessment owners with Creator role."""
+    op.execute("""
     INSERT INTO relationships (created_at, updated_at,
       source_type, source_id, destination_type, destination_id)
     SELECT created_at, updated_at,
@@ -40,8 +39,10 @@ def upgrade():
     );
   """)
 
-  conn = op.get_bind()
-  relationship_ids = [row[0] for row in conn.execute(text("""
+    conn = op.get_bind()
+    relationship_ids = [
+        row[0] for row in conn.execute(
+            text("""
      SELECT relationships.id
      FROM relationships
      JOIN object_owners ON (
@@ -67,37 +68,47 @@ def upgrade():
        WHERE relationship_id = relationships.id
        AND attr_value LIKE "%Creator%"
      );
-  """))]
+  """))
+    ]
 
-  # doing two statements per relationships but this is generally safe because
-  # there will usually only be a handful of such relationships
-  for rid in relationship_ids:
-    attrs = list(conn.execute(text("""
+    # doing two statements per relationships but this is generally safe because
+    # there will usually only be a handful of such relationships
+    for rid in relationship_ids:
+        attrs = list(
+            conn.execute(
+                text("""
       SELECT id, attr_value
       FROM relationship_attrs
       WHERE relationship_id = :rid
       AND attr_name = 'AssigneeType';
-    """), rid=rid))
-    if attrs:
-      for attr_id, attr_value in attrs:
-        new_value = ','.join(set(attr_value.split(',')) | set(['Creator']))
-        conn.execute(text("""
+    """),
+                rid=rid))
+        if attrs:
+            for attr_id, attr_value in attrs:
+                new_value = ','.join(
+                    set(attr_value.split(',')) | set(['Creator']))
+                conn.execute(
+                    text("""
           UPDATE relationship_attrs
           SET attr_value = :new_value
           WHERE id = :attr_id;
-        """), attr_id=attr_id, new_value=new_value).close()
-    else:
-      conn.execute(text("""
+        """),
+                    attr_id=attr_id,
+                    new_value=new_value).close()
+        else:
+            conn.execute(
+                text("""
         INSERT INTO relationship_attrs (relationship_id, attr_name, attr_value)
         VALUES (:rid, 'Assignee', 'Creator');
-      """), rid=rid).close()
+      """),
+                rid=rid).close()
 
-  op.execute("""
+    op.execute("""
       DELETE FROM object_owners
       WHERE ownable_type = "Assessment";
   """)
 
 
 def downgrade():
-  """Do nothing as we cannot bring back the data."""
-  pass
+    """Do nothing as we cannot bring back the data."""
+    pass

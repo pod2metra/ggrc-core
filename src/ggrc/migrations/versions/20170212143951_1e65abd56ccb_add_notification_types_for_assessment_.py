@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add notification types for Assessment state transitions.
 
@@ -16,11 +15,9 @@ from alembic import op
 from sqlalchemy import Boolean, Date, Integer, String
 from sqlalchemy.sql import column, table
 
-
 # revision identifiers, used by Alembic.
 revision = '1e65abd56ccb'
 down_revision = '57940269e30'
-
 
 _NOTIFICATION_TYPES_TABLE = table(
     "notification_types",
@@ -33,69 +30,93 @@ _NOTIFICATION_TYPES_TABLE = table(
     column("updated_at", Date),
 )
 
-
 _NOW = datetime.utcnow()
 _DESCRIPTION_TPL = \
     u"Notify Assessors, Creators and Verifiers that an Assessment {}."
 
 _NOTIFICATION_TYPES = [{
-    "name": "assessment_completed",
-    "description": _DESCRIPTION_TPL.format(u"has been completed"),
-    "template": "assessment_completed",
-    "advance_notice": 0,
-    "instant": False,
-    "created_at": _NOW,
-    "updated_at": _NOW,
+    "name":
+    "assessment_completed",
+    "description":
+    _DESCRIPTION_TPL.format(u"has been completed"),
+    "template":
+    "assessment_completed",
+    "advance_notice":
+    0,
+    "instant":
+    False,
+    "created_at":
+    _NOW,
+    "updated_at":
+    _NOW,
 }, {
-    "name": "assessment_ready_for_review",
-    "description": _DESCRIPTION_TPL.format(u"is ready for review"),
-    "template": "assessment_ready_for_review",
-    "advance_notice": 0,
-    "instant": False,
-    "created_at": _NOW,
-    "updated_at": _NOW,
+    "name":
+    "assessment_ready_for_review",
+    "description":
+    _DESCRIPTION_TPL.format(u"is ready for review"),
+    "template":
+    "assessment_ready_for_review",
+    "advance_notice":
+    0,
+    "instant":
+    False,
+    "created_at":
+    _NOW,
+    "updated_at":
+    _NOW,
 }, {
-    "name": "assessment_verified",
-    "description": _DESCRIPTION_TPL.format(u"has been verified"),
-    "template": "assessment_verified",
-    "advance_notice": 0,
-    "instant": False,
-    "created_at": _NOW,
-    "updated_at": _NOW,
+    "name":
+    "assessment_verified",
+    "description":
+    _DESCRIPTION_TPL.format(u"has been verified"),
+    "template":
+    "assessment_verified",
+    "advance_notice":
+    0,
+    "instant":
+    False,
+    "created_at":
+    _NOW,
+    "updated_at":
+    _NOW,
 }, {
-    "name": "assessment_reopened",
-    "description": _DESCRIPTION_TPL.format(u"has been reopened"),
-    "template": "assessment_reopened",
-    "advance_notice": 0,
-    "instant": False,
-    "created_at": _NOW,
-    "updated_at": _NOW,
+    "name":
+    "assessment_reopened",
+    "description":
+    _DESCRIPTION_TPL.format(u"has been reopened"),
+    "template":
+    "assessment_reopened",
+    "advance_notice":
+    0,
+    "instant":
+    False,
+    "created_at":
+    _NOW,
+    "updated_at":
+    _NOW,
 }]
 
 
 def upgrade():
-  """Add new notification types for Assessment state transitions.
+    """Add new notification types for Assessment state transitions.
 
   The only state transition left out is "Not Started" --> "In Progress",
   because it has no interest to users.
   """
-  op.bulk_insert(
-      _NOTIFICATION_TYPES_TABLE,
-      _NOTIFICATION_TYPES
-  )
+    op.bulk_insert(_NOTIFICATION_TYPES_TABLE, _NOTIFICATION_TYPES)
 
 
 def downgrade():
-  """Remove Assessment state change notification types.
+    """Remove Assessment state change notification types.
 
   The only exception is the Assessment declined state transition, i.e. from
   "Ready for Review" to "In Progress".
 
   Notifications of the deleted notification types get deleted as well.
   """
-  notif_type_names = tuple(notif["name"] for notif in _NOTIFICATION_TYPES)
+    notif_type_names = tuple(notif["name"] for notif in _NOTIFICATION_TYPES)
 
-  sql = """
+    sql = """
       DELETE n
       FROM notifications AS n
       LEFT JOIN notification_types AS nt ON
@@ -104,9 +125,8 @@ def downgrade():
           nt.name in {}
   """.format(notif_type_names)
 
-  op.execute(sql)
+    op.execute(sql)
 
-  sql = _NOTIFICATION_TYPES_TABLE.delete().where(
-      _NOTIFICATION_TYPES_TABLE.c.name.in_(notif_type_names)
-  )
-  op.execute(sql)
+    sql = _NOTIFICATION_TYPES_TABLE.delete().where(
+        _NOTIFICATION_TYPES_TABLE.c.name.in_(notif_type_names))
+    op.execute(sql)

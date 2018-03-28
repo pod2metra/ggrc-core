@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 add notification settings to role
 
@@ -19,22 +18,26 @@ down_revision = '193b1a7e02d6'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.add_column('access_control_roles', sa.Column('notify_about_proposal',
-                                                  sa.Boolean(),
-                                                  nullable=False,
-                                                  server_default="0"))
-  op.add_column('proposals', sa.Column('proposed_notified_datetime',
-                                       sa.DateTime(),
-                                       nullable=True))
-  op.create_index('ix_proposed_notified_datetime',
-                  'proposals',
-                  ['proposed_notified_datetime'],
-                  unique=False)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.add_column('access_control_roles',
+                  sa.Column(
+                      'notify_about_proposal',
+                      sa.Boolean(),
+                      nullable=False,
+                      server_default="0"))
+    op.add_column('proposals',
+                  sa.Column(
+                      'proposed_notified_datetime',
+                      sa.DateTime(),
+                      nullable=True))
+    op.create_index(
+        'ix_proposed_notified_datetime',
+        'proposals', ['proposed_notified_datetime'],
+        unique=False)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_column('access_control_roles', 'notify_about_proposal')
-  op.drop_index('ix_apply_datetime', table_name='proposals')
-  op.drop_column('proposals', 'proposed_notified_datetime')
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_column('access_control_roles', 'notify_about_proposal')
+    op.drop_index('ix_apply_datetime', table_name='proposals')
+    op.drop_column('proposals', 'proposed_notified_datetime')

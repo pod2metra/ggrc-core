@@ -18,184 +18,202 @@ from integration.ggrc.models import factories
 
 @unittest.skip("unskip when import/export fixed for workflows")
 class TestCycleStartFailed(TestCase):
-
-  """ This class contains simple one time workflow tests that are not
+    """ This class contains simple one time workflow tests that are not
   in the gsheet test grid
   """
 
-  def setUp(self):
-    super(TestCycleStartFailed, self).setUp()
-    self.api = Api()
-    self.wf_generator = WorkflowsGenerator()
-    self.object_generator = ObjectGenerator()
-    Notification.query.delete()
+    def setUp(self):
+        super(TestCycleStartFailed, self).setUp()
+        self.api = Api()
+        self.wf_generator = WorkflowsGenerator()
+        self.object_generator = ObjectGenerator()
+        Notification.query.delete()
 
-    self.random_objects = self.object_generator.generate_random_objects(2)
-    _, self.user = self.object_generator.generate_person(
-        user_role="Administrator")
-    self.create_test_cases()
+        self.random_objects = self.object_generator.generate_random_objects(2)
+        _, self.user = self.object_generator.generate_person(
+            user_role="Administrator")
+        self.create_test_cases()
 
-    def init_decorator(init):
-      def new_init(self, *args, **kwargs):
-        init(self, *args, **kwargs)
-        if hasattr(self, "created_at"):
-          self.created_at = datetime.now()
-      return new_init
+        def init_decorator(init):
+            def new_init(self, *args, **kwargs):
+                init(self, *args, **kwargs)
+                if hasattr(self, "created_at"):
+                    self.created_at = datetime.now()
 
-    Notification.__init__ = init_decorator(Notification.__init__)
+            return new_init
 
-  @patch("ggrc.notifications.common.send_email")
-  def test_start_failed(self, mock_mail):
+        Notification.__init__ = init_decorator(Notification.__init__)
 
-    wf_admin = "user@example.com"
+    @patch("ggrc.notifications.common.send_email")
+    def test_start_failed(self, mock_mail):
 
-    with freeze_time("2015-02-01 13:39:20"):
-      _, wf = self.wf_generator.generate_workflow(self.quarterly_wf)
-      response, wf = self.wf_generator.activate_workflow(wf)
-      print wf.next_cycle_start_date
+        wf_admin = "user@example.com"
 
-      self.assert200(response)
+        with freeze_time("2015-02-01 13:39:20"):
+            _, wf = self.wf_generator.generate_workflow(self.quarterly_wf)
+            response, wf = self.wf_generator.activate_workflow(wf)
+            print wf.next_cycle_start_date
 
-    with freeze_time("2015-01-01 13:39:20"):
-      _, notif_data = common.get_daily_notifications()
-      self.assertNotIn(wf_admin, notif_data)
+            self.assert200(response)
 
-    with freeze_time("2015-01-29 13:39:20"):
-      _, notif_data = common.get_daily_notifications()
-      self.assertIn(wf_admin, notif_data)
-      self.assertIn("cycle_starts_in", notif_data[wf_admin])
+        with freeze_time("2015-01-01 13:39:20"):
+            _, notif_data = common.get_daily_notifications()
+            self.assertNotIn(wf_admin, notif_data)
 
-    with freeze_time("2015-03-05 13:39:20"):
-      _, notif_data = common.get_daily_notifications()
-      self.assertIn(wf_admin, notif_data)
-      self.assertNotIn("cycle_started", notif_data[wf_admin])
-      self.assertIn(wf_admin, notif_data)
-      self.assertIn("cycle_start_failed", notif_data[wf_admin])
+        with freeze_time("2015-01-29 13:39:20"):
+            _, notif_data = common.get_daily_notifications()
+            self.assertIn(wf_admin, notif_data)
+            self.assertIn("cycle_starts_in", notif_data[wf_admin])
 
-      common.send_daily_digest_notifications()
+        with freeze_time("2015-03-05 13:39:20"):
+            _, notif_data = common.get_daily_notifications()
+            self.assertIn(wf_admin, notif_data)
+            self.assertNotIn("cycle_started", notif_data[wf_admin])
+            self.assertIn(wf_admin, notif_data)
+            self.assertIn("cycle_start_failed", notif_data[wf_admin])
 
-      _, notif_data = common.get_daily_notifications()
-      self.assertNotIn(wf_admin, notif_data)
+            common.send_daily_digest_notifications()
 
-  # TODO: investigate why next_cycle_start date remains the same after
-  # start_recurring_cycles
+            _, notif_data = common.get_daily_notifications()
+            self.assertNotIn(wf_admin, notif_data)
 
-  # @patch("ggrc.notifications.common.send_email")
-  # def test_start_failed_send_notifications(self, mock_mail):
+    # TODO: investigate why next_cycle_start date remains the same after
+    # start_recurring_cycles
 
-  #   wf_owner = "user@example.com"
+    # @patch("ggrc.notifications.common.send_email")
+    # def test_start_failed_send_notifications(self, mock_mail):
 
-  #   with freeze_time("2015-02-01 13:39:20"):
-  #     _, wf = self.wf_generator.generate_workflow(self.quarterly_wf)
-  #     response, wf = self.wf_generator.activate_workflow(wf)
-  #     print wf.next_cycle_start_date
+    #   wf_owner = "user@example.com"
 
-  #     self.assert200(response)
+    #   with freeze_time("2015-02-01 13:39:20"):
+    #     _, wf = self.wf_generator.generate_workflow(self.quarterly_wf)
+    #     response, wf = self.wf_generator.activate_workflow(wf)
+    #     print wf.next_cycle_start_date
 
-  #   with freeze_time("2015-01-01 13:39:20"):
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertNotIn(wf_owner, notif_data)
+    #     self.assert200(response)
 
-  #   with freeze_time("2015-01-29 13:39:20"):
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertIn("cycle_starts_in", notif_data[wf_owner])
+    #   with freeze_time("2015-01-01 13:39:20"):
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertNotIn(wf_owner, notif_data)
 
-  #   with freeze_time("2015-02-05 13:39:20"):
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertNotIn("cycle_started", notif_data[wf_owner])
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertIn("cycle_start_failed", notif_data[wf_owner])
+    #   with freeze_time("2015-01-29 13:39:20"):
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertIn("cycle_starts_in", notif_data[wf_owner])
 
-  #     start_recurring_cycles()
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertIn("cycle_started", notif_data[wf_owner])
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertNotIn("cycle_start_failed", notif_data[wf_owner])
+    #   with freeze_time("2015-02-05 13:39:20"):
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertNotIn("cycle_started", notif_data[wf_owner])
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertIn("cycle_start_failed", notif_data[wf_owner])
 
-  #     common.send_daily_digest_notifications()
+    #     start_recurring_cycles()
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertIn("cycle_started", notif_data[wf_owner])
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertNotIn("cycle_start_failed", notif_data[wf_owner])
 
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertNotIn(wf_owner, notif_data)
+    #     common.send_daily_digest_notifications()
 
-  # @patch("ggrc.notifications.common.send_email")
-  # def test_start_failed_send_notifications_monthly(self, mock_mail):
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertNotIn(wf_owner, notif_data)
 
-  #   wf_owner = "user@example.com"
+    # @patch("ggrc.notifications.common.send_email")
+    # def test_start_failed_send_notifications_monthly(self, mock_mail):
 
-  #   with freeze_time("2015-05-12 13:39:20"):
-  #     _, wf = self.wf_generator.generate_workflow(self.monthly)
-  #     response, wf = self.wf_generator.activate_workflow(wf)
+    #   wf_owner = "user@example.com"
 
-  #   with freeze_time("2015-05-14 13:39:20"):
-  #     _, wf = self.wf_generator.generate_workflow(self.monthly)
-  #     response, wf = self.wf_generator.activate_workflow(wf)
+    #   with freeze_time("2015-05-12 13:39:20"):
+    #     _, wf = self.wf_generator.generate_workflow(self.monthly)
+    #     response, wf = self.wf_generator.activate_workflow(wf)
 
-  #     self.assert200(response)
+    #   with freeze_time("2015-05-14 13:39:20"):
+    #     _, wf = self.wf_generator.generate_workflow(self.monthly)
+    #     response, wf = self.wf_generator.activate_workflow(wf)
 
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertNotIn("cycle_started", notif_data[wf_owner])
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertIn("cycle_start_failed", notif_data[wf_owner])
+    #     self.assert200(response)
 
-  #     start_recurring_cycles()
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertIn("cycle_started", notif_data[wf_owner])
-  #     self.assertIn(wf_owner, notif_data)
-  #     self.assertNotIn("cycle_start_failed", notif_data[wf_owner])
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertNotIn("cycle_started", notif_data[wf_owner])
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertIn("cycle_start_failed", notif_data[wf_owner])
 
-  #     common.send_daily_digest_notifications()
+    #     start_recurring_cycles()
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertIn("cycle_started", notif_data[wf_owner])
+    #     self.assertIn(wf_owner, notif_data)
+    #     self.assertNotIn("cycle_start_failed", notif_data[wf_owner])
 
-  #     _, notif_data = common.get_daily_notifications()
-  #     self.assertNotIn(wf_owner, notif_data)
+    #     common.send_daily_digest_notifications()
 
-  def create_test_cases(self):
-    def person_dict(person_id):
-      return {
-          "href": "/api/people/%d" % person_id,
-          "id": person_id,
-          "type": "Person"
-      }
+    #     _, notif_data = common.get_daily_notifications()
+    #     self.assertNotIn(wf_owner, notif_data)
 
-    self.quarterly_wf = {
-        "title": "quarterly wf forced notifications",
-        "notify_on_change": True,
-        "description": "",
-        # admin will be current user with id == 1
-        "unit": "month",
-        "repeat_every": 3,
-        "task_groups": [{
-            "title": "tg_1",
-            "contact": person_dict(self.user.id),
-            "task_group_tasks": [{
-                "contact": person_dict(self.user.id),
-                "description": factories.random_str(100),
-            },
-            ],
-        },
-        ]
-    }
-    self.monthly = {
-        "title": "monthly",
-        "notify_on_change": True,
-        "description": "",
-        # admin will be current user with id == 1
-        "unit": "month",
-        "repeat_every": 1,
-        "task_groups": [{
-            "title": "tg_1",
-            "contact": person_dict(self.user.id),
-            "task_group_tasks": [{
-                "contact": person_dict(self.user.id),
-                "description": factories.random_str(100),
-                "relative_start_day": 14,
-                "relative_end_day": 25,
-            },
-            ],
-        },
-        ]
-    }
+    def create_test_cases(self):
+        def person_dict(person_id):
+            return {
+                "href": "/api/people/%d" % person_id,
+                "id": person_id,
+                "type": "Person"
+            }
+
+        self.quarterly_wf = {
+            "title":
+            "quarterly wf forced notifications",
+            "notify_on_change":
+            True,
+            "description":
+            "",
+            # admin will be current user with id == 1
+            "unit":
+            "month",
+            "repeat_every":
+            3,
+            "task_groups": [
+                {
+                    "title":
+                    "tg_1",
+                    "contact":
+                    person_dict(self.user.id),
+                    "task_group_tasks": [
+                        {
+                            "contact": person_dict(self.user.id),
+                            "description": factories.random_str(100),
+                        },
+                    ],
+                },
+            ]
+        }
+        self.monthly = {
+            "title":
+            "monthly",
+            "notify_on_change":
+            True,
+            "description":
+            "",
+            # admin will be current user with id == 1
+            "unit":
+            "month",
+            "repeat_every":
+            1,
+            "task_groups": [
+                {
+                    "title":
+                    "tg_1",
+                    "contact":
+                    person_dict(self.user.id),
+                    "task_group_tasks": [
+                        {
+                            "contact": person_dict(self.user.id),
+                            "description": factories.random_str(100),
+                            "relative_start_day": 14,
+                            "relative_end_day": 25,
+                        },
+                    ],
+                },
+            ]
+        }

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add next_due_date columns
 
 Revision ID: 28f2d0d0362
@@ -19,9 +17,12 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('cycle_task_group_objects', sa.Column('next_due_date', sa.Date(), nullable=True))
-    op.add_column('cycle_task_groups', sa.Column('next_due_date', sa.Date(), nullable=True))
-    op.add_column('cycles', sa.Column('next_due_date', sa.Date(), nullable=True))
+    op.add_column('cycle_task_group_objects',
+                  sa.Column('next_due_date', sa.Date(), nullable=True))
+    op.add_column('cycle_task_groups',
+                  sa.Column('next_due_date', sa.Date(), nullable=True))
+    op.add_column('cycles', sa.Column(
+        'next_due_date', sa.Date(), nullable=True))
 
 
 def downgrade():

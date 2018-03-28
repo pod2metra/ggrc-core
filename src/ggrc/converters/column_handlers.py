@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 This module provides all column handlers for objects in the ggrc module.
 
@@ -47,10 +46,8 @@ from ggrc.converters.handlers import document
 from ggrc.converters.handlers import custom_attribute
 from ggrc.converters.handlers import acl
 from ggrc.converters.handlers.snapshot_instance_column_handler import (
-    SnapshotInstanceColumnHandler
-)
+    SnapshotInstanceColumnHandler)
 from ggrc.extensions import get_extension_modules
-
 
 _DEFAULT_COLUMN_HANDLERS_DICT = {
     "assertions": handlers.ControlAssertionColumnHandler,
@@ -127,10 +124,8 @@ _DEFAULT_COLUMN_HANDLERS_DICT = {
     "__acl__": acl.AccessControlRoleColumnHandler,
 }
 
-
 DEFAULT_HANDLERS_KEY = "default"
 EXTENSION_HANDLERS_ATTR = "contributed_column_handlers"
-
 
 _COLUMN_HANDLERS = {
     DEFAULT_HANDLERS_KEY: _DEFAULT_COLUMN_HANDLERS_DICT,
@@ -138,29 +133,29 @@ _COLUMN_HANDLERS = {
 
 
 def get_extensions_column_handlers():
-  """Search through all enabled modules for their contributed column handlers.
+    """Search through all enabled modules for their contributed column handlers.
 
   Returns:
     result_handlers (dict): dict of all extension handlers
   """
-  result_handlers = deepcopy(_COLUMN_HANDLERS)
-  for extension_module in get_extension_modules():
-    extension_handlers = getattr(
-        extension_module, EXTENSION_HANDLERS_ATTR, None)
-    if callable(extension_handlers):
-      extension_handlers = extension_handlers()
-    if isinstance(extension_handlers, dict):
-      for key, value_dict in extension_handlers.iteritems():
-        result_handlers[key] = result_handlers.get(key, {})
-        result_handlers[key].update(value_dict)
-  return result_handlers
+    result_handlers = deepcopy(_COLUMN_HANDLERS)
+    for extension_module in get_extension_modules():
+        extension_handlers = getattr(extension_module, EXTENSION_HANDLERS_ATTR,
+                                     None)
+        if callable(extension_handlers):
+            extension_handlers = extension_handlers()
+        if isinstance(extension_handlers, dict):
+            for key, value_dict in extension_handlers.iteritems():
+                result_handlers[key] = result_handlers.get(key, {})
+                result_handlers[key].update(value_dict)
+    return result_handlers
 
 
 COLUMN_HANDLERS = get_extensions_column_handlers()
 
 
 def model_column_handlers(cls):
-  """Generates handlers for model class
+    """Generates handlers for model class
 
   Attributes:
       cls (model class): Model class for which you are looking for handlers
@@ -170,6 +165,6 @@ def model_column_handlers(cls):
                               the keys are column names
                               the values are handler classes
   """
-  result_handlers = COLUMN_HANDLERS[DEFAULT_HANDLERS_KEY].copy()
-  result_handlers.update(COLUMN_HANDLERS.get(cls.__name__, {}))
-  return result_handlers
+    result_handlers = COLUMN_HANDLERS[DEFAULT_HANDLERS_KEY].copy()
+    result_handlers.update(COLUMN_HANDLERS.get(cls.__name__, {}))
+    return result_handlers

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Update object states
 
@@ -20,10 +19,10 @@ tables = {'risks', 'threats'}
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
+    """Upgrade database schema and/or data, creating a new revision."""
 
-  for table in tables:
-    sql = """UPDATE {} SET status =
+    for table in tables:
+        sql = """UPDATE {} SET status =
                CASE status
                  WHEN 'Active' THEN 'Active'
                  WHEN 'Deprecated' THEN 'Deprecated'
@@ -42,38 +41,35 @@ def upgrade():
                  WHEN 'Approved' THEN 'Reviewed'
                  ELSE 'Unreviewed'
                END;""".format(table)
-    op.execute(sql)
-    op.alter_column(
-        table,
-        'status',
-        nullable=False,
-        server_default='Draft',
-        existing_type=mysql.VARCHAR(length=250)
-    )
-    op.alter_column(
-        table,
-        'os_state',
-        server_default='Unreviewed',
-        existing_type=mysql.VARCHAR(length=250)
-    )
-  op.drop_column('risk_objects', 'status')
+        op.execute(sql)
+        op.alter_column(
+            table,
+            'status',
+            nullable=False,
+            server_default='Draft',
+            existing_type=mysql.VARCHAR(length=250))
+        op.alter_column(
+            table,
+            'os_state',
+            server_default='Unreviewed',
+            existing_type=mysql.VARCHAR(length=250))
+    op.drop_column('risk_objects', 'status')
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.add_column('risk_objects', sa.Column(
-      'status', mysql.VARCHAR(length=250), nullable=True))
-  for table in tables:
-    op.alter_column(
-        table,
-        'os_state',
-        server_default=None,
-        existing_type=mysql.VARCHAR(length=250)
-    )
-    op.alter_column(
-        table,
-        'status',
-        nullable=True,
-        server_default=None,
-        existing_type=mysql.VARCHAR(length=250)
-    )
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.add_column('risk_objects',
+                  sa.Column(
+                      'status', mysql.VARCHAR(length=250), nullable=True))
+    for table in tables:
+        op.alter_column(
+            table,
+            'os_state',
+            server_default=None,
+            existing_type=mysql.VARCHAR(length=250))
+        op.alter_column(
+            table,
+            'status',
+            nullable=True,
+            server_default=None,
+            existing_type=mysql.VARCHAR(length=250))

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Manage "static" assets
 
 The actual list of stylesheets and javascripts to compile is in
@@ -43,7 +42,7 @@ environment.debug = settings.DEBUG_ASSETS
 
 # `settings-debug` mode doesn't finger-print files (no cache-busting)
 if settings.DEBUG:
-  environment.url_expire = False
+    environment.url_expire = False
 
 # Don't store webassets cache
 environment.cache = False
@@ -54,21 +53,23 @@ environment.updater = webassets.updater.TimestampUpdater()
 
 assets_yamls = [os.path.join(settings.MODULE_DIR, 'assets', 'assets.yaml')]
 
-module_load_paths = [settings.MODULE_DIR, ]
+module_load_paths = [
+    settings.MODULE_DIR,
+]
 for extension in settings.EXTENSIONS:
-  file, pathname, description = imp.find_module(extension)
-  module_load_paths.append(pathname)
-  p = os.path.join(pathname, 'assets', 'assets.yaml')
-  if os.path.exists(p):
-    assets_yamls.append(p)
+    file, pathname, description = imp.find_module(extension)
+    module_load_paths.append(pathname)
+    p = os.path.join(pathname, 'assets', 'assets.yaml')
+    if os.path.exists(p):
+        assets_yamls.append(p)
 asset_paths = {}
 for assets_yaml_path in assets_yamls:
-  with open(assets_yaml_path) as f:
-    for k, v in yaml.load(f.read()).items():
-      asset_paths.setdefault(k, []).extend(v or [])
+    with open(assets_yaml_path) as f:
+        for k, v in yaml.load(f.read()).items():
+            asset_paths.setdefault(k, []).extend(v or [])
 
 if not settings.AUTOBUILD_ASSETS:
-  environment.auto_build = False
+    environment.auto_build = False
 
 environment.url = '/static'
 environment.directory = os.path.join(settings.MODULE_DIR, 'static')
@@ -76,60 +77,59 @@ environment.directory = os.path.join(settings.MODULE_DIR, 'static')
 environment.load_path = [settings.THIRD_PARTY_DIR]
 
 _per_module_load_suffixes = [
-    'assets/javascripts',
-    'assets/mustache',
-    'assets/vendor/javascripts',
+    'assets/javascripts', 'assets/mustache', 'assets/vendor/javascripts',
     'assets/vendor/bootstrap-sass/vendor/assets/javascripts',
     'assets/vendor/remoteipart/vendor/assets/javascripts',
-    'assets/stylesheets',
-    'assets/vendor/stylesheets',
-    'assets/js_specs'
+    'assets/stylesheets', 'assets/vendor/stylesheets', 'assets/js_specs'
 ]
 
 for module_load_base in module_load_paths:
-  module_load_paths = [os.path.join(module_load_base, load_suffix)
-                       for load_suffix in _per_module_load_suffixes]
-  environment.load_path.extend(module_load_paths)
+    module_load_paths = [
+        os.path.join(module_load_base, load_suffix)
+        for load_suffix in _per_module_load_suffixes
+    ]
+    environment.load_path.extend(module_load_paths)
 
 
 def path_without_assets_base(path):
-  steps = path.split(os.path.sep)
-  if len(steps) > 3 and steps[1] == 'assets' and steps[2] == 'mustache':
-    return os.path.join(*steps[3:])
-  return path
+    steps = path.split(os.path.sep)
+    if len(steps) > 3 and steps[1] == 'assets' and steps[2] == 'mustache':
+        return os.path.join(*steps[3:])
+    return path
 
 
 class MustacheFilter(JSTemplateFilter):
-  """
+    """
   Populate GGRC.Templates from list of mustache templates
     * mostly copies webassets.filter.jst.JST
   """
 
-  name = 'mustache'
-  options = {
-      'namespace': 'GGRC.Templates'
-  }
+    name = 'mustache'
+    options = {'namespace': 'GGRC.Templates'}
 
-  def process_templates(self, out, hunks, **kwargs):
-    namespace = self.namespace or 'GGRC.Templates'
+    def process_templates(self, out, hunks, **kwargs):
+        namespace = self.namespace or 'GGRC.Templates'
 
-    out.write("{namespace} = {namespace} || {{}};\n".format(
-        '{}', namespace=namespace))
+        out.write("{namespace} = {namespace} || {{}};\n".format(
+            '{}', namespace=namespace))
 
-    for name, hunk in self.iter_templates_with_base(hunks):
-      name = path_without_assets_base(name)
-      contents = hunk.data().replace('\n', '\\n').replace("'", r"\'")
-      out.write("{namespace}['{name}']".format(
-          namespace=namespace, name=name))
-      out.write("= '{template}';\n".format(template=contents))
+        for name, hunk in self.iter_templates_with_base(hunks):
+            name = path_without_assets_base(name)
+            contents = hunk.data().replace('\n', '\\n').replace("'", r"\'")
+            out.write("{namespace}['{name}']".format(
+                namespace=namespace, name=name))
+            out.write("= '{template}';\n".format(template=contents))
+
 
 version_suffix = '-%(version)s'
 if settings.DEBUG:
-  version_suffix = ''
+    version_suffix = ''
 
-environment.register("dashboard-js-templates", webassets.Bundle(
-    *asset_paths['dashboard-js-template-files'],
-    filters=MustacheFilter,
-    output='dashboard-templates' + version_suffix + '.js',
-    # Always keep `debug` False here, since raw mustache is not valid JS
-    debug=False))
+environment.register(
+    "dashboard-js-templates",
+    webassets.Bundle(
+        *asset_paths['dashboard-js-template-files'],
+        filters=MustacheFilter,
+        output='dashboard-templates' + version_suffix + '.js',
+        # Always keep `debug` False here, since raw mustache is not valid JS
+        debug=False))

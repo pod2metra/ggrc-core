@@ -16,9 +16,9 @@ from ggrc.fulltext.mixin import Indexed
 class AccessGroup(Roleable, HasObjectState, PublicDocumentable, Commentable,
                   CustomAttributable, Personable, Relatable, TestPlanned,
                   LastDeprecatedTimeboxed, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'access_groups'
+    __tablename__ = 'access_groups'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

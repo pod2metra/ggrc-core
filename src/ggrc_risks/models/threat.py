@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Module for threat model."""
 
 from ggrc import db
@@ -18,9 +17,9 @@ from ggrc.models.track_object_state import HasObjectState
 class Threat(Roleable, HasObjectState, CustomAttributable, Personable,
              Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
              Commentable, TestPlanned, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'threats'
+    __tablename__ = 'threats'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add RiskAssessment.template_id
 
 Revision ID: 160cd75171ac
@@ -19,7 +17,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('risk_assessments', sa.Column('template_id', sa.Integer(), nullable=False))
+    op.add_column('risk_assessments',
+                  sa.Column('template_id', sa.Integer(), nullable=False))
 
 
 def downgrade():

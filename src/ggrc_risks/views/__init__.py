@@ -7,5 +7,6 @@ from ggrc_risks.views import converters
 
 from flask import render_template
 
+
 def init_extra_views(app):
-  pass
+    pass

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Rename admin role.
 
 Revision ID: 3adc42b4f6b9
@@ -20,18 +18,21 @@ from alembic import op
 from datetime import datetime
 from sqlalchemy.sql import table, column
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('updated_at', sa.DateTime),
-    )
+)
+
 
 def upgrade():
-  op.execute(roles_table.update()\
-      .where(roles_table.c.name == 'System Administrator')\
-      .values(name = 'gGRC Admin'))
+    op.execute(roles_table.update()\
+        .where(roles_table.c.name == 'System Administrator')\
+        .values(name = 'gGRC Admin'))
+
 
 def downgrade():
-  op.execute(roles_table.update()\
-      .where(roles_table.c.name == 'gGRC Admin')\
-      .values(name = 'System Administrator'))
+    op.execute(roles_table.update()\
+        .where(roles_table.c.name == 'gGRC Admin')\
+        .values(name = 'System Administrator'))

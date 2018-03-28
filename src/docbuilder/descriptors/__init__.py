@@ -12,5 +12,4 @@ from docbuilder.descriptors.package import Package
 from docbuilder.descriptors.service import Service
 from docbuilder.descriptors.model import Model, Mixin
 
-
 __all__ = ['Package', 'Service', 'Model', 'Mixin']

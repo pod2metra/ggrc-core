@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add Assignee roles to Task and Cycle Task types
 
@@ -21,7 +20,6 @@ from sqlalchemy.sql import table
 revision = '251191c050d0'
 down_revision = '4131bd4a8a4d'
 
-
 ACR_TABLE = table(
     'access_control_roles',
     column('name', sa.String),
@@ -33,7 +31,6 @@ ACR_TABLE = table(
     column('delete', sa.Boolean),
     column('my_work', sa.Boolean),
 )
-
 
 INSERT_ACL_ENTRIES = """
 INSERT INTO access_control_list
@@ -63,32 +60,29 @@ WHERE
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.bulk_insert(
-      ACR_TABLE,
-      [{
-          'name': "Task Assignees",
-          'object_type': "TaskGroupTask",
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': True,
-          'non_editable': True,
-          'delete': False,
-          'my_work': False,
-      }, {
-          'name': "Task Assignees",
-          'object_type': "CycleTaskGroupObjectTask",
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': True,
-          'non_editable': True,
-          'delete': False,
-          'my_work': False,
-      }]
-  )
-  op.execute(INSERT_ACL_ENTRIES)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.bulk_insert(ACR_TABLE, [{
+        'name': "Task Assignees",
+        'object_type': "TaskGroupTask",
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': True,
+        'non_editable': True,
+        'delete': False,
+        'my_work': False,
+    }, {
+        'name': "Task Assignees",
+        'object_type': "CycleTaskGroupObjectTask",
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': True,
+        'non_editable': True,
+        'delete': False,
+        'my_work': False,
+    }])
+    op.execute(INSERT_ACL_ENTRIES)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute(DELETE_SQL)
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute(DELETE_SQL)

@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Reestablish baseline
 
 Revision ID: 1afd15b0581f
@@ -18,8 +16,12 @@ from alembic import op
 
 
 def upgrade():
-    op.create_index('fk_risk_assessments_contexts', 'risk_assessments', ['context_id'], unique=False)
+    op.create_index(
+        'fk_risk_assessments_contexts',
+        'risk_assessments', ['context_id'],
+        unique=False)
 
 
 def downgrade():
-    op.drop_index('fk_risk_assessments_contexts', table_name='risk_assessments')
+    op.drop_index(
+        'fk_risk_assessments_contexts', table_name='risk_assessments')

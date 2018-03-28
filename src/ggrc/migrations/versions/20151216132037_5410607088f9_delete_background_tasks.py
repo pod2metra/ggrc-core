@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Delete background tasks
 
 Revision ID: 5410607088f9
@@ -19,10 +18,10 @@ down_revision = '1ef8f4f504ae'
 
 
 def upgrade():
-  """Remove all entries from background_tasks"""
-  op.execute("truncate background_tasks")
+    """Remove all entries from background_tasks"""
+    op.execute("truncate background_tasks")
 
 
 def downgrade():
-  """Remove all entries from background_tasks"""
-  op.execute("truncate background_tasks")
+    """Remove all entries from background_tasks"""
+    op.execute("truncate background_tasks")

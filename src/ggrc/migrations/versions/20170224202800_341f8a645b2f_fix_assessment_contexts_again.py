@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Fix Assessment contexts again
 
@@ -15,10 +14,10 @@ down_revision = '4e7fda17abc7'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  pass
+    """Upgrade database schema and/or data, creating a new revision."""
+    pass
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  pass
+    """Downgrade database schema and/or data back to the previous revision."""
+    pass

@@ -4,12 +4,10 @@
 
 from ggrc.models import all_models
 
-
 GA_RNAME = "Administrator"
 GE_RNAME = "Editor"
 GR_RNAME = "Reader"
 GC_RNAME = "Creator"
-
 
 G_ROLES = {
     r.name: r

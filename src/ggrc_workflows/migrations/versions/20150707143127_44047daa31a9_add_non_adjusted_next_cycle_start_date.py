@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add non-adjusted next cycle start date
 
 Revision ID: 44047daa31a9
@@ -23,9 +22,12 @@ import sqlalchemy as sa
 
 def upgrade():
     op.add_column('workflows',
-                  sa.Column('non_adjusted_next_cycle_start_date',
-                  sa.Date(), nullable=True))
+                  sa.Column(
+                      'non_adjusted_next_cycle_start_date',
+                      sa.Date(),
+                      nullable=True))
     return
+
 
 def downgrade():
     op.drop_column('workflows', 'non_adjusted_next_cycle_start_date')

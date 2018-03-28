@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add Creator role
 
 Revision ID: 47218103cee5
@@ -14,11 +13,9 @@ from alembic import op
 from datetime import datetime
 from sqlalchemy.sql import table, column, and_
 
-
 # revision identifiers, used by Alembic.
 revision = '47218103cee5'
 down_revision = '27432edbe6d4'
-
 
 roles_table = table(
     'roles',
@@ -35,21 +32,19 @@ roles_table = table(
 
 
 def upgrade():
-  current_datetime = datetime.now()
+    current_datetime = datetime.now()
 
-  # Add the Creator role
-  op.execute(roles_table.insert().values(
-      name='Creator',
-      description='Global creator',
-      permissions_json="CODE DECLARED ROLE",
-      created_at=current_datetime,
-      updated_at=current_datetime,
-      scope='System'
-  ))
+    # Add the Creator role
+    op.execute(roles_table.insert().values(
+        name='Creator',
+        description='Global creator',
+        permissions_json="CODE DECLARED ROLE",
+        created_at=current_datetime,
+        updated_at=current_datetime,
+        scope='System'))
 
 
 def downgrade():
-  op.execute(roles_table.delete().where(
-      and_(roles_table.c.name == 'Creator',
-           roles_table.c.scope == 'System')
-  ))
+    op.execute(roles_table.delete().where(
+        and_(roles_table.c.name == 'Creator',
+             roles_table.c.scope == 'System')))

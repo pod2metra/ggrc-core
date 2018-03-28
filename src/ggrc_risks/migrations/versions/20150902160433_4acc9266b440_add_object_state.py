@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add object state
 
 Revision ID: 4acc9266b440
@@ -17,9 +16,12 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
+
 def upgrade():
-    op.add_column('risks', sa.Column('os_state', sa.String(length=250), nullable=False))
-    op.add_column('threat_actors', sa.Column('os_state', sa.String(length=250), nullable=False))
+    op.add_column('risks',
+                  sa.Column('os_state', sa.String(length=250), nullable=False))
+    op.add_column('threat_actors',
+                  sa.Column('os_state', sa.String(length=250), nullable=False))
 
 
 def downgrade():

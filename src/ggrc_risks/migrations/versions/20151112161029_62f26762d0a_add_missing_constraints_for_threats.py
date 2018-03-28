@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add missing constraints for threats
 
 Revision ID: 62f26762d0a
@@ -19,9 +18,9 @@ down_revision = '2837682ad516'
 
 
 def upgrade():
-  # resolve_duplicates(Threat, 'slug')
-  op.create_unique_constraint('uq_threats', 'threats', ['slug'])
+    # resolve_duplicates(Threat, 'slug')
+    op.create_unique_constraint('uq_threats', 'threats', ['slug'])
 
 
 def downgrade():
-  op.drop_constraint('uq_threats', 'threats', 'unique')
+    op.drop_constraint('uq_threats', 'threats', 'unique')

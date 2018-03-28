@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Tests export of Audit and mapped objects."""
 from collections import defaultdict
 
@@ -15,63 +14,68 @@ from integration.ggrc.models.factories import get_model_factory
 
 
 class TestAuditExport(TestCase):
-  """Test export of Audit"""
-  def setUp(self):
-    super(TestAuditExport, self).setUp()
-    self.client.get("/login")
+    """Test export of Audit"""
 
-  def test_export_audit_mappings(self):
-    """Test export of audit mapped objects"""
-    snap_objects = []
-    mapped_slugs = defaultdict(list)
-    with factories.single_commit():
-      audit = factories.AuditFactory(slug="Audit")
-      # Create a group of mapped objects for current audit
-      for _ in range(3):
-        # All snapshotable objects should be mapped to Audit + Issue
-        # and Assessment
-        for type_ in Types.all.union(Types.scoped):
-          if type_ == "Issue":
-            obj = get_model_factory(type_)()
-            factories.RelationshipFactory(source=audit, destination=obj)
-          elif type_ in Types.scoped:
-            obj = get_model_factory(type_)(audit=audit)
-            factories.RelationshipFactory(source=audit, destination=obj)
-          else:
-            obj = get_model_factory(type_)()
-          mapped_slugs[type_].append(obj.slug)
-          snap_objects.append(obj)
+    def setUp(self):
+        super(TestAuditExport, self).setUp()
+        self.client.get("/login")
 
-    self._create_snapshots(audit, snap_objects)
+    def test_export_audit_mappings(self):
+        """Test export of audit mapped objects"""
+        snap_objects = []
+        mapped_slugs = defaultdict(list)
+        with factories.single_commit():
+            audit = factories.AuditFactory(slug="Audit")
+            # Create a group of mapped objects for current audit
+            for _ in range(3):
+                # All snapshotable objects should be mapped to Audit + Issue
+                # and Assessment
+                for type_ in Types.all.union(Types.scoped):
+                    if type_ == "Issue":
+                        obj = get_model_factory(type_)()
+                        factories.RelationshipFactory(
+                            source=audit, destination=obj)
+                    elif type_ in Types.scoped:
+                        obj = get_model_factory(type_)(audit=audit)
+                        factories.RelationshipFactory(
+                            source=audit, destination=obj)
+                    else:
+                        obj = get_model_factory(type_)()
+                    mapped_slugs[type_].append(obj.slug)
+                    snap_objects.append(obj)
 
-    audit_data = self.export_parsed_csv([{
-        "object_name": "Audit",
-        "filters": {
-            "expression": {}
-        },
-        "fields": "all",
-    }])["Audit"][0]
+        self._create_snapshots(audit, snap_objects)
 
-    for type_, slugs in mapped_slugs.items():
-      if type_ in Types.all:
-        format_ = "map:{} versions"
-      else:
-        format_ = "map:{}"
-      mapping_name = format_.format(utils.title_from_camelcase(type_))
-      self.assertIn(mapping_name, audit_data)
-      self.assertEqual(audit_data[mapping_name], "\n".join(sorted(slugs)))
+        audit_data = self.export_parsed_csv([{
+            "object_name": "Audit",
+            "filters": {
+                "expression": {}
+            },
+            "fields": "all",
+        }])["Audit"][0]
 
-  def test_export_deprecated_date(self):
-    """Test export of audit last deprecated date"""
-    with freeze_time("2017-01-25"):
-      factories.AuditFactory(status="Deprecated")
+        for type_, slugs in mapped_slugs.items():
+            if type_ in Types.all:
+                format_ = "map:{} versions"
+            else:
+                format_ = "map:{}"
+            mapping_name = format_.format(utils.title_from_camelcase(type_))
+            self.assertIn(mapping_name, audit_data)
+            self.assertEqual(audit_data[mapping_name], "\n".join(
+                sorted(slugs)))
 
-    last_deprecated_date = self.export_parsed_csv([{
-        "object_name": "Audit",
-        "filters": {
-            "expression": {}
-        },
-        "fields": ["last_deprecated_date"],
-    }])["Audit"][0]["Last Deprecated Date"]
+    def test_export_deprecated_date(self):
+        """Test export of audit last deprecated date"""
+        with freeze_time("2017-01-25"):
+            factories.AuditFactory(status="Deprecated")
 
-    self.assertEquals("01/25/2017", last_deprecated_date)
+        last_deprecated_date = self.export_parsed_csv([{
+            "object_name":
+            "Audit",
+            "filters": {
+                "expression": {}
+            },
+            "fields": ["last_deprecated_date"],
+        }])["Audit"][0]["Last Deprecated Date"]
+
+        self.assertEquals("01/25/2017", last_deprecated_date)

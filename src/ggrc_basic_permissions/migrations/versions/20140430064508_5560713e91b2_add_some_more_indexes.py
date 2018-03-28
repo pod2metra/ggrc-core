@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add some more indexes
 
 Revision ID: 5560713e91b2
@@ -19,7 +17,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.create_index('ix_user_roles_person', 'user_roles', ['person_id'], unique=False)
+    op.create_index(
+        'ix_user_roles_person', 'user_roles', ['person_id'], unique=False)
 
 
 def downgrade():

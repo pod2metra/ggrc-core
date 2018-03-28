@@ -9,11 +9,10 @@ from integration.ggrc.generator import ObjectGenerator
 
 
 class WorkflowTestCase(TestCase):
+    def setUp(self):
+        super(WorkflowTestCase, self).setUp()
+        self.api = Api()
+        self.generator = WorkflowsGenerator()
+        self.object_generator = ObjectGenerator()
 
-  def setUp(self):
-    super(WorkflowTestCase, self).setUp()
-    self.api = Api()
-    self.generator = WorkflowsGenerator()
-    self.object_generator = ObjectGenerator()
-
-    self.random_objects = self.object_generator.generate_random_objects()
+        self.random_objects = self.object_generator.generate_random_objects()

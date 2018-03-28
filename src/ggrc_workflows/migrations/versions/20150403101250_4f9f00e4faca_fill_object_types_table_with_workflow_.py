@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """fill object types table with workflow models
 
 Revision ID: 4f9f00e4faca
@@ -18,11 +17,11 @@ down_revision = '8e530ce276a'
 
 
 def upgrade():
-  # This migration has been removed due to remove_object_type_table migration.
-  # The object_types table has been removed and there should not be any more
-  # references to that table.
-  pass
+    # This migration has been removed due to remove_object_type_table migration.
+    # The object_types table has been removed and there should not be any more
+    # references to that table.
+    pass
 
 
 def downgrade():
-  pass
+    pass

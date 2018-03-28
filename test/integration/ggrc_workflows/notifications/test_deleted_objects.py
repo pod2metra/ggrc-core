@@ -19,85 +19,95 @@ from integration.ggrc.models import factories
 
 @unittest.skip("unskip when import/export fixed for workflows")
 class TestNotificationsForDeletedObjects(TestCase):
-
-  """ This class contains simple one time workflow tests that are not
+    """ This class contains simple one time workflow tests that are not
   in the gsheet test grid
   """
 
-  def setUp(self):
-    super(TestNotificationsForDeletedObjects, self).setUp()
-    self.api = Api()
-    self.wf_generator = WorkflowsGenerator()
-    self.object_generator = ObjectGenerator()
-    Notification.query.delete()
+    def setUp(self):
+        super(TestNotificationsForDeletedObjects, self).setUp()
+        self.api = Api()
+        self.wf_generator = WorkflowsGenerator()
+        self.object_generator = ObjectGenerator()
+        Notification.query.delete()
 
-    self.random_objects = self.object_generator.generate_random_objects(2)
-    _, self.user = self.object_generator.generate_person(
-        user_role="Administrator")
-    self.create_test_cases()
+        self.random_objects = self.object_generator.generate_random_objects(2)
+        _, self.user = self.object_generator.generate_person(
+            user_role="Administrator")
+        self.create_test_cases()
 
-    def init_decorator(init):
-      def new_init(self, *args, **kwargs):
-        init(self, *args, **kwargs)
-        if hasattr(self, "created_at"):
-          self.created_at = datetime.now()
-      return new_init
+        def init_decorator(init):
+            def new_init(self, *args, **kwargs):
+                init(self, *args, **kwargs)
+                if hasattr(self, "created_at"):
+                    self.created_at = datetime.now()
 
-    Notification.__init__ = init_decorator(Notification.__init__)
+            return new_init
 
-  @patch("ggrc.notifications.common.send_email")
-  def test_delete_activated_workflow(self, mock_mail):
+        Notification.__init__ = init_decorator(Notification.__init__)
 
-    with freeze_time("2015-02-01 13:39:20"):
-      _, workflow = self.wf_generator.generate_workflow(self.quarterly_wf_1)
-      response, workflow = self.wf_generator.activate_workflow(workflow)
+    @patch("ggrc.notifications.common.send_email")
+    def test_delete_activated_workflow(self, mock_mail):
 
-      self.assert200(response)
+        with freeze_time("2015-02-01 13:39:20"):
+            _, workflow = self.wf_generator.generate_workflow(
+                self.quarterly_wf_1)
+            response, workflow = self.wf_generator.activate_workflow(workflow)
 
-      user = Person.query.get(self.user.id)
+            self.assert200(response)
 
-    with freeze_time("2015-01-01 13:39:20"):
-      _, notif_data = common.get_daily_notifications()
-      self.assertNotIn(user.email, notif_data)
+            user = Person.query.get(self.user.id)
 
-    with freeze_time("2015-01-29 13:39:20"):
-      _, notif_data = common.get_daily_notifications()
-      self.assertIn(user.email, notif_data)
-      self.assertIn("cycle_starts_in", notif_data[user.email])
+        with freeze_time("2015-01-01 13:39:20"):
+            _, notif_data = common.get_daily_notifications()
+            self.assertNotIn(user.email, notif_data)
 
-      workflow = Workflow.query.get(workflow.id)
+        with freeze_time("2015-01-29 13:39:20"):
+            _, notif_data = common.get_daily_notifications()
+            self.assertIn(user.email, notif_data)
+            self.assertIn("cycle_starts_in", notif_data[user.email])
 
-      response = self.wf_generator.api.delete(workflow)
-      self.assert200(response)
+            workflow = Workflow.query.get(workflow.id)
 
-      _, notif_data = common.get_daily_notifications()
-      user = Person.query.get(self.user.id)
+            response = self.wf_generator.api.delete(workflow)
+            self.assert200(response)
 
-      self.assertNotIn(user.email, notif_data)
+            _, notif_data = common.get_daily_notifications()
+            user = Person.query.get(self.user.id)
 
-  def create_test_cases(self):
-    def person_dict(person_id):
-      return {
-          "href": "/api/people/%d" % person_id,
-          "id": person_id,
-          "type": "Person"
-      }
+            self.assertNotIn(user.email, notif_data)
 
-    self.quarterly_wf_1 = {
-        "title": "quarterly wf 1",
-        "notify_on_change": True,
-        "description": "",
-        # admin will be current user with id == 1
-        "unit": "month",
-        "repeat_every": 3,
-        "task_groups": [{
-            "title": "tg_1",
-            "contact": person_dict(self.user.id),
-            "task_group_tasks": [{
-                "contact": person_dict(self.user.id),
-                "description": factories.random_str(100),
-            },
-            ],
-        },
-        ]
-    }
+    def create_test_cases(self):
+        def person_dict(person_id):
+            return {
+                "href": "/api/people/%d" % person_id,
+                "id": person_id,
+                "type": "Person"
+            }
+
+        self.quarterly_wf_1 = {
+            "title":
+            "quarterly wf 1",
+            "notify_on_change":
+            True,
+            "description":
+            "",
+            # admin will be current user with id == 1
+            "unit":
+            "month",
+            "repeat_every":
+            3,
+            "task_groups": [
+                {
+                    "title":
+                    "tg_1",
+                    "contact":
+                    person_dict(self.user.id),
+                    "task_group_tasks": [
+                        {
+                            "contact": person_dict(self.user.id),
+                            "description": factories.random_str(100),
+                        },
+                    ],
+                },
+            ]
+        }

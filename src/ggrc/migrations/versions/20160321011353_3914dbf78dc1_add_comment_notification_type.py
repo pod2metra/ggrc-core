@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add comment notification type
 
@@ -14,11 +13,9 @@ from sqlalchemy.sql import column
 from sqlalchemy.sql import table
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '3914dbf78dc1'
 down_revision = '11cee57a4149'
-
 
 NOTIFICATION_TYPES = table(
     'notification_types',
@@ -36,33 +33,33 @@ NOTIFICATION_TYPES = table(
 )
 
 NOTIFICATIONS = [{
-    "name": "comment_created",
-    "description": "Notify selected users that a comment has been created",
-    "template": "comment_created",
-    "advance_notice": 0,
-    "instant": False,
+    "name":
+    "comment_created",
+    "description":
+    "Notify selected users that a comment has been created",
+    "template":
+    "comment_created",
+    "advance_notice":
+    0,
+    "instant":
+    False,
 }]
 
 
 def upgrade():
-  """Add notification type entries for requests and assessments."""
-  op.bulk_insert(NOTIFICATION_TYPES, NOTIFICATIONS)
+    """Add notification type entries for requests and assessments."""
+    op.bulk_insert(NOTIFICATION_TYPES, NOTIFICATIONS)
 
 
 def downgrade():
-  """Remove notification type entries for requests and assessments."""
-  notification_names = tuple([notif["name"] for notif in NOTIFICATIONS])
-  op.execute(
-      """
+    """Remove notification type entries for requests and assessments."""
+    notification_names = tuple([notif["name"] for notif in NOTIFICATIONS])
+    op.execute("""
       DELETE n
       FROM notifications AS n
       LEFT JOIN notification_types AS nt
         ON n.notification_type_id = nt.id
       WHERE nt.name = 'comment_created'
-      """
-  )
-  op.execute(
-      NOTIFICATION_TYPES.delete().where(
-          NOTIFICATION_TYPES.c.name.in_(notification_names)
-      )
-  )
+      """)
+    op.execute(NOTIFICATION_TYPES.delete().where(
+        NOTIFICATION_TYPES.c.name.in_(notification_names)))

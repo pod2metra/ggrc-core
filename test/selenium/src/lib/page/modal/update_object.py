@@ -8,20 +8,20 @@ from lib.utils import selenium_utils
 
 
 class CompareUpdateObjectModal(base.Modal):
-  """Modal for compare version of objects and update them to latest version."""
-  # pylint: disable=too-few-public-methods
-  _locators = locator.ModalUpdateObject
+    """Modal for compare version of objects and update them to latest version."""
+    # pylint: disable=too-few-public-methods
+    _locators = locator.ModalUpdateObject
 
-  def __init__(self, driver):
-    super(CompareUpdateObjectModal, self).__init__(driver)
-    self.title_modal = base.Label(driver, self._locators.MODAL_TITLE)
-    self.confirmation_text = base.Label(
-        driver, self._locators.CONFIRMATION_TEXT)
-    self.button_update = base.Button(driver, self._locators.BUTTON_CONFIRM)
+    def __init__(self, driver):
+        super(CompareUpdateObjectModal, self).__init__(driver)
+        self.title_modal = base.Label(driver, self._locators.MODAL_TITLE)
+        self.confirmation_text = base.Label(driver,
+                                            self._locators.CONFIRMATION_TEXT)
+        self.button_update = base.Button(driver, self._locators.BUTTON_CONFIRM)
 
-  def confirm_update(self):
-    """Confirm update object."""
-    selenium_utils.wait_for_js_to_load(self._driver)
-    self.button_update.click()
-    selenium_utils.get_when_invisible(
-        self._driver, self._locators.BUTTON_CONFIRM)
+    def confirm_update(self):
+        """Confirm update object."""
+        selenium_utils.wait_for_js_to_load(self._driver)
+        self.button_update.click()
+        selenium_utils.get_when_invisible(self._driver,
+                                          self._locators.BUTTON_CONFIRM)

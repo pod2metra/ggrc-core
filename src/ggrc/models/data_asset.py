@@ -17,9 +17,9 @@ class DataAsset(Roleable, HasObjectState, PublicDocumentable,
                 CustomAttributable, Personable, Relatable, Commentable,
                 TestPlanned, LastDeprecatedTimeboxed, BusinessObject, Indexed,
                 db.Model):
-  __tablename__ = 'data_assets'
+    __tablename__ = 'data_assets'
 
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add missing mapping permissions.
 
 Revision ID: 758b4012b5f
@@ -19,7 +18,8 @@ from alembic import op
 from datetime import datetime
 from sqlalchemy.sql import table, column
 
-roles_table = table('roles',
+roles_table = table(
+    'roles',
     column('id', sa.Integer),
     column('name', sa.String),
     column('permissions_json', sa.Text),
@@ -28,65 +28,68 @@ roles_table = table('roles',
     column('created_at', sa.DateTime),
     column('updated_at', sa.DateTime),
     column('context_id', sa.Integer),
-    )
+)
+
 
 def set_permissions(program_editor_objects):
-  program_owner_objects = list(program_editor_objects)
-  program_owner_objects.append('UserRole')
+    program_owner_objects = list(program_editor_objects)
+    program_owner_objects.append('UserRole')
 
-  current_datetime = datetime.now()
-  op.execute(roles_table.update()\
-      .values(
-        permissions_json = json.dumps({
-          'create': program_owner_objects,
-          'read':   program_owner_objects,
-          'update': program_owner_objects,
-          'delete': program_owner_objects,
-          }),
-        updated_at = current_datetime,
-        )\
-      .where(roles_table.c.name == 'ProgramOwner'))
-  op.execute(roles_table.update()\
-      .values(
-        permissions_json = json.dumps({
-          'create': program_editor_objects,
-          'read':   program_editor_objects,
-          'update': program_editor_objects,
-          'delete': program_editor_objects,
-          }),
-        updated_at = current_datetime)\
-      .where(roles_table.c.name == 'ProgramEditor'))
-  op.execute(roles_table.update()\
-      .values(
-        permissions_json = json.dumps({
-          'create': [],
-          'read': program_editor_objects,
-          'update': [],
-          'delete': [],
-          }),
-        updated_at = current_datetime)\
-      .where(roles_table.c.name == 'ProgramReader'))
+    current_datetime = datetime.now()
+    op.execute(roles_table.update()\
+        .values(
+          permissions_json = json.dumps({
+            'create': program_owner_objects,
+            'read':   program_owner_objects,
+            'update': program_owner_objects,
+            'delete': program_owner_objects,
+            }),
+          updated_at = current_datetime,
+          )\
+        .where(roles_table.c.name == 'ProgramOwner'))
+    op.execute(roles_table.update()\
+        .values(
+          permissions_json = json.dumps({
+            'create': program_editor_objects,
+            'read':   program_editor_objects,
+            'update': program_editor_objects,
+            'delete': program_editor_objects,
+            }),
+          updated_at = current_datetime)\
+        .where(roles_table.c.name == 'ProgramEditor'))
+    op.execute(roles_table.update()\
+        .values(
+          permissions_json = json.dumps({
+            'create': [],
+            'read': program_editor_objects,
+            'update': [],
+            'delete': [],
+            }),
+          updated_at = current_datetime)\
+        .where(roles_table.c.name == 'ProgramReader'))
+
 
 def upgrade():
-  #create the context
-  set_permissions([
-      'Cycle',
-      'ObjectDocument',
-      'ObjectObjective',
-      'ObjectPerson',
-      'ObjectSection',
-      'Program',
-      'ProgramControl',
-      'ProgramDirective',
-      'Relationship',
-      ])
+    #create the context
+    set_permissions([
+        'Cycle',
+        'ObjectDocument',
+        'ObjectObjective',
+        'ObjectPerson',
+        'ObjectSection',
+        'Program',
+        'ProgramControl',
+        'ProgramDirective',
+        'Relationship',
+    ])
+
 
 def downgrade():
-  set_permissions([
-      'Cycle',
-      'ObjectDocument',
-      'ObjectPerson',
-      'Program',
-      'ProgramDirective',
-      'Relationship',
-      ])
+    set_permissions([
+        'Cycle',
+        'ObjectDocument',
+        'ObjectPerson',
+        'Program',
+        'ProgramDirective',
+        'Relationship',
+    ])

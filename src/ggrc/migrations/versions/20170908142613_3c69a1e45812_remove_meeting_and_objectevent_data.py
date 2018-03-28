@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Remove Meeting and ObjectEvent data
 
@@ -17,7 +16,6 @@ from ggrc.migrations.utils import cleanup
 revision = '3c69a1e45812'
 down_revision = 'f0dade8da1'
 
-
 DELETIONS = (
     ("audit_objects", "auditable_type"),
     ("custom_attribute_definitions", "definition_type"),
@@ -30,12 +28,12 @@ DELETIONS = (
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  for table, field in DELETIONS:
-    cleanup.delete(op, table, field, value="Meeting")
-    cleanup.delete(op, table, field, value="ObjectEvent")
+    """Upgrade database schema and/or data, creating a new revision."""
+    for table, field in DELETIONS:
+        cleanup.delete(op, table, field, value="Meeting")
+        cleanup.delete(op, table, field, value="ObjectEvent")
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  pass
+    """Downgrade database schema and/or data back to the previous revision."""
+    pass

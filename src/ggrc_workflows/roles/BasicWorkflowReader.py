@@ -22,10 +22,8 @@ permissions = {
     "create": [
         "Workflow",
     ],
-    "update": [
-    ],
-    "delete": [
-    ],
+    "update": [],
+    "delete": [],
     "view_object_page": [
         "Workflow",
     ],

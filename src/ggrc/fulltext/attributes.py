@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """ This module collect all custom full text attributes classes"""
 
 from collections import defaultdict
@@ -16,7 +15,7 @@ EMPTY_SUBPROPERTY_KEY = ''
 
 
 class FullTextAttr(object):
-  """Custom full text index attribute class
+    """Custom full text index attribute class
 
   Allows to add full text indexing rule for attribute with a custom alias,
   getting value rule and subproperties.
@@ -31,167 +30,182 @@ class FullTextAttr(object):
   The first subproperty in the list - the one used for sorting.
   """
 
-  SUB_KEY_TMPL = "{id_val}-{sub}"
+    SUB_KEY_TMPL = "{id_val}-{sub}"
 
-  def __init__(self, alias, prop_getter, subproperties=None,
-               with_template=True):
-    self.alias = alias
-    self.prop_getter = prop_getter
-    self.subproperties = subproperties or [EMPTY_SUBPROPERTY_KEY]
-    self.with_template = with_template
-    self.is_sortable = EMPTY_SUBPROPERTY_KEY not in self.subproperties
+    def __init__(self,
+                 alias,
+                 prop_getter,
+                 subproperties=None,
+                 with_template=True):
+        self.alias = alias
+        self.prop_getter = prop_getter
+        self.subproperties = subproperties or [EMPTY_SUBPROPERTY_KEY]
+        self.with_template = with_template
+        self.is_sortable = EMPTY_SUBPROPERTY_KEY not in self.subproperties
 
-  def get_attribute_name(self, instance):
-    """Get attribute's name from it's alias
+    def get_attribute_name(self, instance):
+        """Get attribute's name from it's alias
 
     If template exists for the property, it's being applied
     """
-    if isinstance(instance, Indexed):
-      property_tmpl = instance.PROPERTY_TEMPLATE
-    else:
-      property_tmpl = u"{}"
+        if isinstance(instance, Indexed):
+            property_tmpl = instance.PROPERTY_TEMPLATE
+        else:
+            property_tmpl = u"{}"
 
-    if self.with_template:
-      return property_tmpl.format(self.alias)
-    return self.alias
+        if self.with_template:
+            return property_tmpl.format(self.alias)
+        return self.alias
 
-  def get_value_for(self, instance):
-    """Get value from the given instance using 'prop_getter' rule"""
-    if callable(self.prop_getter):
-      return self.prop_getter(instance)
-    return getattr(instance, self.prop_getter)
+    def get_value_for(self, instance):
+        """Get value from the given instance using 'prop_getter' rule"""
+        if callable(self.prop_getter):
+            return self.prop_getter(instance)
+        return getattr(instance, self.prop_getter)
 
-  def get_property_for(self, instance):
-    """Collect property dict for the given instance"""
-    value = self.get_value_for(instance)
-    results = {}
-    sorted_dict = {}
-    sorting_subprop = self.subproperties[0]
-    for subprop in self.subproperties:
-      if value is not None and subprop != EMPTY_SUBPROPERTY_KEY:
-        subprop_key = self.SUB_KEY_TMPL.format(id_val=value.id, sub=subprop)
-        result = getattr(value, subprop)
-        results[subprop_key] = result
-        if result and subprop == sorting_subprop:
-          sorted_dict[value.id] = unicode(result)
-      else:
-        results[subprop] = value
-    if self.is_sortable and results:
-      results['__sort__'] = u':'.join(sorted(sorted_dict.values()))
-    return {self.get_attribute_name(instance): results}
+    def get_property_for(self, instance):
+        """Collect property dict for the given instance"""
+        value = self.get_value_for(instance)
+        results = {}
+        sorted_dict = {}
+        sorting_subprop = self.subproperties[0]
+        for subprop in self.subproperties:
+            if value is not None and subprop != EMPTY_SUBPROPERTY_KEY:
+                subprop_key = self.SUB_KEY_TMPL.format(
+                    id_val=value.id, sub=subprop)
+                result = getattr(value, subprop)
+                results[subprop_key] = result
+                if result and subprop == sorting_subprop:
+                    sorted_dict[value.id] = unicode(result)
+            else:
+                results[subprop] = value
+        if self.is_sortable and results:
+            results['__sort__'] = u':'.join(sorted(sorted_dict.values()))
+        return {self.get_attribute_name(instance): results}
 
-  # pylint: disable=unused-argument
-  @staticmethod
-  def get_filter_value(value, operation):
-    return value
+    # pylint: disable=unused-argument
+    @staticmethod
+    def get_filter_value(value, operation):
+        return value
 
-  def get_attribute_revisioned_value(self, content):
-    """Get attribute value from the given revision content
+    def get_attribute_revisioned_value(self, content):
+        """Get attribute value from the given revision content
 
     accorging to the FullTextAttr rules
     """
-    return content.get(self.alias, None)
+        return content.get(self.alias, None)
 
 
 class ValueMapFullTextAttr(FullTextAttr):
-  """Custom full text index attribute class for specific values
+    """Custom full text index attribute class for specific values
 
   Used in case when we need to cast property value to some
   specific value to be indexed.
   """
-  def __init__(self, *args, **kwargs):
-    value_map = kwargs.pop("value_map", None)
-    assert value_map is not None
-    self.value_map = value_map
-    super(ValueMapFullTextAttr, self).__init__(*args, **kwargs)
 
-  def get_value_for(self, instance):
-    """Get value from the instance using value_map rule"""
-    value = super(ValueMapFullTextAttr, self).get_value_for(instance)
-    # handle error if value_map doesn't have mapping for the given value
-    return self.value_map.get(value, None)
+    def __init__(self, *args, **kwargs):
+        value_map = kwargs.pop("value_map", None)
+        assert value_map is not None
+        self.value_map = value_map
+        super(ValueMapFullTextAttr, self).__init__(*args, **kwargs)
 
-  def get_attribute_revisioned_value(self, content):
-    """Get attribute value from the given revision content
+    def get_value_for(self, instance):
+        """Get value from the instance using value_map rule"""
+        value = super(ValueMapFullTextAttr, self).get_value_for(instance)
+        # handle error if value_map doesn't have mapping for the given value
+        return self.value_map.get(value, None)
+
+    def get_attribute_revisioned_value(self, content):
+        """Get attribute value from the given revision content
 
     accorging to the FullTextAttr rules
     """
-    return self.value_map.get(content[self.alias], None)
+        return self.value_map.get(content[self.alias], None)
 
 
 class BooleanFullTextAttr(ValueMapFullTextAttr):
-  """Custom full text index attribute class for Boolean values
+    """Custom full text index attribute class for Boolean values
 
   Used in case we need to cast property boolean value to some
   specific value to be indexed.
   E.g. 1/0 to key/non-key (for Significance field)
   """
-  # pylint: disable=too-many-arguments
-  def __init__(self, alias, prop_getter, subproperties=None,
-               true_value="true", false_value="false",
-               with_template=True,):
-    value_map = {True: true_value, False: false_value}
-    super(BooleanFullTextAttr, self).__init__(alias, prop_getter,
-                                              subproperties=subproperties,
-                                              with_template=with_template,
-                                              value_map=value_map)
 
-  def get_value_for(self, instance):
-    """Get value from the instance using value_map rule"""
-    # pylint: disable=bad-super-call
-    value = super(ValueMapFullTextAttr, self).get_value_for(instance)
-    if value is not None:
-      return self.value_map.get(value, None)
+    # pylint: disable=too-many-arguments
+    def __init__(
+            self,
+            alias,
+            prop_getter,
+            subproperties=None,
+            true_value="true",
+            false_value="false",
+            with_template=True,
+    ):
+        value_map = {True: true_value, False: false_value}
+        super(BooleanFullTextAttr, self).__init__(
+            alias,
+            prop_getter,
+            subproperties=subproperties,
+            with_template=with_template,
+            value_map=value_map)
 
-  def get_attribute_revisioned_value(self, content):
-    """Get attribute value from the given revision content
+    def get_value_for(self, instance):
+        """Get value from the instance using value_map rule"""
+        # pylint: disable=bad-super-call
+        value = super(ValueMapFullTextAttr, self).get_value_for(instance)
+        if value is not None:
+            return self.value_map.get(value, None)
+
+    def get_attribute_revisioned_value(self, content):
+        """Get attribute value from the given revision content
 
     accorging to the FullTextAttr rules
     """
-    rev_val = content[self.alias]
-    if rev_val is None:
-      return
-    if not isinstance(rev_val, bool):
-      rev_val = bool(int(str(rev_val)))
-    return self.value_map.get(rev_val, None)
+        rev_val = content[self.alias]
+        if rev_val is None:
+            return
+        if not isinstance(rev_val, bool):
+            rev_val = bool(int(str(rev_val)))
+        return self.value_map.get(rev_val, None)
 
 
 class CustomRoleAttr(FullTextAttr):
-  """Custom full text index attribute class for custom roles"""
-  # pylint: disable=too-few-public-methods
-  def __init__(self, alias):
-    super(CustomRoleAttr, self).__init__(alias, alias)
-    self.with_template = False
+    """Custom full text index attribute class for custom roles"""
 
-  def get_property_for(self, instance):
-    """Returns index properties of all custom roles for a given instance"""
-    results = {}
-    sorted_roles = defaultdict(list)
-    for acl in getattr(instance, self.alias, []):
-      if not acl.ac_role:
-        # If acl is not properly set the acl record was *most likely* created
-        # through acl propagation hook and probably shouldn't be indexed at
-        # all, because we are creating internal roles. In any case we can
-        # properly check for the internal property on the role once GGRC-3784
-        # is done.
-        continue
-      if acl.ac_role.internal:
-        # Don't index internal roles they are not presented to user.
-        continue
-      ac_role = acl.ac_role.name
-      person_id = acl.person.id
-      if not results.get(acl.ac_role.name, None):
-        results[acl.ac_role.name] = {}
-      sorted_roles[ac_role].append(acl.person.email)
-      results[ac_role]["{}-email".format(person_id)] = acl.person.email
-      results[ac_role]["{}-name".format(person_id)] = acl.person.name
-    for role in sorted_roles:
-      results[role]["__sort__"] = u':'.join(sorted(sorted_roles[role]))
-    return results
+    # pylint: disable=too-few-public-methods
+    def __init__(self, alias):
+        super(CustomRoleAttr, self).__init__(alias, alias)
+        self.with_template = False
+
+    def get_property_for(self, instance):
+        """Returns index properties of all custom roles for a given instance"""
+        results = {}
+        sorted_roles = defaultdict(list)
+        for acl in getattr(instance, self.alias, []):
+            if not acl.ac_role:
+                # If acl is not properly set the acl record was *most likely* created
+                # through acl propagation hook and probably shouldn't be indexed at
+                # all, because we are creating internal roles. In any case we can
+                # properly check for the internal property on the role once GGRC-3784
+                # is done.
+                continue
+            if acl.ac_role.internal:
+                # Don't index internal roles they are not presented to user.
+                continue
+            ac_role = acl.ac_role.name
+            person_id = acl.person.id
+            if not results.get(acl.ac_role.name, None):
+                results[acl.ac_role.name] = {}
+            sorted_roles[ac_role].append(acl.person.email)
+            results[ac_role]["{}-email".format(person_id)] = acl.person.email
+            results[ac_role]["{}-name".format(person_id)] = acl.person.name
+        for role in sorted_roles:
+            results[role]["__sort__"] = u':'.join(sorted(sorted_roles[role]))
+        return results
 
 
 class MultipleSubpropertyFullTextAttr(FullTextAttr):
-  """Custom full text index attribute class for multiple return values
+    """Custom full text index attribute class for multiple return values
 
   subproperties required for this class
   this class required for store in full text search more than 1 returned value
@@ -200,121 +214,119 @@ class MultipleSubpropertyFullTextAttr(FullTextAttr):
   `EMPTY` value
   """
 
-  def __init__(self, *args, **kwargs):
-    super(MultipleSubpropertyFullTextAttr, self).__init__(*args, **kwargs)
-    assert EMPTY_SUBPROPERTY_KEY not in self.subproperties
-    assert self.is_sortable
+    def __init__(self, *args, **kwargs):
+        super(MultipleSubpropertyFullTextAttr, self).__init__(*args, **kwargs)
+        assert EMPTY_SUBPROPERTY_KEY not in self.subproperties
+        assert self.is_sortable
 
-  def get_property_for(self, instance):
-    """Collect property for sended instance"""
-    values = self.get_value_for(instance)
-    results = {}
-    sorted_dict = {}
-    sorting_subprop = self.subproperties[0]
-    for sub in self.subproperties:
-      for value in values:
-        if value is not None:
-          sub_key = self.SUB_KEY_TMPL.format(id_val=value.id, sub=sub)
-          result = getattr(value, sub)
-          results[sub_key] = result
-          if result and sub == sorting_subprop:
-            sorted_dict[value.id] = unicode(result)
-        else:
-          sub_key = self.SUB_KEY_TMPL.format(id_val='EMPTY', sub=sub)
-          results[sub_key] = None
-    if self.is_sortable and results:
-      results['__sort__'] = u':'.join(sorted(sorted_dict.values()))
-    return {self.get_attribute_name(instance): results}
+    def get_property_for(self, instance):
+        """Collect property for sended instance"""
+        values = self.get_value_for(instance)
+        results = {}
+        sorted_dict = {}
+        sorting_subprop = self.subproperties[0]
+        for sub in self.subproperties:
+            for value in values:
+                if value is not None:
+                    sub_key = self.SUB_KEY_TMPL.format(
+                        id_val=value.id, sub=sub)
+                    result = getattr(value, sub)
+                    results[sub_key] = result
+                    if result and sub == sorting_subprop:
+                        sorted_dict[value.id] = unicode(result)
+                else:
+                    sub_key = self.SUB_KEY_TMPL.format(id_val='EMPTY', sub=sub)
+                    results[sub_key] = None
+        if self.is_sortable and results:
+            results['__sort__'] = u':'.join(sorted(sorted_dict.values()))
+        return {self.get_attribute_name(instance): results}
 
 
 # pylint: disable=too-few-public-methods
 class DatetimeValue(object):
-  """Mixin setup if expected filter value is datetime.
+    """Mixin setup if expected filter value is datetime.
 
   This mixin should be used for filtering datetime fields values only.
   """
 
-  VALUE_ERROR_MSG = (u"Specified date format is invalid for search, "
-                     u"please use the following format for date: "
-                     u"mm/dd/yyyy, mm-dd-yyyy, mm/yyyy, mm-yyyy, yyyy.")
+    VALUE_ERROR_MSG = (u"Specified date format is invalid for search, "
+                       u"please use the following format for date: "
+                       u"mm/dd/yyyy, mm-dd-yyyy, mm/yyyy, mm-yyyy, yyyy.")
 
-  def get_value_error_msg(self):
-    return self.VALUE_ERROR_MSG
+    def get_value_error_msg(self):
+        return self.VALUE_ERROR_MSG
 
-  @staticmethod
-  def get_filter_value(value, operation):
-    """returns parsed datetime pairs for selected operation"""
-    converted_pairs = date_parsers.parse_date(unicode(value))
-    if not converted_pairs:
-      return
-    date_dict = {
-        "=": converted_pairs,
-        "~": converted_pairs,
-        "!~": (converted_pairs[1], converted_pairs[0]),
-        "!=": (converted_pairs[1], converted_pairs[0]),
-        ">": (converted_pairs[1], None),
-        "<": (None, converted_pairs[0]),
-        ">=": (converted_pairs[0], None),
-        "<=": (None, converted_pairs[1]),
-    }
-    return date_dict.get(operation)
+    @staticmethod
+    def get_filter_value(value, operation):
+        """returns parsed datetime pairs for selected operation"""
+        converted_pairs = date_parsers.parse_date(unicode(value))
+        if not converted_pairs:
+            return
+        date_dict = {
+            "=": converted_pairs,
+            "~": converted_pairs,
+            "!~": (converted_pairs[1], converted_pairs[0]),
+            "!=": (converted_pairs[1], converted_pairs[0]),
+            ">": (converted_pairs[1], None),
+            "<": (None, converted_pairs[0]),
+            ">=": (converted_pairs[0], None),
+            "<=": (None, converted_pairs[1]),
+        }
+        return date_dict.get(operation)
 
 
 class DateValue(DatetimeValue):
-  """Mixin setup if expected filter value is date
+    """Mixin setup if expected filter value is date
 
   This mixin should be used for filtering date fields values only.
   """
 
-  def get_filter_value(self, value, operation):
-    results = super(DateValue, self).get_filter_value(value, operation)
-    if not results:
-      return
-    return [i.date() if i else i for i in results]
+    def get_filter_value(self, value, operation):
+        results = super(DateValue, self).get_filter_value(value, operation)
+        if not results:
+            return
+        return [i.date() if i else i for i in results]
 
 
 class TimezonedDatetimeValue(DatetimeValue):
-  """Mixin setup if expected filter value is datetime depended from timezone.
+    """Mixin setup if expected filter value is datetime depended from timezone.
 
   This mixin should be used for filtering datetime fields values only.
   """
 
-  def get_filter_value(self, value, operation):
-    """returns parsed datetime pairs for selected operation"""
-    if getattr(g, "user_timezone_offset", None):
-      minutes_offset = int(g.user_timezone_offset)
-    else:
-      minutes_offset = 0
-    offset = datetime.timedelta(minutes=minutes_offset)
-    converted_pairs = super(TimezonedDatetimeValue, self).get_filter_value(
-        value, operation
-    )
-    if not converted_pairs:
-      return converted_pairs
-    return [(p - offset) if p else p for p in converted_pairs]
+    def get_filter_value(self, value, operation):
+        """returns parsed datetime pairs for selected operation"""
+        if getattr(g, "user_timezone_offset", None):
+            minutes_offset = int(g.user_timezone_offset)
+        else:
+            minutes_offset = 0
+        offset = datetime.timedelta(minutes=minutes_offset)
+        converted_pairs = super(TimezonedDatetimeValue, self).get_filter_value(
+            value, operation)
+        if not converted_pairs:
+            return converted_pairs
+        return [(p - offset) if p else p for p in converted_pairs]
 
 
 class DatetimeFullTextAttr(TimezonedDatetimeValue, FullTextAttr):
-  """Custom full text index attribute class for Datetime values"""
+    """Custom full text index attribute class for Datetime values"""
 
-  def get_attribute_revisioned_value(self, content):
-    """Get attribute value from the given revision content
+    def get_attribute_revisioned_value(self, content):
+        """Get attribute value from the given revision content
 
     accorging to the FullTextAttr rules
     """
-    if self.prop_getter in content:
-      return content[self.alias].replace("T", " ")
+        if self.prop_getter in content:
+            return content[self.alias].replace("T", " ")
 
 
 DateFullTextAttr = type("DateFullTextAttr", (DateValue, FullTextAttr), {})
-
 
 DatetimeMultipleSubpropertyFullTextAttr = type(
     "DatetimeMultipleSubpropertyFullTextAttr",
     (TimezonedDatetimeValue, MultipleSubpropertyFullTextAttr),
     {},
 )
-
 
 DateMultipleSubpropertyFullTextAttr = type(
     "DateMultipleSubpropertyFullTextAttr",

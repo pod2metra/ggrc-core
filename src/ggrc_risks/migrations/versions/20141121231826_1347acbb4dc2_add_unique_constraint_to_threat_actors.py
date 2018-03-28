@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add unique constraint to threat actors
 
 Revision ID: 1347acbb4dc2
@@ -17,8 +16,8 @@ from alembic import op
 
 
 def upgrade():
-  op.create_unique_constraint('uq_t_actors', 'threat_actors', ['title'])
+    op.create_unique_constraint('uq_t_actors', 'threat_actors', ['title'])
 
 
 def downgrade():
-  op.drop_constraint('uq_t_actors', 'threat_actors', 'unique')
+    op.drop_constraint('uq_t_actors', 'threat_actors', 'unique')

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Module for Clause model."""
 from sqlalchemy import orm
 
@@ -25,36 +24,34 @@ class Clause(Roleable, HasObjectState, Hierarchical, CustomAttributable,
              PublicDocumentable, TestPlanned, BusinessObject, Indexed,
              db.Model):
 
-  __tablename__ = 'clauses'
-  _table_plural = 'clauses'
-  _aliases = {
-      "description": "Text of Clause",
-      "directive": None,
-      "document_url": None,
-      "document_evidence": None,
-  }
+    __tablename__ = 'clauses'
+    _table_plural = 'clauses'
+    _aliases = {
+        "description": "Text of Clause",
+        "directive": None,
+        "document_url": None,
+        "document_evidence": None,
+    }
 
-  # pylint: disable=invalid-name
-  na = deferred(db.Column(db.Boolean, default=False, nullable=False),
-                'Clause')
-  notes = deferred(db.Column(db.Text, nullable=False, default=u""), 'Clause')
+    # pylint: disable=invalid-name
+    na = deferred(
+        db.Column(db.Boolean, default=False, nullable=False), 'Clause')
+    notes = deferred(db.Column(db.Text, nullable=False, default=u""), 'Clause')
 
-  _api_attrs = reflection.ApiAttributes('na', 'notes')
+    _api_attrs = reflection.ApiAttributes('na', 'notes')
 
-  _fulltext_attrs = [
-      'na',
-      'notes',
-  ]
+    _fulltext_attrs = [
+        'na',
+        'notes',
+    ]
 
-  @classmethod
-  def indexed_query(cls):
-    query = super(Clause, cls).indexed_query()
-    return query.options(
-        orm.Load(cls).load_only(
+    @classmethod
+    def indexed_query(cls):
+        query = super(Clause, cls).indexed_query()
+        return query.options(orm.Load(cls).load_only(
             "na",
             "notes",
-        )
-    )
+        ))
 
-  _sanitize_html = ['notes']
-  _include_links = []
+    _sanitize_html = ['notes']
+    _include_links = []

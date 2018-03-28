@@ -1,13 +1,12 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Checker function for import pre commit hooks."""
 
 from ggrc.converters import errors
 
 
 def check_tasks(row_converter):
-  """Checker for task group task objects.
+    """Checker for task group task objects.
 
   This checker should make sure if a task group task has any invalid values
   that should be ignored. Object will not be checked if there's already
@@ -17,16 +16,16 @@ def check_tasks(row_converter):
     row_converter: RowConverter object with row data for a task group task
       import.
   """
-  if row_converter.ignore:
-    return
+    if row_converter.ignore:
+        return
 
-  obj = row_converter.obj
-  if obj.start_date > obj.end_date:
-    row_converter.add_error(
-        errors.INVALID_START_END_DATES,
-        start_date="Start date",
-        end_date="End date",
-    )
+    obj = row_converter.obj
+    if obj.start_date > obj.end_date:
+        row_converter.add_error(
+            errors.INVALID_START_END_DATES,
+            start_date="Start date",
+            end_date="End date",
+        )
 
 
 DENY_FINISHED_DATES_STATUSES_STR = ("<'Assigned' / 'In Progress' / "
@@ -36,7 +35,7 @@ DENY_VERIFIED_DATES_STATUSES_STR = ("<'Assigned' / 'In Progress' / "
 
 
 def check_cycle_tasks(row_converter):  # noqa
-  """Checker for CycleTaskGroupObjectTask model objects.
+    """Checker for CycleTaskGroupObjectTask model objects.
 
   This checker should make sure if a cycle-task has any invalid values
   that should be ignored during update via import.
@@ -45,46 +44,46 @@ def check_cycle_tasks(row_converter):  # noqa
     row_converter: RowConverter object with row data for a cycle-task
       import.
   """
-  # Cycle-Task creation is denied. Don't need checks for new items.
-  if row_converter.is_new:
-    return
-  obj = row_converter.obj
-  if obj.start_date > obj.end_date:
-    row_converter.add_error(
-        errors.INVALID_START_END_DATES,
-        start_date="Start Date",
-        end_date="Due Date",
-    )
-  if (obj.finished_date and obj.verified_date and
-          obj.finished_date > obj.verified_date):
-    row_converter.add_error(
-        errors.INVALID_START_END_DATES,
-        start_date="Actual Finish Date",
-        end_date="Actual Verified Date",
-    )
-  if obj.status not in (obj.FINISHED, obj.VERIFIED):
-    if obj.finished_date:
-      row_converter.add_error(
-          errors.INVALID_STATUS_DATE_CORRELATION,
-          date="Actual Finish Date",
-          deny_states=DENY_FINISHED_DATES_STATUSES_STR,
-      )
-    if obj.verified_date:
-      row_converter.add_error(
-          errors.INVALID_STATUS_DATE_CORRELATION,
-          date="Actual Verified Date",
-          deny_states=DENY_VERIFIED_DATES_STATUSES_STR,
-      )
-  if obj.status == obj.FINISHED and obj.verified_date:
-    row_converter.add_error(
-        errors.INVALID_STATUS_DATE_CORRELATION,
-        date="Actual Verified Date",
-        deny_states=DENY_VERIFIED_DATES_STATUSES_STR,
-    )
+    # Cycle-Task creation is denied. Don't need checks for new items.
+    if row_converter.is_new:
+        return
+    obj = row_converter.obj
+    if obj.start_date > obj.end_date:
+        row_converter.add_error(
+            errors.INVALID_START_END_DATES,
+            start_date="Start Date",
+            end_date="Due Date",
+        )
+    if (obj.finished_date and obj.verified_date
+            and obj.finished_date > obj.verified_date):
+        row_converter.add_error(
+            errors.INVALID_START_END_DATES,
+            start_date="Actual Finish Date",
+            end_date="Actual Verified Date",
+        )
+    if obj.status not in (obj.FINISHED, obj.VERIFIED):
+        if obj.finished_date:
+            row_converter.add_error(
+                errors.INVALID_STATUS_DATE_CORRELATION,
+                date="Actual Finish Date",
+                deny_states=DENY_FINISHED_DATES_STATUSES_STR,
+            )
+        if obj.verified_date:
+            row_converter.add_error(
+                errors.INVALID_STATUS_DATE_CORRELATION,
+                date="Actual Verified Date",
+                deny_states=DENY_VERIFIED_DATES_STATUSES_STR,
+            )
+    if obj.status == obj.FINISHED and obj.verified_date:
+        row_converter.add_error(
+            errors.INVALID_STATUS_DATE_CORRELATION,
+            date="Actual Verified Date",
+            deny_states=DENY_VERIFIED_DATES_STATUSES_STR,
+        )
 
 
 def check_workflows(row_converter):
-  """Checker for Workflow object.
+    """Checker for Workflow object.
 
   Check if a Workflow has any invalid values. If so, it should be ignored.
   Object will not be checked if there's already an error exists
@@ -94,22 +93,22 @@ def check_workflows(row_converter):
     row_converter: RowConverter object with row data for a task group task
       import.
   """
-  if row_converter.ignore:
-    return
+    if row_converter.ignore:
+        return
 
-  obj = row_converter.obj
-  if (obj.unit is None and obj.repeat_every is not None or
-          obj.unit is not None and obj.repeat_every is None):
-    row_converter.add_error(
-        errors.VALIDATION_ERROR,
-        column_name="'repeat_every', 'unit'",
-        message="'repeat_every' and 'unit' fields can be set to NULL only"
-                " simultaneously",
-    )
+    obj = row_converter.obj
+    if (obj.unit is None and obj.repeat_every is not None
+            or obj.unit is not None and obj.repeat_every is None):
+        row_converter.add_error(
+            errors.VALIDATION_ERROR,
+            column_name="'repeat_every', 'unit'",
+            message="'repeat_every' and 'unit' fields can be set to NULL only"
+            " simultaneously",
+        )
 
 
 def check_assessment(row_converter):
-  """Checker for Assessment model instance.
+    """Checker for Assessment model instance.
 
   This checker should make sure if an assessment are invalid or non-importable
   and should be ignored.
@@ -119,12 +118,12 @@ def check_assessment(row_converter):
         import.
       kwargs: Dict with options.
   """
-  if row_converter.obj.archived:
-    row_converter.add_error(errors.ARCHIVED_IMPORT_ERROR)
+    if row_converter.obj.archived:
+        row_converter.add_error(errors.ARCHIVED_IMPORT_ERROR)
 
 
 def check_assessment_status(row_converter):
-  """Verify Assessment status.
+    """Verify Assessment status.
 
   This function should make sure if an assessment can set-up new status.
 
@@ -132,16 +131,16 @@ def check_assessment_status(row_converter):
       row_converter: RowConverter object with row data for an assessment
         import.
   """
-  try:
-    row_converter.obj.validate_done_state(
-        row_converter.old_values.get("status"),
-        row_converter.obj.status
-    )
-  except ValueError as exp:
-    status_alias = row_converter.headers.get("status", {}).get("display_name")
-    row_converter.add_error(
-        errors.VALIDATION_ERROR, column_name=status_alias, message=exp.message
-    )
+    try:
+        row_converter.obj.validate_done_state(
+            row_converter.old_values.get("status"), row_converter.obj.status)
+    except ValueError as exp:
+        status_alias = row_converter.headers.get("status",
+                                                 {}).get("display_name")
+        row_converter.add_error(
+            errors.VALIDATION_ERROR,
+            column_name=status_alias,
+            message=exp.message)
 
 
 CHECKS = {
@@ -151,6 +150,4 @@ CHECKS = {
     "Assessment": check_assessment
 }
 
-SECONDARY_CHECKS = {
-    "Assessment": check_assessment_status
-}
+SECONDARY_CHECKS = {"Assessment": check_assessment_status}

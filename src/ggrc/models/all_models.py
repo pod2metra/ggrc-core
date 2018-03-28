@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """All GGRC model classes grouped together for convenience."""
 
 import sys
@@ -141,7 +140,7 @@ __all__ = [m.__name__ for m in all_models]
 
 
 def register_model(model):
-  """Add model to all models.
+    """Add model to all models.
 
   This function is used for adding models from different ggrc modules, such as
   ggrc_workflows or ggrc_risks, to the list of all models in the ggrc module.
@@ -149,15 +148,15 @@ def register_model(model):
   Args:
     model: sqlalchemy model to be added to the list of all models.
   """
-  current_module = sys.modules[__name__]
-  setattr(current_module, model.__name__, model)
-  inflector.register_inflections(model._inflector)
-  all_models.append(model)
-  __all__.append(model.__name__)
+    current_module = sys.modules[__name__]
+    setattr(current_module, model.__name__, model)
+    inflector.register_inflections(model._inflector)
+    all_models.append(model)
+    __all__.append(model.__name__)
 
 
 def unregister_model(model):
-  """Remove model from all models.
+    """Remove model from all models.
 
   This function removes the given model from the main ggrc module and the
   all_models list.
@@ -165,10 +164,10 @@ def unregister_model(model):
   Args:
     model: sqlalchemy model that should be removed from the ggrc module
   """
-  current_module = sys.modules[__name__]
-  delattr(current_module, model.__name__)
-  inflector.unregister_inflector(model._inflector)
-  if model in all_models:
-    all_models.remove(model)
-  if model.__name__ in __all__:
-    __all__.remove(model.__name__)
+    current_module = sys.modules[__name__]
+    delattr(current_module, model.__name__)
+    inflector.unregister_inflector(model._inflector)
+    if model in all_models:
+        all_models.remove(model)
+    if model.__name__ in __all__:
+        __all__.remove(model.__name__)

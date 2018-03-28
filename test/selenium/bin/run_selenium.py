@@ -20,7 +20,6 @@ import requests
 from lib import file_ops, environment, decorator  # noqa
 from lib.service.rest_service import client
 
-
 # add src to path so that we can do imports from our src
 PROJECT_ROOT_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../"
 sys.path.append(PROJECT_ROOT_PATH + "src")
@@ -28,27 +27,27 @@ sys.path.append(PROJECT_ROOT_PATH + "src")
 
 @decorator.track_time
 def wait_for_server():
-  """Wait for the server to return '200' status code in response during
+    """Wait for the server to return '200' status code in response during
   predefined time in 'pytest.ini'.
   """
-  sys.stdout.write("Wating on server: ")
-  for _ in xrange(environment.SERVER_WAIT_TIME):
-    try:
-      if (requests.head(environment.APP_URL).status_code ==
-              client.RestClient.STATUS_CODES["OK"]):
-        print "[Done]"
-        return True
-    except IOError:
-      sys.stdout.write(".")
-      sys.stdout.flush()
-      time.sleep(1)
-  print "[Failed]"
-  return False
+    sys.stdout.write("Wating on server: ")
+    for _ in xrange(environment.SERVER_WAIT_TIME):
+        try:
+            if (requests.head(environment.APP_URL).status_code ==
+                    client.RestClient.STATUS_CODES["OK"]):
+                print "[Done]"
+                return True
+        except IOError:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+            time.sleep(1)
+    print "[Failed]"
+    return False
 
 
 if __name__ == "__main__":
-  if not wait_for_server():
-    sys.exit(3)
-  file_ops.create_directory(environment.LOG_PATH)
-  file_ops.delete_directory_contents(environment.LOG_PATH)
-  sys.exit(pytest.main())
+    if not wait_for_server():
+        sys.exit(3)
+    file_ops.create_directory(environment.LOG_PATH)
+    file_ops.delete_directory_contents(environment.LOG_PATH)
+    sys.exit(pytest.main())

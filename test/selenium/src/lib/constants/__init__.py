@@ -3,23 +3,6 @@
 """Import constants modules."""
 # flake8: noqa
 
-
-from lib.constants import (
-  cls_name,
-  element,
-  log,
-  path,
-  locator,
-  method,
-  regex,
-  url,
-  ux,
-  test_runner,
-  settings,
-  messages,
-  roles,
-  value_aliases,
-  files,
-  objects,
-  counters
-)
+from lib.constants import (cls_name, element, log, path, locator, method,
+                           regex, url, ux, test_runner, settings, messages,
+                           roles, value_aliases, files, objects, counters)

@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add test_plan field
 
@@ -20,14 +19,14 @@ down_revision = '237ccd7c769c'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.add_column(
-      "risk_assessments",
-      sa.Column("test_plan", sa.Text, nullable=True),
-  )
-  rename_ca_title("Assessment Procedure", ["risk_assessment"])
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.add_column(
+        "risk_assessments",
+        sa.Column("test_plan", sa.Text, nullable=True),
+    )
+    rename_ca_title("Assessment Procedure", ["risk_assessment"])
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_column("risk_assessments", "test_plan")
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_column("risk_assessments", "test_plan")

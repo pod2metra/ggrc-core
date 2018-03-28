@@ -8,9 +8,9 @@ from integration.ggrc_workflows.helpers import setup_helper
 
 
 class WorkflowTestCase(TestCase):
-  """Workflow test case base class."""
+    """Workflow test case base class."""
 
-  def setUp(self):
-    super(WorkflowTestCase, self).setUp()
-    self.api_helper = api_helper.Api()
-    self.setup_helper = setup_helper.WorkflowSetup()
+    def setUp(self):
+        super(WorkflowTestCase, self).setUp()
+        self.api_helper = api_helper.Api()
+        self.setup_helper = setup_helper.WorkflowSetup()

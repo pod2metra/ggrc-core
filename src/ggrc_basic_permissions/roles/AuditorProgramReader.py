@@ -7,9 +7,4 @@ description = """
   program context so that the auditor will have access to the private program
   information and mappings required to perform the audit.
   """
-permissions = {
-    "read": [],
-    "create": [],
-    "update": [],
-    "delete": []
-}
+permissions = {"read": [], "create": [], "update": [], "delete": []}

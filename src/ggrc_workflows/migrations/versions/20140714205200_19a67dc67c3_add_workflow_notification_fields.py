@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Add workflow notification fields
 
 Revision ID: 19a67dc67c3
@@ -19,8 +17,13 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('workflows', sa.Column('notify_custom_message', sa.String(length=250), nullable=True))
-    op.add_column('workflows', sa.Column('notify_on_change', sa.Boolean(), nullable=False))
+    op.add_column('workflows',
+                  sa.Column(
+                      'notify_custom_message',
+                      sa.String(length=250),
+                      nullable=True))
+    op.add_column('workflows',
+                  sa.Column('notify_on_change', sa.Boolean(), nullable=False))
 
 
 def downgrade():

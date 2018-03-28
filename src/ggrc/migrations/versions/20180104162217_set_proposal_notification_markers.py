@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Set notify_about_proposal = True to Control and Roles Admin and P. Contacts
 
@@ -17,7 +16,7 @@ down_revision = 'e9de00a0c8b'
 
 
 def upgrade():
-  op.execute("""
+    op.execute("""
        update access_control_roles
        set notify_about_proposal = 1
        where object_type in ("Control", "Risk") and
@@ -26,4 +25,4 @@ def upgrade():
 
 
 def downgrade():
-  pass
+    pass

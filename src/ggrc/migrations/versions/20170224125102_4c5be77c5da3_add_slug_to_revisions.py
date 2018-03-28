@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add slug to revisions
 
@@ -18,19 +17,18 @@ down_revision = "341f8a645b2f"
 
 
 def upgrade():
-  """Add resource_slug to revisions table."""
-  op.add_column(
-      "revisions",
-      sa.Column("resource_slug", sa.String(length=250), nullable=True)
-  )
-  op.create_index(
-      "ix_revisions_resource_slug",
-      "revisions",
-      ["resource_slug"],
-      unique=False,
-  )
+    """Add resource_slug to revisions table."""
+    op.add_column("revisions",
+                  sa.Column(
+                      "resource_slug", sa.String(length=250), nullable=True))
+    op.create_index(
+        "ix_revisions_resource_slug",
+        "revisions",
+        ["resource_slug"],
+        unique=False,
+    )
 
 
 def downgrade():
-  """Remove resource_slug from revisions table."""
-  op.drop_column("revisions", "resource_slug")
+    """Remove resource_slug from revisions table."""
+    op.drop_column("revisions", "resource_slug")

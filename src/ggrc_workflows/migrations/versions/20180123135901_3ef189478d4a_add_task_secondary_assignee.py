@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Add task secondary assignee
 
@@ -14,11 +13,9 @@ import sqlalchemy as sa
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '3ef189478d4a'
 down_revision = '58e0f07e174b'
-
 
 ACR_TABLE = sa.sql.table(
     'access_control_roles',
@@ -36,7 +33,6 @@ ACR_TABLE = sa.sql.table(
     sa.sql.column('internal', sa.Boolean),
 )
 
-
 DELETE_SQL = """
 DELETE FROM access_control_roles
 WHERE name = 'Task Secondary Assignees'
@@ -44,39 +40,36 @@ WHERE name = 'Task Secondary Assignees'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.bulk_insert(
-      ACR_TABLE,
-      [{
-          'name': 'Task Secondary Assignees',
-          'object_type': 'TaskGroupTask',
-          'read': True,
-          'update': True,
-          'delete': False,
-          'my_work': False,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': False,
-          'default_to_current_user': False,
-          'non_editable': True,
-          'internal': False
-      }, {
-          'name': 'Task Secondary Assignees',
-          'object_type': 'CycleTaskGroupObjectTask',
-          'read': True,
-          'update': True,
-          'delete': False,
-          'my_work': False,
-          'created_at': datetime.datetime.now(),
-          'updated_at': datetime.datetime.now(),
-          'mandatory': False,
-          'default_to_current_user': False,
-          'non_editable': True,
-          'internal': False
-      }]
-  )
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.bulk_insert(ACR_TABLE, [{
+        'name': 'Task Secondary Assignees',
+        'object_type': 'TaskGroupTask',
+        'read': True,
+        'update': True,
+        'delete': False,
+        'my_work': False,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': False,
+        'default_to_current_user': False,
+        'non_editable': True,
+        'internal': False
+    }, {
+        'name': 'Task Secondary Assignees',
+        'object_type': 'CycleTaskGroupObjectTask',
+        'read': True,
+        'update': True,
+        'delete': False,
+        'my_work': False,
+        'created_at': datetime.datetime.now(),
+        'updated_at': datetime.datetime.now(),
+        'mandatory': False,
+        'default_to_current_user': False,
+        'non_editable': True,
+        'internal': False
+    }])
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.execute(DELETE_SQL)
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.execute(DELETE_SQL)

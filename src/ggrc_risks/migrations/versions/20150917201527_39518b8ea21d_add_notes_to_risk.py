@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Add notes to Risk
 
 Revision ID: 39518b8ea21d
@@ -18,8 +17,8 @@ import sqlalchemy as sa
 
 
 def upgrade():
-  op.add_column('risks', sa.Column('notes', sa.Text()))
+    op.add_column('risks', sa.Column('notes', sa.Text()))
 
 
 def downgrade():
-  op.drop_column('risks', 'notes')
+    op.drop_column('risks', 'notes')

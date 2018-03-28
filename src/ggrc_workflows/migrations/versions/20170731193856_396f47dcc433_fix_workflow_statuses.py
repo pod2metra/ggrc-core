@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Fix workflow cycle and group statuses
 
@@ -11,15 +10,14 @@ Create Date: 2017-07-31 19:38:56.374150
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision = '396f47dcc433'
 down_revision = '59aaa4750320'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.execute("""
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.execute("""
       UPDATE cycle_task_groups
       SET status='Verified'
       WHERE id in (
@@ -33,7 +31,7 @@ def upgrade():
       AND status <> 'Verified'
   """)
 
-  op.execute("""
+    op.execute("""
       UPDATE cycle_task_groups
       SET status='Finished'
       WHERE id in (
@@ -47,7 +45,7 @@ def upgrade():
       AND status <> 'Finished'
   """)
 
-  op.execute("""
+    op.execute("""
       UPDATE cycles
       SET status='Verified'
       WHERE id in (
@@ -61,7 +59,7 @@ def upgrade():
       AND status <> 'Verified'
   """)
 
-  op.execute("""
+    op.execute("""
       UPDATE cycles
       SET status='Finished'
       WHERE id in (
@@ -77,4 +75,4 @@ def upgrade():
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
+    """Downgrade database schema and/or data back to the previous revision."""

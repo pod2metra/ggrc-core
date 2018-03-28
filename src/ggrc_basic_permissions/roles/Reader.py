@@ -1,13 +1,10 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """A module with configuration of the Reader role's permissions."""
 
 # pylint: disable=invalid-name
 
-
 from ggrc_basic_permissions.roles.Creator import owner_update
-
 
 scope = "System"
 description = """
@@ -176,9 +173,9 @@ permissions = {
         "Context",
         "BackgroundTask",
     ],
-    "view_object_page": [
-        "__GGRC_ALL__"
-    ],
-    "update": owner_update,
-    "delete": owner_update,
+    "view_object_page": ["__GGRC_ALL__"],
+    "update":
+    owner_update,
+    "delete":
+    owner_update,
 }

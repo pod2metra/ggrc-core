@@ -4,6 +4,6 @@
 
 
 class TransformationCSVFields(object):
-  """To transformation fields of CSV files."""
-  # pylint: disable=too-few-public-methods
-  REVISION_DATE = "Revision Date"
+    """To transformation fields of CSV files."""
+    # pylint: disable=too-few-public-methods
+    REVISION_DATE = "Revision Date"

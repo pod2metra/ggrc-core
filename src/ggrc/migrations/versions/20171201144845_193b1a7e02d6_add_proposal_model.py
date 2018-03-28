@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 add proposal model
 
@@ -20,59 +19,57 @@ down_revision = '3911f39325b4'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  op.create_table(
-      'proposals',
-      sa.Column('id', sa.Integer(), nullable=False),
-      sa.Column('instance_id', sa.Integer(), nullable=False),
-      sa.Column('instance_type', sa.String(length=250), nullable=False),
-      sa.Column('content', mysql.LONGTEXT, nullable=False),
-      sa.Column('agenda', sa.Text(), nullable=False),
-      sa.Column('decline_reason', sa.Text(), nullable=False),
-      sa.Column('decline_datetime', sa.DateTime(), nullable=True),
-      sa.Column('declined_by_id', sa.Integer(), nullable=True),
-      sa.Column('apply_reason', sa.Text(), nullable=False),
-      sa.Column('apply_datetime', sa.DateTime(), nullable=True),
-      sa.Column('applied_by_id', sa.Integer(), nullable=True),
-      sa.Column('status', sa.String(length=250), nullable=False),
-      sa.Column('updated_at', sa.DateTime(), nullable=False),
-      sa.Column('modified_by_id', sa.Integer(), nullable=True),
-      sa.Column('created_at', sa.DateTime(), nullable=False),
-      sa.Column('context_id', sa.Integer(), nullable=True),
-      sa.Column('proposed_by_id', sa.Integer(), nullable=True),
-      sa.ForeignKeyConstraint(['applied_by_id'], ['people.id'], ),
-      sa.ForeignKeyConstraint(['context_id'], ['contexts.id'], ),
-      sa.ForeignKeyConstraint(['declined_by_id'], ['people.id'], ),
-      sa.ForeignKeyConstraint(['proposed_by_id'], ['people.id'], ),
-      sa.PrimaryKeyConstraint('id')
-  )
-  op.create_index('fk_instance',
-                  'proposals',
-                  ['instance_id', 'instance_type'],
-                  unique=False)
-  op.create_index('fk_proposal_contexts',
-                  'proposals',
-                  ['context_id'],
-                  unique=False)
-  op.create_index('ix_proposal_updated_at',
-                  'proposals',
-                  ['updated_at'],
-                  unique=False)
-  op.create_index('ix_decline_datetime',
-                  'proposals',
-                  ['decline_datetime'],
-                  unique=False)
-  op.create_index('ix_apply_datetime',
-                  'proposals',
-                  ['apply_datetime'],
-                  unique=False)
+    """Upgrade database schema and/or data, creating a new revision."""
+    op.create_table(
+        'proposals', sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('instance_id', sa.Integer(), nullable=False),
+        sa.Column('instance_type', sa.String(length=250), nullable=False),
+        sa.Column('content', mysql.LONGTEXT, nullable=False),
+        sa.Column('agenda', sa.Text(), nullable=False),
+        sa.Column('decline_reason', sa.Text(), nullable=False),
+        sa.Column('decline_datetime', sa.DateTime(), nullable=True),
+        sa.Column('declined_by_id', sa.Integer(), nullable=True),
+        sa.Column('apply_reason', sa.Text(), nullable=False),
+        sa.Column('apply_datetime', sa.DateTime(), nullable=True),
+        sa.Column('applied_by_id', sa.Integer(), nullable=True),
+        sa.Column('status', sa.String(length=250), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('modified_by_id', sa.Integer(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('context_id', sa.Integer(), nullable=True),
+        sa.Column('proposed_by_id', sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ['applied_by_id'],
+            ['people.id'],
+        ), sa.ForeignKeyConstraint(
+            ['context_id'],
+            ['contexts.id'],
+        ), sa.ForeignKeyConstraint(
+            ['declined_by_id'],
+            ['people.id'],
+        ), sa.ForeignKeyConstraint(
+            ['proposed_by_id'],
+            ['people.id'],
+        ), sa.PrimaryKeyConstraint('id'))
+    op.create_index(
+        'fk_instance',
+        'proposals', ['instance_id', 'instance_type'],
+        unique=False)
+    op.create_index(
+        'fk_proposal_contexts', 'proposals', ['context_id'], unique=False)
+    op.create_index(
+        'ix_proposal_updated_at', 'proposals', ['updated_at'], unique=False)
+    op.create_index(
+        'ix_decline_datetime', 'proposals', ['decline_datetime'], unique=False)
+    op.create_index(
+        'ix_apply_datetime', 'proposals', ['apply_datetime'], unique=False)
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  op.drop_index('ix_proposal_updated_at', table_name='proposals')
-  op.drop_index('fk_proposal_contexts', table_name='proposals')
-  op.drop_index('ix_decline_datetime', table_name='proposals')
-  op.drop_index('ix_apply_datetime', table_name='proposals')
-  op.drop_index('fk_instance', table_name='proposals')
-  op.drop_table('proposals')
+    """Downgrade database schema and/or data back to the previous revision."""
+    op.drop_index('ix_proposal_updated_at', table_name='proposals')
+    op.drop_index('fk_proposal_contexts', table_name='proposals')
+    op.drop_index('ix_decline_datetime', table_name='proposals')
+    op.drop_index('ix_apply_datetime', table_name='proposals')
+    op.drop_index('fk_instance', table_name='proposals')
+    op.drop_table('proposals')

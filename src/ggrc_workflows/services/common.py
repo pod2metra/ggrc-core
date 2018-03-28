@@ -7,22 +7,20 @@ from blinker import Namespace
 
 
 class Signals():
-  signals = Namespace()
+    signals = Namespace()
 
-  # Special instance to collect context for each instance,
-  # required for status_change signal handling
-  StatusChangeSignalObjectContext = collections.namedtuple(
-      "StatusChangeSignalObjectContext",
-      [
-          "instance",  # instance, with modified status
-          "old_status",  # old status value
-          "new_status",  # new status value
-      ],
-  )
+    # Special instance to collect context for each instance,
+    # required for status_change signal handling
+    StatusChangeSignalObjectContext = collections.namedtuple(
+        "StatusChangeSignalObjectContext",
+        [
+            "instance",  # instance, with modified status
+            "old_status",  # old status value
+            "new_status",  # new status value
+        ],
+    )
 
-  status_change = signals.signal(
-      'Status Changed',
-      """
+    status_change = signals.signal('Status Changed', """
     This is used to signal any listeners of any changes in model object status
     attribute
     """)

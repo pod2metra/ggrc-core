@@ -1,7 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
-
 """Change continuous frequency to one_time
 
 Revision ID: 23f5b46fc4a3
@@ -25,6 +23,7 @@ def upgrade():
       SET w.frequency='one_time'
       WHERE w.frequency='continuous'
       """)
+
 
 def downgrade():
     pass

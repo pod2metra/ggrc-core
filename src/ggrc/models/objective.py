@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """Module for Objective model."""
 
 from ggrc import db
@@ -17,27 +16,17 @@ from .mixins.with_last_assessment_date import WithLastAssessmentDate
 from .mixins.with_similarity_score import WithSimilarityScore
 
 
-class Objective(WithLastAssessmentDate,
-                Roleable,
-                HasObjectState,
-                mixins.CustomAttributable,
-                mixins.WithStartDate,
-                mixins.WithLastDeprecatedDate,
-                Auditable,
-                Relatable,
-                Personable,
-                PublicDocumentable,
-                Commentable,
-                mixins.TestPlanned,
-                WithSimilarityScore,
-                mixins.BusinessObject,
-                Indexed,
-                db.Model):
-  """Class representing Objective."""
+class Objective(WithLastAssessmentDate, Roleable, HasObjectState,
+                mixins.CustomAttributable, mixins.WithStartDate,
+                mixins.WithLastDeprecatedDate, Auditable, Relatable,
+                Personable, PublicDocumentable, Commentable,
+                mixins.TestPlanned, WithSimilarityScore, mixins.BusinessObject,
+                Indexed, db.Model):
+    """Class representing Objective."""
 
-  __tablename__ = 'objectives'
-  _include_links = []
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-  }
+    __tablename__ = 'objectives'
+    _include_links = []
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+    }

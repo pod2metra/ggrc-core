@@ -22,47 +22,48 @@ from ggrc.models.track_object_state import HasObjectState
 class Product(Roleable, HasObjectState, CustomAttributable, Personable,
               Relatable, LastDeprecatedTimeboxed, PublicDocumentable,
               Commentable, TestPlanned, BusinessObject, Indexed, db.Model):
-  __tablename__ = 'products'
+    __tablename__ = 'products'
 
-  kind_id = deferred(db.Column(db.Integer), 'Product')
-  version = deferred(db.Column(db.String), 'Product')
+    kind_id = deferred(db.Column(db.Integer), 'Product')
+    version = deferred(db.Column(db.String), 'Product')
 
-  kind = db.relationship(
-      'Option',
-      primaryjoin='and_(foreign(Product.kind_id) == Option.id, '
-      'Option.role == "product_type")',
-      uselist=False,
-  )
+    kind = db.relationship(
+        'Option',
+        primaryjoin='and_(foreign(Product.kind_id) == Option.id, '
+        'Option.role == "product_type")',
+        uselist=False,
+    )
 
-  _api_attrs = reflection.ApiAttributes('kind', 'version')
-  _fulltext_attrs = [
-      'kind',
-      'version',
-  ]
-  _sanitize_html = ['version', ]
-  _aliases = {
-      "document_url": None,
-      "document_evidence": None,
-      "kind": {
-          "display_name": "Kind/Type",
-          "filter_by": "_filter_by_kind",
-      },
-  }
+    _api_attrs = reflection.ApiAttributes('kind', 'version')
+    _fulltext_attrs = [
+        'kind',
+        'version',
+    ]
+    _sanitize_html = [
+        'version',
+    ]
+    _aliases = {
+        "document_url": None,
+        "document_evidence": None,
+        "kind": {
+            "display_name": "Kind/Type",
+            "filter_by": "_filter_by_kind",
+        },
+    }
 
-  @validates('kind')
-  def validate_product_options(self, key, option):
-    return validate_option(
-        self.__class__.__name__, key, option, 'product_type')
+    @validates('kind')
+    def validate_product_options(self, key, option):
+        return validate_option(self.__class__.__name__, key, option,
+                               'product_type')
 
-  @classmethod
-  def _filter_by_kind(cls, predicate):
-    return Option.query.filter(
-        (Option.id == cls.kind_id) & predicate(Option.title)
-    ).exists()
+    @classmethod
+    def _filter_by_kind(cls, predicate):
+        return Option.query.filter(
+            (Option.id == cls.kind_id) & predicate(Option.title)).exists()
 
-  @classmethod
-  def eager_query(cls):
-    from sqlalchemy import orm
+    @classmethod
+    def eager_query(cls):
+        from sqlalchemy import orm
 
-    query = super(Product, cls).eager_query()
-    return query.options(orm.joinedload('kind'))
+        query = super(Product, cls).eager_query()
+        return query.options(orm.joinedload('kind'))

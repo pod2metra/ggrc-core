@@ -1,6 +1,5 @@
 # Copyright (C) 2018 Google Inc.
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
-
 """
 Rename Assessment state from 'Ready for Review' to 'In Review'
 
@@ -17,30 +16,32 @@ down_revision = '191c7cc1fed8'
 
 
 def upgrade():
-  """Upgrade database schema and/or data, creating a new revision."""
-  connection = op.get_bind()
-  updating_ids = connection.execute("""
+    """Upgrade database schema and/or data, creating a new revision."""
+    connection = op.get_bind()
+    updating_ids = connection.execute("""
         SELECT id
         FROM assessments
         WHERE status = 'Ready for Review';
     """).fetchall()
-  # Convert ids in tuples to integers
-  updating_ids = [id_[0] for id_ in updating_ids]
+    # Convert ids in tuples to integers
+    updating_ids = [id_[0] for id_ in updating_ids]
 
-  op.execute("""
+    op.execute("""
       ALTER TABLE assessments CHANGE status status
       ENUM("Not Started", "In Progress", "In Review", "Verified",
       "Completed") NOT NULL;
   """)
 
-  if updating_ids:
-    connection.execute(text("""
+    if updating_ids:
+        connection.execute(
+            text("""
         UPDATE assessments
         SET status="In Review"
         WHERE id IN :ids;
-    """), ids=updating_ids)
+    """),
+            ids=updating_ids)
 
-  op.execute("""
+    op.execute("""
       UPDATE fulltext_record_properties
       SET content="In Review"
       WHERE content="Ready for Review";
@@ -48,30 +49,32 @@ def upgrade():
 
 
 def downgrade():
-  """Downgrade database schema and/or data back to the previous revision."""
-  connection = op.get_bind()
-  updating_ids = connection.execute("""
+    """Downgrade database schema and/or data back to the previous revision."""
+    connection = op.get_bind()
+    updating_ids = connection.execute("""
       SELECT id
       FROM assessments
       WHERE status = 'In Review';
   """).fetchall()
-  # Convert ids in tuples to integers
-  updating_ids = [id_[0] for id_ in updating_ids]
+    # Convert ids in tuples to integers
+    updating_ids = [id_[0] for id_ in updating_ids]
 
-  op.execute("""
+    op.execute("""
       ALTER TABLE assessments CHANGE status status
       ENUM("Not Started", "In Progress", "Ready for Review", "Verified",
       "Completed") NOT NULL;
   """)
 
-  if updating_ids:
-    connection.execute(text("""
+    if updating_ids:
+        connection.execute(
+            text("""
         UPDATE assessments
         SET status="Ready for Review"
         WHERE id IN :ids;
-    """), ids=updating_ids)
+    """),
+            ids=updating_ids)
 
-  op.execute("""
+    op.execute("""
       UPDATE fulltext_record_properties
       SET content="Ready for Review"
       WHERE content="In Review";
