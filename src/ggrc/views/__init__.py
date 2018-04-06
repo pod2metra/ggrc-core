@@ -96,9 +96,9 @@ def reindex_snapshots(_):
 
 @app.route("/_background_tasks/reindex", methods=["POST"])
 @queued_task
-def reindex(_):
+def reindex(task):
   """Web hook to update the full text search index."""
-  do_reindex()
+  do_reindex(task.parameters.get("reindex_types"))
   return app.make_response(("success", 200, [("Content-Type", "text/html")]))
 
 
@@ -203,7 +203,7 @@ def start_update_audit_issues(audit_id, message):
 
 
 @helpers.without_sqlalchemy_cache
-def do_reindex(with_reindex_snapshots=False):
+def do_reindex(reindex_types):
   """Update the full text search index."""
 
   indexer = get_indexer()
@@ -211,6 +211,8 @@ def do_reindex(with_reindex_snapshots=False):
       m.__name__: m for m in all_models.all_models
       if issubclass(m, mixin.Indexed) and m.REQUIRED_GLOBAL_REINDEX
   }
+  if reindex_types is None:
+    reindex_types = indexed_models.keys()
   people_query = db.session.query(all_models.Person.id,
                                   all_models.Person.name,
                                   all_models.Person.email)
@@ -220,6 +222,8 @@ def do_reindex(with_reindex_snapshots=False):
       all_models.AccessControlRole.name,
   ))
   for model_name in sorted(indexed_models.keys()):
+    if model_name not in reindex_types:
+      continue
     logger.info("Updating index for: %s", model_name)
     with benchmark("Create records for %s" % model_name):
       model = indexed_models[model_name]
@@ -232,7 +236,7 @@ def do_reindex(with_reindex_snapshots=False):
         model.bulk_record_update_for(ids_chunk)
         db.session.commit()
 
-  if with_reindex_snapshots:
+  if "Snapshot" in reindex_types:
     logger.info("Updating index for: %s", "Snapshot")
     with benchmark("Create records for %s" % "Snapshot"):
       snapshot_indexer.reindex()
@@ -243,8 +247,12 @@ def do_reindex(with_reindex_snapshots=False):
 @helpers.without_sqlalchemy_cache
 def do_full_reindex():
   """Update the full text search index for all models."""
-
-  do_reindex(with_reindex_snapshots=True)
+  indexed_models = [
+      m.__name__ for m in all_models.all_models
+      if issubclass(m, mixin.Indexed) and m.REQUIRED_GLOBAL_REINDEX
+  ]
+  indexed_models.append("Snapshot")
+  do_reindex(indexed_models)
   start_compute_attributes(revision_ids="all_latest")
 
 
@@ -507,10 +515,15 @@ def admin_reindex_snapshots():
 def admin_reindex():
   """Calls a webhook that reindexes indexable objects
   """
+  reindex_types = request.args.get("types")
+  if reindex_types:
+    reindex_types = reindex_types.split(",")
   task_queue = create_task(
       name="reindex",
       url=url_for(reindex.__name__),
-      queued_callback=reindex
+      queued_callback=reindex,
+      parameters={"reindex_types": reindex_types},
+
   )
   return task_queue.make_response(
       app.make_response(("scheduled %s" % task_queue.name, 200,
