@@ -94,6 +94,14 @@ class TestCase(BaseTestCase, object):
       if acl.ac_role_id == role_id:
         yield acl.person
 
+  def do_reindex(self, *models):
+    """Do admin reindex procedure. Sinple procedure during migraion."""
+    if models:
+      query = "?types={}".format(",".join(models))
+    else:
+      query = ""
+    self.client.post("/admin/reindex{}".format(query))
+
   @contextlib.contextmanager
   def custom_headers(self, headers=None):
     """Context manager that allowed to add some custom headers in request."""
