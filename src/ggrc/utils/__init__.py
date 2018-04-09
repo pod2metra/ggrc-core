@@ -50,7 +50,7 @@ class GrcEncoder(json.JSONEncoder):
     elif isinstance(obj, datetime.timedelta):
       return (datetime.datetime.min + obj).time().isoformat()
     elif isinstance(obj, set):
-      return list(obj)
+      return sorted(obj)
     elif isinstance(obj, mixins.Base):
       return {"id": obj.id, "type": obj.type}
     elif callable(obj):
