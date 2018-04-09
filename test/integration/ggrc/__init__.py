@@ -23,6 +23,7 @@ from ggrc.app import app
 from ggrc.converters.import_helper import read_csv_file
 from ggrc.views.converters import check_import_file
 from ggrc.models import Revision, all_models
+from ggrc import utils
 from integration.ggrc.api_helper import Api
 from integration.ggrc.models import factories
 
@@ -37,17 +38,6 @@ THIS_ABS_PATH = os.path.abspath(os.path.dirname(__file__))
 def read_imported_file(file_data):  # pylint: disable=unused-argument
   csv_file = check_import_file()
   return read_csv_file(csv_file)
-
-
-class SetEncoder(json.JSONEncoder):
-  """Custom json encoder that supports sets."""
-  # pylint: disable=method-hidden
-  # false positive: https://github.com/PyCQA/pylint/issues/414
-
-  def default(self, obj):  # pylint: disable=arguments-differ
-    if isinstance(obj, set):
-      return sorted(obj)
-    return super(SetEncoder, self).default(obj)
 
 
 class TestCase(BaseTestCase, object):
@@ -226,9 +216,9 @@ class TestCase(BaseTestCase, object):
               responses[block["name"]].get(count, 0) + int(block[count])
 
     response_str = json.dumps(responses, indent=4, sort_keys=True,
-                              cls=SetEncoder)
+                              cls=utils.GrcEncoder)
     expected_str = json.dumps(expected_messages, indent=4, sort_keys=True,
-                              cls=SetEncoder)
+                              cls=utils.GrcEncoder)
 
     self.assertEqual(responses, expected_messages,
                      "Expected response does not match received response:\n\n"
