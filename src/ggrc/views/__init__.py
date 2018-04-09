@@ -256,24 +256,12 @@ def do_full_reindex():
   start_compute_attributes(revision_ids="all_latest")
 
 
-class SetEncoder(json.JSONEncoder):
-  """Encoder that can handle python sets"""
-  # pylint: disable=method-hidden
-  # false positive: https://github.com/PyCQA/pylint/issues/414
-
-  def default(self, obj):  # pylint: disable=arguments-differ
-    """If we get a set we first transform it to a list and then just use
-       the default encoder"""
-    if isinstance(obj, set):
-      return list(obj)
-    return super(SetEncoder, self).default(obj)
-
-
 def get_permissions_json():
   """Get all permissions for current user"""
   with benchmark("Get permission JSON"):
     permissions.permissions_for(permissions.get_user())
-    return json.dumps(getattr(g, '_request_permissions', None), cls=SetEncoder)
+    return json.dumps(getattr(g, '_request_permissions', None),
+                      cls=utils.GrcEncoder)
 
 
 def get_config_json():
@@ -565,7 +553,7 @@ def admin_refresh_revisions():
 @app.route("/admin/compute_attributes", methods=["POST"])
 @login_required
 @admin_required
-def send_event_job():
+def admin_compute_attributes():
   """Trigger background task on every event for computed attributes."""
   with benchmark("POST /admin/compute_attributes"):
     if request.data:
