@@ -107,10 +107,37 @@ class TestTotalReindex(TestCase):
   COMMIT_INDEX_TEST_CASES = [(f, OBJECT_TEST_COUNT)
                              for f in INDEXED_MODEL_FACTORIES]
 
+  @ddt.data(*INDEX_QUERY_LIMIT.keys())
+  def test_reindex_by_model(self, model_name):
+    """Api reindex call for {0}."""
+    with ggrc_factories.single_commit():
+      for factory in self.INDEXED_MODEL_FACTORIES:
+        for _ in range(5):
+          factory()
+    indexer = fulltext.get_indexer()
+    count = indexer.record_type.query.count()
+    count = indexer.record_type.query.delete()
+    with QueryCounter() as counter:
+      self.do_reindex(model_name)
+      self.assertLessEqual(
+          counter.get,
+          self.INDEX_QUERY_LIMIT[model_name],
+          "Index {model} has too much queries: "
+          "{counted} greater than {expected}.".format(
+              model=model_name,
+              expected=self.INDEX_QUERY_LIMIT[model_name],
+              counted=counter.get,
+          )
+      )
+    reindexed_count = indexer.record_type.query.filter(
+        MysqlRecordProperty.type != "AccessControlRole"
+    ).count()
+    self.assertEqual(count, reindexed_count)
+
   @ddt.data(*COMMIT_INDEX_TEST_CASES)
   @ddt.unpack
   def test_index_on_commit(self, factory, obj_count):
-    """Test count number of queries on reindex procedure."""
+    """Count number of queries on reindex procedure for {0._meta.model}."""
     model = factory._meta.model  # pylint: disable=protected-access
     with ggrc_factories.single_commit():
       obj_to_index = {factory() for _ in range(obj_count)}
