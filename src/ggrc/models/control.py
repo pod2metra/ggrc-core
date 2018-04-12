@@ -26,6 +26,7 @@ from ggrc.fulltext.mixin import Indexed
 from ggrc.fulltext import attributes
 from ggrc.models import reflection
 from ggrc.models import proposal
+from ggrc.models import review
 
 
 class ControlCategory(CategoryBase):
@@ -157,9 +158,10 @@ class Control(WithLastAssessmentDate,
               Commentable,
               WithSimilarityScore,
               mixins.BusinessObject,
-              Indexed,
               mixins.Folderable,
               proposal.Proposalable,
+              review.Reviewable,
+              Indexed,
               db.Model):
   """Control model definition."""
   __tablename__ = 'controls'
