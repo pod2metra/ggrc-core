@@ -69,6 +69,7 @@ from ggrc.models.vendor import Vendor
 from ggrc.models.maintenance import Maintenance
 from ggrc.models.label import Label
 from ggrc.models.object_label import ObjectLabel
+from ggrc.models.review import Review
 
 all_models = [  # pylint: disable=invalid-name
     # data platform models
@@ -137,6 +138,7 @@ all_models = [  # pylint: disable=invalid-name
     Snapshot,
     Maintenance,
     ImportExport,
+    Review,
 ]
 
 __all__ = [m.__name__ for m in all_models]
