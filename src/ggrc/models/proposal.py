@@ -23,18 +23,6 @@ from ggrc.models import comment
 # pylint: disable=too-few-public-methods
 
 
-class ProposalablePolymorphicRelationship(utils.JsonPolymorphicRelationship):
-  """Custom relation for proposalable instance.
-
-  Allow to setup instance over json serializaion."""
-
-  def __call__(self, obj, json_obj):
-    instance = super(ProposalablePolymorphicRelationship,
-                     self).__call__(obj, json_obj)
-    assert isinstance(instance, Proposalable)
-    return instance
-
-
 class FullInstanceContentFased(utils.FasadeProperty):
   """Custom fasade property for full_instance_content property."""
 
@@ -49,6 +37,25 @@ class FullInstanceContentFased(utils.FasadeProperty):
 
 
 # pylint: enable=too-few-public-methods
+
+
+class Proposalable(object):  # pylint: disable=too-few-public-methods
+  """Mixin to setup instance as proposable."""
+
+  @sa.ext.declarative.declared_attr
+  def proposals(cls):  # pylint: disable=no-self-argument
+    """declare proposals relationship for proposable instance."""
+    def join_function():
+      return sa.and_(
+          sa.orm.foreign(Proposal.instance_type) == cls.__name__,
+          sa.orm.foreign(Proposal.instance_id) == cls.id,
+      )
+
+    return sa.orm.relationship(
+        Proposal,
+        primaryjoin=join_function,
+        backref=Proposal.INSTANCE_TMPL.format(cls.__name__),
+    )
 
 
 class Proposal(mixins.person_relation_factory("applied_by"),
@@ -127,9 +134,11 @@ class Proposal(mixins.person_relation_factory("applied_by"),
 
   INSTANCE_TMPL = "{}_proposalable"
 
-  instance = ProposalablePolymorphicRelationship("instance_id",
-                                                 "instance_type",
-                                                 INSTANCE_TMPL)
+  instance = utils.json_polimorphic_relationship_factory(
+      Proposalable
+  )(
+      "instance_id", "instance_type", INSTANCE_TMPL
+  )
 
   _fulltext_attrs = [
       "instance_id",
@@ -170,25 +179,6 @@ class Proposal(mixins.person_relation_factory("applied_by"),
             db.Index("ix_apply_datetime", "apply_datetime"),
             db.Index("ix_proposed_notified_datetime",
                      "proposed_notified_datetime"))
-
-
-class Proposalable(object):  # pylint: disable=too-few-public-methods
-  """Mixin to setup instance as proposable."""
-
-  @sa.ext.declarative.declared_attr
-  def proposals(cls):  # pylint: disable=no-self-argument
-    """declare proposals relationship for proposable instance."""
-    def join_function():
-      return sa.and_(
-          sa.orm.foreign(Proposal.instance_type) == cls.__name__,
-          sa.orm.foreign(Proposal.instance_id) == cls.id,
-      )
-
-    return sa.orm.relationship(
-        Proposal,
-        primaryjoin=join_function,
-        backref=Proposal.INSTANCE_TMPL.format(cls.__name__),
-    )
 
 
 def get_propsal_acr_dict():
