@@ -34,7 +34,7 @@ from ggrc import gdrive
 from ggrc import utils
 from ggrc.utils import as_json, benchmark, dump_attrs
 from ggrc.utils.log_event import log_event
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 from ggrc.login import get_current_user_id, get_current_user
 from ggrc.models.cache import Cache
 from ggrc.models.exceptions import ValidationError, translate_message
@@ -97,9 +97,7 @@ def update_snapshot_index(session, cache):
     return
   objs = itertools.chain(cache.new, cache.dirty, cache.deleted)
   reindex_snapshots_ids = [o.id for o in objs if o.type == "Snapshot"]
-  get_indexer().delete_records_by_ids("Snapshot",
-                                      reindex_snapshots_ids,
-                                      commit=False)
+  indexer.delete_records_by_ids("Snapshot", reindex_snapshots_ids, commit=False)
   reindex_snapshots(reindex_snapshots_ids)
 
 
@@ -262,7 +260,6 @@ class ModelView(View):
     if '__search' in request.args:
       terms = request.args['__search']
       types = self._get_matching_types(self.model)
-      indexer = get_indexer()
       models = indexer._get_grouped_types(types)
       search_query = indexer.get_permissions_query(models, 'read', None)
       search_query = and_(search_query, indexer._get_filter_query(terms))

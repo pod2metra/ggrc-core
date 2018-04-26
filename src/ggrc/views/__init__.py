@@ -26,7 +26,7 @@ from ggrc.builder.json import publish
 from ggrc.builder.json import publish_representation
 from ggrc.converters import get_importables, get_exportables
 from ggrc.extensions import get_extension_modules
-from ggrc.fulltext import get_indexer, mixin
+from ggrc.fulltext import indexer, mixin
 from ggrc.integrations import issues
 from ggrc.integrations import integrations_errors
 from ggrc.login import get_current_user
@@ -180,7 +180,6 @@ def start_update_audit_issues(audit_id, message):
 def do_reindex():
   """Update the full text search index."""
 
-  indexer = get_indexer()
   indexed_models = {
       m.__name__: m for m in all_models.all_models
       if issubclass(m, mixin.Indexed) and m.REQUIRED_GLOBAL_REINDEX
@@ -203,7 +202,7 @@ def do_reindex():
       for ids_chunk in utils.list_chunks(ids):
         handled_ids += len(ids_chunk)
         logger.info("%s: %s / %s", model_name, handled_ids, ids_count)
-        model.bulk_record_update_for(ids_chunk)
+        indexer.bulk_record_update_for(model, ids_chunk)
         db.session.commit()
 
   indexer.invalidate_cache()

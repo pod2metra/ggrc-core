@@ -8,7 +8,7 @@ from werkzeug.exceptions import BadRequest
 
 import ggrc.models.relationship
 
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 from ggrc.utils import GrcEncoder, url_for, benchmark
 from ggrc import db
 
@@ -78,7 +78,6 @@ def do_counts(terms, types=None, contact_id=None,
   # Remove types that the user can't read
   # types = [type for type in types if permissions.is_allowed_read(type, None)]
 
-  indexer = get_indexer()
   with benchmark("Counts"):
     results = indexer.counts(terms, types=types, contact_id=contact_id,
                              extra_params=extra_params,
@@ -128,7 +127,6 @@ def _build_relevant_filter(types, relevant_objects):
 def do_search(terms, list_for_type, types=None, permission_type='read',
               permission_model=None, contact_id=None, extra_params=None,
               relevant_objects=None):
-  indexer = get_indexer()
   with benchmark("Search"):
     results = indexer.search(
         terms, types=types, permission_type=permission_type,

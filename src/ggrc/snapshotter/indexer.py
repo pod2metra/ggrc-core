@@ -14,7 +14,7 @@ from ggrc import db
 from ggrc import models
 from ggrc.models import all_models
 from ggrc.fulltext.mysql import MysqlRecordProperty as Record
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 from ggrc.models.reflection import AttributeInfo
 from ggrc.utils import generate_query_chunks
 
@@ -170,9 +170,7 @@ def insert_records(payload):
 def get_person_data(rec, person):
   """Get list of Person properties for fulltext indexing
   """
-  indexer = get_indexer()
-  builder = indexer.get_builder(models.Person)
-  subprops = builder.build_person_subprops(person)
+  subprops = indexer.build_person_subprops(person)
   for key, val in subprops.items():
     newrec = rec.copy()
     newrec.update({"subproperty": key, "content": val})
@@ -182,9 +180,7 @@ def get_person_data(rec, person):
 def get_person_sort_subprop(rec, people):
   """Get a special subproperty for sorting
   """
-  indexer = get_indexer()
-  builder = indexer.get_builder(models.Person)
-  subprops = builder.build_list_sort_subprop(people)
+  subprops = indexer.build_list_sort_subprop(people)
   for key, val in subprops.items():
     newrec = rec.copy()
     newrec.update({"subproperty": key, "content": val})
@@ -194,11 +190,9 @@ def get_person_sort_subprop(rec, people):
 def get_access_control_role_data(rec, ac_list_item):
   """Get list of access control data for fulltext indexing
   """
-  indexer = get_indexer()
-  builder = indexer.get_builder(models.Person)
-  ac_role_name, person_id = (builder.get_ac_role_person_id(ac_list_item))
+  ac_role_name, person_id = (indexer.get_ac_role_person_id(ac_list_item))
   if ac_role_name:
-    for key, val in builder.build_person_subprops({"id": person_id}).items():
+    for key, val in indexer.build_person_subprops({"id": person_id}).items():
       newrec = rec.copy()
       newrec.update({"property": ac_role_name,
                      "subproperty": key,
@@ -209,10 +203,9 @@ def get_access_control_role_data(rec, ac_list_item):
 def get_access_control_sort_subprop(rec, access_control_list):
   """Get a special access_control_list subproperty for sorting
   """
-  builder = get_indexer().get_builder(models.Person)
   collection = defaultdict(list)
   for ac_list_item in access_control_list:
-    ac_role_name, person_id = builder.get_ac_role_person_id(ac_list_item)
+    ac_role_name, person_id = indexer.get_ac_role_person_id(ac_list_item)
     if ac_role_name:
       collection[ac_role_name].append({"id": person_id})
   for ac_role_name, people in collection.iteritems():

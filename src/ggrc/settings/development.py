@@ -11,7 +11,7 @@ HOST = '0.0.0.0'
 SQLALCHEMY_DATABASE_URI = os.environ.get(
     'GGRC_DATABASE_URI',
     'mysql+mysqldb://root:root@127.0.0.1/ggrcdev?charset=utf8')
-FULLTEXT_INDEXER = 'ggrc.fulltext.mysql.MysqlIndexer'
+FULLTEXT_INDEXER = 'ggrc.fulltext.mysql.Indexer'
 LOGIN_MANAGER = 'ggrc.login.noop'
 # SQLALCHEMY_ECHO = True
 SQLALCHEMY_RECORD_QUERIES = 'slow'

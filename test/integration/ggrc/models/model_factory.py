@@ -17,7 +17,7 @@ import factory
 from ggrc import db
 from ggrc import models
 from ggrc.login import noop
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 
 
 class ModelFactory(factory.Factory, object):
@@ -36,7 +36,6 @@ class ModelFactory(factory.Factory, object):
 
   @classmethod
   def _log_event(cls, instance, action="POST"):
-    indexer = get_indexer()
     db.session.flush()
     user = cls._get_user()
     revision = models.Revision(

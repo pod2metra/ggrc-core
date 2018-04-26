@@ -4,7 +4,7 @@
 APP_ENGINE = True
 ENABLE_JASMINE = False
 LOGIN_MANAGER = 'ggrc.login.noop'
-FULLTEXT_INDEXER = 'ggrc.fulltext.mysql.MysqlIndexer'
+FULLTEXT_INDEXER = 'ggrc.fulltext.mysql.Indexer'
 # Cannot access filesystem on AppEngine or when using SDK
 AUTOBUILD_ASSETS = False
 SQLALCHEMY_RECORD_QUERIES = False

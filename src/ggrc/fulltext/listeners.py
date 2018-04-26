@@ -39,10 +39,9 @@ class ReindexSet(threading.local):
 
 def _runner(mapper, content, target):  # pylint:disable=unused-argument
   """Collect all reindex models in session"""
-  ggrc_indexer = fulltext.get_indexer()
   db.session.reindex_set = getattr(db.session, "reindex_set", ReindexSet())
-  getters = ggrc_indexer.indexer_rules.get(target.__class__.__name__) or []
-  fields = ggrc_indexer.indexer_fields.get(target.__class__.__name__)
+  getters = fulltext.indexer.indexer_rules.get(target.__class__.__name__) or []
+  fields = fulltext.indexer.indexer_fields.get(target.__class__.__name__)
   for getter in getters:
     if fields and not fields_changed(target, fields):
       continue
@@ -57,8 +56,6 @@ def _runner(mapper, content, target):  # pylint:disable=unused-argument
 
 def register_fulltext_listeners():
   """Indexing initialization procedure"""
-  ggrc_indexer = fulltext.get_indexer()
-
   for model in all_models.all_models:
     for action in ACTIONS:
       event.listen(model, action, _runner)
@@ -66,9 +63,9 @@ def register_fulltext_listeners():
       continue
     for sub_model in model.mro():
       for rule in getattr(sub_model, "AUTO_REINDEX_RULES", []):
-        ggrc_indexer.indexer_rules[rule.model].append(rule.rule)
+        fulltext.indexer.indexer_rules[rule.model].append(rule.rule)
         if rule.fields:
-          ggrc_indexer.indexer_fields[rule.model].update(rule.fields)
+          fulltext.indexer.indexer_fields[rule.model].update(rule.fields)
 
 
 def fields_changed(obj, fields):

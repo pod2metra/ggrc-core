@@ -90,15 +90,14 @@ class TestTotalReindex(TestCase):
       for factory in self.INDEXED_MODEL_FACTORIES:
         for _ in range(5):
           factory()
-    indexer = fulltext.get_indexer()
-    count = indexer.record_type.query.count()
-    count = indexer.record_type.query.delete()
+    count = fulltext.mysql.MysqlRecordProperty.query.count()
+    fulltext.mysql.MysqlRecordProperty.query.delete()
     self._full_reindex()
 
     # ACR roles are created in migration and aren't removed in setup
     # Index for them will be created only after reindexing
-    reindexed_count = indexer.record_type.query.filter(
-        MysqlRecordProperty.type != "AccessControlRole"
+    reindexed_count = fulltext.mysql.MysqlRecordProperty.query.filter(
+        fulltext.mysql.MysqlRecordProperty.type != "AccessControlRole"
     ).count()
     self.assertEqual(count, reindexed_count)
 
