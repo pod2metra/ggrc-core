@@ -3,8 +3,9 @@
 
 """Module containing Document model."""
 
-from sqlalchemy import orm
+from sqlalchemy import event
 from sqlalchemy import func, case
+from sqlalchemy import orm
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from ggrc import db
@@ -17,11 +18,11 @@ from ggrc.models import mixins
 from ggrc.models.deferred import deferred
 from ggrc.models.mixins import Base
 from ggrc.models.mixins import before_flush_handleable as bfh
-from ggrc.models.relationship import Relatable
+from ggrc.models import relationship
 from ggrc.utils import referenced_objects
 
 
-class Document(Roleable, Relatable, Base, mixins.Titled, Indexed,
+class Document(Roleable, relationship.Relatable, Base, mixins.Titled, Indexed,
                bfh.BeforeFlushHandleable, db.Model):
   """Document model."""
   __tablename__ = 'documents'

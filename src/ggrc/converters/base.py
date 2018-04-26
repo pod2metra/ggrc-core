@@ -19,7 +19,7 @@ from ggrc.converters.snapshot_block import SnapshotBlockConverter
 from ggrc.converters.import_helper import extract_relevant_data
 from ggrc.converters.import_helper import split_array
 from ggrc.converters.import_helper import CsvStringBuilder
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 
 
 class BaseConverter(object):
@@ -33,7 +33,7 @@ class BaseConverter(object):
     self.shared_state = {}
     self.response_data = []
     self.exportable = get_exportables()
-    self.indexer = get_indexer()
+    self.indexer = indexer
 
   def get_info(self):
     for converter in self.block_converters:

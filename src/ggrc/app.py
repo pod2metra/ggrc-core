@@ -28,6 +28,7 @@ from ggrc import settings
 from ggrc.gdrive import init_gdrive_routes
 from ggrc.utils import benchmark
 from ggrc.utils.issue_tracker_mock import init_issue_tracker_mock
+from ggrc.fulltext import hooks as ft_hooks
 
 if settings.ISSUE_TRACKER_MOCK and not settings.PRODUCTION:
   init_issue_tracker_mock()
@@ -161,7 +162,6 @@ def init_extra_listeners():
   from ggrc.fulltext import listeners
   register_automapping_listeners()
   register_snapshot_listeners()
-  listeners.register_fulltext_listeners()
 
 
 def _enable_debug_toolbar():
@@ -293,6 +293,7 @@ init_extension_blueprints(app)
 init_gdrive_routes(app)
 init_permissions_provider()
 init_extra_listeners()
+ft_hooks.init_hooks()
 notifications.register_notification_listeners()
 
 _enable_debug_toolbar()

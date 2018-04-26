@@ -19,7 +19,7 @@ from sqlalchemy.ext import hybrid
 from ggrc import builder
 from ggrc import db
 from ggrc.access_control import roleable, role
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 from ggrc.fulltext.mixin import Indexed
 from ggrc.login import get_current_user
 from ggrc.models import mixins
@@ -436,8 +436,7 @@ class Workflow(roleable.Roleable,
     db.session.flush()
 
     # add fulltext entries
-    indexer = get_indexer()
-    indexer.create_record(indexer.fts_record_for(backlog_workflow))
+    indexer.create_record(backlog_workflow)
     return "Backlog workflow created"
 
 

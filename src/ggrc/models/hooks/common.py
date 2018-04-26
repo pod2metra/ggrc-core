@@ -6,7 +6,7 @@
 import sqlalchemy as sa
 
 from ggrc import db
-from ggrc.fulltext import mixin
+from ggrc.fulltext import mixin, indexer
 from ggrc.models import all_models
 from ggrc.models.mixins import attributable
 from ggrc.utils import referenced_objects
@@ -50,7 +50,8 @@ def _handle_obj_delete(mapper, connection, target):
   # pylint: disable=unused-argument
   delete_queries = []
   if issubclass(type(target), mixin.Indexed):
-    delete_queries.append(target.get_delete_query_for([target.id]))
+    delete_queries.append(indexer.get_delete_query_for(target.__class__,
+                                                       [target.id]))
   if issubclass(type(target), attributable.Attributable):
     delete_queries.append(target.get_delete_ca_query_for([target.id]))
 

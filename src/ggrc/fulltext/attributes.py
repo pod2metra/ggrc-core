@@ -10,7 +10,7 @@ import datetime
 from flask import g
 
 from ggrc.utils import date_parsers
-from ggrc.fulltext.mixin import Indexed
+from ggrc.fulltext import utils
 
 EMPTY_SUBPROPERTY_KEY = ''
 
@@ -46,10 +46,8 @@ class FullTextAttr(object):
 
     If template exists for the property, it's being applied
     """
-    if isinstance(instance, Indexed):
-      property_tmpl = instance.PROPERTY_TEMPLATE
-    else:
-      property_tmpl = u"{}"
+
+    property_tmpl = utils.get_property_tmpl(instance)
 
     if self.with_template:
       return property_tmpl.format(self.alias)

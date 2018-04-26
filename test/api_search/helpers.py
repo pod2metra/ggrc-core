@@ -7,7 +7,7 @@ import uuid
 from collections import namedtuple
 
 from api_search.setters import AC_ROLES, CAD_PERSON_TITLE
-from ggrc.fulltext import get_indexer
+from ggrc.fulltext import indexer
 from ggrc.models import all_models
 from ggrc.snapshotter.indexer import reindex_snapshots
 from ggrc.snapshotter.rules import Types
@@ -22,9 +22,7 @@ def create_reindexed_snapshots(audit_id, objects):
   audit = all_models.Audit.query.get(audit_id)
   snapshots = TestCase._create_snapshots(audit, snapshottable_objects)
   reindex_snapshots_ids = [snap.id for snap in snapshots]
-  get_indexer().delete_records_by_ids("Snapshot",
-                                      reindex_snapshots_ids,
-                                      commit=False)
+  indexer.delete_records_by_ids("Snapshot", reindex_snapshots_ids, commit=False)
   reindex_snapshots(reindex_snapshots_ids)
 
 
