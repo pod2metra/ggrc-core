@@ -185,7 +185,7 @@ class DeleteColumnHandler(ColumnHandler):
         indexer = self.row_converter.block_converter.converter.indexer
         if indexer is not None:
           for o in tr.session.deleted:
-            indexer.delete_record(o.id, o.__class__.__name__, commit=False)
+            indexer.delete_record(o, commit=False)
         tr.commit()
 
 

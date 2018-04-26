@@ -74,9 +74,7 @@ class CustomAttributeValue(Base, Indexed, db.Model):
     return self._related_revisions[0]
 
   def delere_record(self):
-    get_indexer().delete_record(self.attributable_id,
-                                self.attributable_type,
-                                False)
+    get_indexer().delete_record(self.attributable, False)
 
   def get_reindex_pair(self):
     return (self.attributable_type, self.attributable_id)
