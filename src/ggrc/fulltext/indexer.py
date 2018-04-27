@@ -325,7 +325,7 @@ def _get_grouped_types(types=None, extra_params=None):
 
   if they in sended types and extra_params"""
   model_names = []
-  for model_klass in ggrs.models.all_models.all_models:
+  for model_klass in ggrc.models.all_models.all_models:
     model_name = model_klass.__name__
     if types and model_name not in types:
       continue
