@@ -331,32 +331,74 @@ def load_personal_context(user, permissions):
 
 def load_access_control_list(user, permissions):
   """Load permissions from access_control_list"""
-  acl = all_models.AccessControlList
-  acr = all_models.AccessControlRole
-  access_control_list = db.session.query(
-      acl.object_type,
-      acl.object_id,
-      func.max(acr.read),
-      func.max(acr.update),
-      func.max(acr.delete)
-  ).filter(and_(
+  query = db.session.query(
+      all_models.AccessControlList.object_type,
+      func.coalesce(
+          func.group_concat(
+              sqlalchemy.distinct(
+                  func.IF(
+                      all_models.AccessControlRole.read,
+                      all_models.AccessControlList.object_id,
+                      sqlalchemy.sql.null()
+                  )
+              )
+          ),
+          ""
+      ),
+      func.coalesce(
+          func.group_concat(
+              sqlalchemy.distinct(
+                  func.IF(
+                      all_models.AccessControlRole.update,
+                      all_models.AccessControlList.object_id,
+                      sqlalchemy.sql.null()
+                  )
+              )
+          ),
+          ""
+      ),
+      func.coalesce(
+          func.group_concat(
+              sqlalchemy.distinct(
+                  func.IF(
+                      all_models.AccessControlRole.delete,
+                      all_models.AccessControlList.object_id,
+                      sqlalchemy.sql.null()
+                  )
+              )
+          ),
+          ""
+      )
+  ).filter(
       all_models.AccessControlList.person_id == user.id,
-      all_models.AccessControlList.ac_role_id == acr.id)
+      (
+          all_models.AccessControlList.ac_role_id ==
+          all_models.AccessControlRole.id
+      )
   ).group_by(
-      all_models.AccessControlList.object_id,
       all_models.AccessControlList.object_type
   )
 
-  for object_type, object_id, read, update, delete in access_control_list:
-    actions = (("read", read), ("view_object_page", read),
-               ("update", update), ("delete", delete))
-    for action, allowed in actions:
-      if not allowed:
-        continue
-      permissions.setdefault(action, {})\
-          .setdefault(object_type, {})\
-          .setdefault('resources', set())\
-          .add(object_id)
+  for object_type, read_ids, update_ids, delete_ids in query:
+    actions = [
+        ("read", read_ids),
+        ("update", update_ids),
+        ("delete", delete_ids),
+        ("view_object_page", ""),
+    ]
+    for action, allowed_str in actions:
+      allowed_ids_set = set([int(i) for i in allowed_str.split(",") if i])
+      if action not in permissions:
+        permissions[action] = {}
+      if object_type not in permissions[action]:
+        permissions[action][object_type] = {"resources": allowed_ids_set}
+      elif "resources" not in permissions[action][object_type]:
+        permissions[action][object_type]["resources"] = allowed_ids_set
+      else:
+        resource = permissions[action][object_type]["resources"]
+        permissions[action][object_type]["resources"] = (
+            resource | allowed_ids_set
+        )
 
 
 def load_backlog_workflows(permissions):
