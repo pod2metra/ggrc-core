@@ -20,7 +20,7 @@ def with_memcache(cls):
   @functools.wraps(base_setup)
   def setup_decorator(self):
     """Add testbed on setup, activate it and init memcache client"""
-    self.testbed = getattr(self, "testbed", testbed.Testbed())
+    self.testbed = getattr(self, "testbed") or testbed.Testbed()
     # pylint: disable=protected-access
     if not self.testbed._activated:
       self.testbed.activate()
