@@ -199,11 +199,57 @@ class Comment(Roleable, Relatable, Described, Notifiable,
       reflection.Attribute("header_url_link",
                            create=False,
                            update=False),
+      reflection.Attribute("related_to",
+                           create=True,
+                           read=False,
+                           update=False),
   )
 
   _sanitize_html = [
       "description",
+
   ]
+
+  _related_to = None
+
+  @utils.JsonProperty
+  def related_to(self):
+    """Special property, that lets map comment during creation."""
+    if self._related_to:
+      return self._related_to
+    if not self.id:
+      return None
+    relation = Relationship.query.filter(
+        Relationship.source_type == self.type,
+        Relationship.source_id == self.id
+    ).union(
+        Relationship.query.filter(
+            Relationship.destination_type == self.type,
+            Relationship.destination_id == self.id
+        )
+    ).first()
+    if relation.source_type == self.type:
+      model_name = relation.destination_type
+      model_id = relation.destination_id
+    else:
+      model_name = relation.source_type
+      model_id = relation.source_id
+    instance = inflector.get_model(model_name).eager_query().get(model_id)
+    self._related_to = instance
+    return self._related_to
+
+  @related_to.setter
+  def related_to(self, value):
+    """Special property setter, that lets map comment during creation."""
+    if not value:
+      return
+    value = value.__class__.eager_query().get(value.id)
+    self._related_to = value
+    db.session.add(Relationship(source=self, destination=value))
+    from ggrc.models.mixins.autostatuschangeable import AutoStatusChangeable
+    if isinstance(value, AutoStatusChangeable):
+      value.handle_first_class_edit(value)
+      value.handle_custom_attribute_edit(value)
 
   def get_objects_to_reindex(self):
     """Return list required objects for reindex if comment C.U.D."""
@@ -313,6 +359,7 @@ class Comment(Roleable, Relatable, Described, Notifiable,
 
 
 class CommentInitiator(object):  # pylint: disable=too-few-public-methods
+  """Mixin that mark model as possible comment initiator."""
 
   @sa.ext.declarative.declared_attr
   def initiator_comments(cls):  # pylint: disable=no-self-argument
