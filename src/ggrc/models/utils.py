@@ -71,6 +71,25 @@ class JsonPolymorphicRelationship(PolymorphicRelationship):
     return None
 
 
+class JsonProperty(property):
+  """Custom property.
+
+  Will setup value to the instance on deserialization step.
+  """
+
+  def __call__(self, obj, json_obj):
+    try:
+      field_name = (
+          f for f, p in obj.__class__.__dict__.iteritems()
+          if f in json_obj and p is self
+      ).next()
+    except StopIteration:
+      return None
+    else:
+      return referenced_objects.get(json_obj[field_name]["type"],
+                                    json_obj[field_name]["id"])
+
+
 class FasadeProperty(object):  # pylint: disable=too-few-public-methods
   """Fasade property.
 
