@@ -129,7 +129,14 @@ permissions = {
         "ControlCategory",
         "ControlAssertion",
         "Control",
-        "Comment",
+        {
+            "type": "Comment",
+            "condition": "is_allowed_based_on",
+            "terms": {
+                "property_name": "related_to",
+                "action": "update",
+            },
+        },
         {
             "type": "Assessment",
             "condition": "is_auditor",
