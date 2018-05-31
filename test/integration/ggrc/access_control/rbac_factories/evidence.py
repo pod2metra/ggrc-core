@@ -107,12 +107,11 @@ class EvidenceRBACFactory(base.BaseRBACFactory):
   def add_comment(self):
     """Map new comment to evidence."""
     evidence = all_models.Evidence.query.get(self.evidence_id)
-    _, comment = self.objgen.generate_object(all_models.Comment, {
+    return self.objgen.generate_object(all_models.Comment, {
         "description": factories.random_str(),
         "context": None,
-    })
-    return self.objgen.generate_relationship(source=evidence,
-                                             destination=comment)[0]
+        "related_to": evidence,
+    })[0]
 
   def read_comments(self):
     """Read comments mapped to evidence"""
