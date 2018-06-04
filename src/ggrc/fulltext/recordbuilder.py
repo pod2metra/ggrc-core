@@ -17,30 +17,6 @@ from ggrc.fulltext.mixin import Indexed
 LOGGER = logging.getLogger(__name__)
 
 
-class Record(object):  # pylint: disable=too-few-public-methods
-  """"Class required to collection index properties on build procedure."""
-
-  __slots__ = (
-      "key",
-      "type",
-      "context_id",
-      "tags",
-      "properties",
-  )
-
-  def __init__(self,  # pylint: disable=too-many-arguments
-               key,
-               rec_type,
-               context_id,
-               properties,
-               tags=""):
-    self.key = key
-    self.type = rec_type
-    self.context_id = context_id
-    self.tags = tags
-    self.properties = properties
-
-
 class RecordBuilder(object):
   """Basic record builder for full text index table."""
   # pylint: disable=too-few-public-methods
@@ -179,7 +155,28 @@ class RecordBuilder(object):
       properties[attribute_name] = {"": definition.get_indexed_value(value)}
     return properties
 
-  def as_record(self, obj):  # noqa  # pylint:disable=too-many-branches
+  def _get_cav_properties(self, obj):
+    if not isinstance(obj, CustomAttributable):
+      return {}
+    properties = {}
+    cavs = {v.custom_attribute_id: v for v in obj.custom_attribute_values}
+    for cad in obj.custom_attribute_definitions:
+      attribute_name = cad.title
+      cav = cavs.get(cad.id)
+      if cad.attribute_type == "Map:Person":
+        if cav and cav.attribute_object_id:
+          properties[attribute_name] = self.build_person_subprops(
+              cav.attribute_object
+          )
+          properties[attribute_name].update(
+              self.build_list_sort_subprop([cav.attribute_object])
+          )
+      else:
+        value = cav.attribute_value if cav is not None else cad.default_value
+        properties[attribute_name] = {"": cad.get_indexed_value(value)}
+    return properties
+
+  def get_properties(self, obj):
     """Generate record representation for an object.
 
     Properties should be returned in the following format:
@@ -193,27 +190,6 @@ class RecordBuilder(object):
     }
     If there is no subproperty - empty string is used as a key
     """
-    # Defaults. These work when the record is not a custom attribute
-
     properties = self._get_properties(obj)
-    if isinstance(obj, CustomAttributable):
-      cavs = {v.custom_attribute_id: v for v in obj.custom_attribute_values}
-      for cad in obj.custom_attribute_definitions:
-        cav = cavs.get(cad.id)
-        if not cav:
-          value = cad.default_value
-        elif cad.attribute_type == "Map:Person":
-          value = cav.attribute_object if cav.attribute_object_id else None
-        else:
-          value = cav.attribute_value
-        properties.update(self.get_custom_attribute_properties(cad, value))
-
-    return Record(
-        # This logic saves custom attribute values as attributes of the object
-        # that owns the attribute values. When obj is not a
-        # CustomAttributeValue the values are saved directly.
-        obj.id,
-        obj.__class__.__name__,
-        obj.context_id,
-        properties
-    )
+    properties.update(self._get_cav_properties(obj))
+    return properties

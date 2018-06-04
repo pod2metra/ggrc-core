@@ -51,7 +51,7 @@ class ModelFactory(factory.Factory, object):
     )
     db.session.add(revision)
     db.session.add(event)
-    indexer.update_record(indexer.fts_record_for(instance), commit=False)
+    indexer.update_record(instance, commit=False)
 
   @staticmethod
   def _get_user():

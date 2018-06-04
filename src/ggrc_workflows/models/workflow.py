@@ -436,8 +436,7 @@ class Workflow(roleable.Roleable,
     db.session.flush()
 
     # add fulltext entries
-    indexer = get_indexer()
-    indexer.create_record(indexer.fts_record_for(backlog_workflow))
+    get_indexer().create_record(backlog_workflow)
     return "Backlog workflow created"
 
 

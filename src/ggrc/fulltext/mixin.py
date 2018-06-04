@@ -1,5 +1,3 @@
-# Copyright (C) 2018 Google Inc.
-# Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Module contains Indexed mixin class"""
 import itertools
@@ -41,10 +39,8 @@ class Indexed(object):
       return
     instances = cls.indexed_query().filter(cls.id.in_(ids))
     indexer = fulltext.get_indexer()
-    keys = inspect(indexer.record_type).c
-    records = (indexer.fts_record_for(i) for i in instances)
-    rows = itertools.chain(*[indexer.records_generator(i) for i in records])
-    values = [{c.name: getattr(r, a) for a, c in keys.items()} for r in rows]
+    rows = itertools.chain(*[indexer.records_generator(i) for i in instances])
+    values = list(rows)
     if values:
       return indexer.record_type.__table__.insert().values(values)
 

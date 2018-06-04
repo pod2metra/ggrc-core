@@ -30,54 +30,51 @@ class SqlIndexer(object):
     self.builders[obj_class.__name__] = builder
     return builder
 
-  def fts_record_for(self, obj):
-    return self.get_builder(obj.__class__).as_record(obj)
-
   def invalidate_cache(self):
     self.cache = defaultdict(dict)
 
   def search(self, terms):
     raise NotImplementedError()
 
-  def records_generator(self, record):
+  def records_generator(self, instance):
     """Record generator method."""
-    for prop, value in record.properties.items():
-      for subproperty, content in value.items():
+    props = self.get_builder(instance.__class__).get_properties(instance)
+    for prop, value in props.iteritems():
+      for subproperty, content in value.iteritems():
         if content is not None:
-          yield self.record_type(
-              key=record.key,
-              type=record.type,
-              context_id=record.context_id,
-              tags=record.tags,
+          yield dict(
+              key=instance.id,
+              type=instance.type,
+              context_id=instance.context_id,
+              tags="",
               property=prop,
               subproperty=unicode(subproperty),
               content=unicode(content),
           )
 
-  def create_record(self, record, commit=True):
+  def create_record(self, instance, commit=True):
     """Create records in db."""
-    for db_record in self.records_generator(record):
-      db.session.add(db_record)
+    for db_record in self.records_generator(instance):
+      db.session.add(self.record_type(**db_record))
     if commit:
       db.session.commit()
 
-  def update_record(self, record, commit=True):
+  def update_record(self, instance, commit=True):
     """Update records values in db."""
     # remove the obsolete index entries
-    if record.properties:
-      db.session.query(self.record_type).filter(
-          self.record_type.key == record.key,
-          self.record_type.type == record.type,
-          self.record_type.property.in_(list(record.properties.keys())),
-      ).delete(synchronize_session="fetch")
-    # add new index entries
-    self.create_record(record, commit=commit)
+    self.delete_record(instance.id, instance.type, False)
+    self.create_record(instance, commit=commit)
 
   def delete_record(self, key, type, commit=True):
     """Delete records values in db for specific types."""
-    db.session.query(self.record_type).filter(
+    db.session.query(
+        self.record_type
+    ).filter(
         self.record_type.key == key,
-        self.record_type.type == type).delete()
+        self.record_type.type == type
+    ).delete(
+        synchronize_session="fetch"
+    )
     if commit:
       db.session.commit()
 
