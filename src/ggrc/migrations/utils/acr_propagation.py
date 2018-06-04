@@ -171,22 +171,27 @@ def remove_propagated_roles(object_type, role_names):
           ACR_TABLE.c.object_type == object_type,
       )
   )
-  child_role_ids = connection.execute(
-      sa.select([ACR_TABLE.c.id]).where(
-          ACR_TABLE.c.parent_id.in_(parent_role_ids),
-      )
-  ).fetchall()
-  child_ids = [row.id for row in child_role_ids]
-  if not child_ids:
-    return
-  op.execute(
-      ACL_TABLE.delete().where(
-          ACL_TABLE.c.ac_role_id.in_(child_ids)
-      )
+  child_role_ids = sa.select([ACR_TABLE.c.id]).where(
+      ACR_TABLE.c.parent_id.in_(parent_role_ids),
   )
+  ids_query = sa.select([
+      ACL_TABLE.c.id
+  ]).order_by(
+      sa.desc(ACL_TABLE.c.id)
+  ).where(
+      ACL_TABLE.c.ac_role_id.in_(
+          child_role_ids
+      )
+  ).limit(1000)
+  ids = [r.id for r in connection.execute(ids_query).fetchall()]
+  while ids:
+    connection.execute(ACL_TABLE.delete().where(ACL_TABLE.c.id.in_(ids)))
+    ids = [r.id for r in connection.execute(ids_query).fetchall()]
   op.execute(
       ACR_TABLE.delete().where(
-          ACR_TABLE.c.id.in_(child_ids)
+          ACR_TABLE.c.id.in_([
+              r.id for r in connection.execute(child_role_ids).fetchall()
+          ])
       )
   )
 
