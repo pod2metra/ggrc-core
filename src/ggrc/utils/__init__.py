@@ -298,6 +298,18 @@ def list_chunks(list_, chunk_size=CHUNK_SIZE):
     yield list_[index:index + chunk_size]
 
 
+def chunks_generator(iterable, size=CHUNK_SIZE):
+  """Chunks generator base iterbale. Yield slices of iterable based on size."""
+  chunk = []
+  for item in iterable:
+    if len(chunk) == size:
+      yield chunk
+      chunk = []
+    chunk.append(item)
+  if chunk:
+    yield chunk
+
+
 def create_stub(object_, context_id=None):
   """Create stub from instance.
 
