@@ -241,7 +241,7 @@ def update_indexer(session):  # pylint:disable=unused-argument
         models_ids_to_reindex[type_name].add(id_value)
     # expire required to fix declared_attr cached value
     db.session.expire_all()
-    db.session.reindex_set.invalidate()
+    delattr(db.session, 'reindex_set')
     for model_name, ids in models_ids_to_reindex.iteritems():
       get_model(model_name).bulk_record_update_for(ids)
 
