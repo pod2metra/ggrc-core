@@ -10,6 +10,7 @@ from sqlalchemy import orm
 from ggrc import db
 
 from ggrc import fulltext
+from ggrc import utils
 
 
 class ReindexRule(namedtuple("ReindexRule", ["model", "rule", "fields"])):
@@ -31,41 +32,40 @@ class Indexed(object):
 
   PROPERTY_TEMPLATE = u"{}"
 
+  INDEX_CHUNK_SIZE = 1000
+
   def get_reindex_pair(self):
     return (self.__class__.__name__, self.id)
 
   @classmethod
-  def get_insert_query_for(cls, ids):
+  def insert_queries_generator(cls, ids):
     """Return insert class record query. It will return None, if it's empty."""
-    if not ids:
-      return
-    instances = cls.indexed_query().filter(cls.id.in_(ids))
     indexer = fulltext.get_indexer()
-    rows = itertools.chain(*[indexer.records_generator(i) for i in instances])
-    values = list(rows)
-    if values:
-      return indexer.record_type.__table__.insert().values(values)
+    if ids:
+      instances = cls.indexed_query().filter(cls.id.in_(ids))
+      rows = itertools.chain(*[
+          indexer.records_generator(i) for i in instances
+      ])
+      for values in utils.chunks_generator(rows, cls.INDEX_CHUNK_SIZE):
+        yield indexer.record_type.__table__.insert().values(values)
 
   @classmethod
-  def get_delete_query_for(cls, ids):
+  def delete_queries_generator(cls, ids):
     """Return delete class record query. If ids are empty, will return None."""
-    if not ids:
-      return
     indexer = fulltext.get_indexer()
-    return indexer.record_type.__table__.delete().where(
-        indexer.record_type.type == cls.__name__
-    ).where(
-        indexer.record_type.key.in_(ids)
-    )
+    for ids_chunk in utils.chunks_generator(ids or [], cls.INDEX_CHUNK_SIZE):
+      yield indexer.record_type.__table__.delete().where(
+          indexer.record_type.type == cls.__name__
+      ).where(
+          indexer.record_type.key.in_(ids_chunk)
+      )
 
   @classmethod
   def bulk_record_update_for(cls, ids):
     """Bulky update index records for current class"""
-    delete_query = cls.get_delete_query_for(ids)
-    insert_query = cls.get_insert_query_for(ids)
-    for query in [delete_query, insert_query]:
-      if query is not None:
-        db.session.execute(query)
+    for query in itertools.chain(*[cls.delete_queries_generator(ids),
+                                   cls.insert_queries_generator(ids)]):
+      db.session.execute(query)
 
   @classmethod
   def indexed_query(cls):
