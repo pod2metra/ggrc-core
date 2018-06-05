@@ -65,7 +65,8 @@ class Indexed(object):
     """Bulky update index records for current class"""
     for query in itertools.chain(*[cls.delete_queries_generator(ids),
                                    cls.insert_queries_generator(ids)]):
-      db.session.execute(query)
+      with db.session.begin_nested():
+        db.session.execute(query)
 
   @classmethod
   def indexed_query(cls):
