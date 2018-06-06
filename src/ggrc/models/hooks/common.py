@@ -50,7 +50,8 @@ def _handle_obj_delete(mapper, connection, target):
   # pylint: disable=unused-argument
   delete_queries = []
   if issubclass(type(target), mixin.Indexed):
-    delete_queries.append(target.get_delete_query_for([target.id]))
+    for query in target.delete_queries_generator([target.id]):
+      delete_queries.append(query)
   if issubclass(type(target), attributable.Attributable):
     delete_queries.append(target.get_delete_ca_query_for([target.id]))
 
