@@ -8,7 +8,7 @@ import ddt
 from ggrc.models import all_models
 from integration.ggrc.access_control import rbac_factories
 from integration.ggrc.access_control.acl_propagation import base
-from integration.ggrc.utils import helpers
+from integration.ggrc.test_utils import helpers
 
 
 @ddt.ddt
