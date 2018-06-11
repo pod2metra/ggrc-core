@@ -8,6 +8,7 @@ from collections import defaultdict
 from google.appengine.ext import deferred
 
 from ggrc import login
+from ggrc import db
 from ggrc import settings
 from ggrc.utils import benchmark
 from ggrc.utils import structures
@@ -117,6 +118,8 @@ class ImportConverter(BaseConverter):
     self.import_secondary_objects()
     self._start_compute_attributes_job()
     self.drop_cache()
+    for instance in db.session:
+      del instance
 
   def row_converters_from_csv(self):
     for converter in self.block_converters:
