@@ -167,6 +167,14 @@ def make_import(csv_data, dry_run):
   except Exception as e:  # pylint: disable=broad-except
     logger.exception("Import failed: %s", e.message)
     raise BadRequest("Import failed due to server error: %s" % e.message)
+  finally:
+    for bc in converter.block_converters:
+      for row in bc.row_converters:
+        for column in (row.headers or {}):
+          del row.headers[column]
+        del row
+      del bc
+    del converter
 
 
 def check_for_previous_run():
