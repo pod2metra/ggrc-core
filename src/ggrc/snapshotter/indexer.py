@@ -15,6 +15,8 @@ from ggrc import models
 from ggrc.models import all_models
 from ggrc.fulltext.mysql import MysqlRecordProperty as Record
 from ggrc.fulltext import get_indexer
+
+from ggrc.models.custom_attribute_definition import warm_up_cad_cache
 from ggrc.models.reflection import AttributeInfo
 from ggrc.utils import generate_query_chunks, helpers
 
@@ -55,32 +57,7 @@ PARENT_PROPERTY_TMPL = u"{parent_type}-{parent_id}"
 CHILD_PROPERTY_TMPL = u"{child_type}-{child_id}"
 
 
-def _get_custom_attribute_dict():
-  """Get fulltext indexable properties for all snapshottable objects
-
-  Args:
-    None
-  Returns:
-    custom_attribute_definitions dict - representing dictionary of custom
-                                        attribute definition attributes.
-  """
-  # pylint: disable=protected-access
-  cadef_klass_names = {
-      getattr(all_models, c)._inflector.table_singular: c for c in Types.all
-  }
-
-  query = models.CustomAttributeDefinition.query.filter(
-      models.CustomAttributeDefinition.definition_type.in_(
-          cadef_klass_names.keys()
-      )
-  )
-  cads = defaultdict(list)
-  for cad in query:
-    cads[cadef_klass_names[cad.definition_type]].append(cad)
-  return cads
-
-
-def get_searchable_attributes(attributes, cads, content):
+def get_searchable_attributes(attributes, content):
   """Get all searchable attributes for a given object that should be indexed
 
   Args:
@@ -90,22 +67,21 @@ def get_searchable_attributes(attributes, cads, content):
   Return:
     Dict of "key": "value" from objects revision
   """
-  searchable_values = {}
-  for attr in attributes:
-    value = attr.get_attribute_revisioned_value(content)
-    searchable_values[attr.alias] = value
-
+  searchable_values = {
+      a.alias: a.get_attribute_revisioned_value(content) for a in attributes
+  }
   cav_dict = {v["custom_attribute_id"]: v
               for v in content.get("custom_attribute_values", [])}
-  for cad in cads:
-    cav = cav_dict.get(cad.id)
-    if not cav:
-      value = cad.get_indexed_value(cad.default_value)
-    elif cad.attribute_type == "Map:Person":
+  for cad in content["custom_attribute_definitions"]:
+    cav = cav_dict.get(cad["id"]) or {}
+    if cad["attribute_type"] == "Map:Person":
       value = cav.get("attribute_object")
     else:
-      value = cad.get_indexed_value(cav["attribute_value"])
-    searchable_values[cad.title] = value
+      value = all_models.CustomAttributeDefinition.get_indexed_value_for(
+          cad["attribute_type"],
+          cav.get("attribute_value", cad["default_value"])
+      )
+    searchable_values[cad["title"]] = value
   return searchable_values
 
 
@@ -334,8 +310,8 @@ def reindex_pairs(pairs):
           "child_id",
           "revision_id",
       )
-  )
-  cad_dict = _get_custom_attribute_dict()
+  ).all()
+  warm_up_cad_cache([s.revision.resource_type for s in snapshot_query])
   for snapshot in snapshot_query:
     revision = snapshot.revision
     snapshots[snapshot.id] = {
@@ -347,7 +323,6 @@ def reindex_pairs(pairs):
         "child_id": snapshot.child_id,
         "revision": get_searchable_attributes(
             CLASS_PROPERTIES[revision.resource_type],
-            cad_dict[revision.resource_type],
             revision.content)
     }
   search_payload = []
