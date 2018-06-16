@@ -145,9 +145,12 @@ class SnapshotGenerator(object):
                           revisions=revisions, _filter=_filter)
     updated = result.response
     if not self.dry_run:
-      reindex_pairs(updated)
-      self._copy_snapshot_relationships()
-      self._create_audit_relationships()
+      with benchmark("reindex_pairs on snapshot update"):
+        reindex_pairs(updated)
+      with benchmark("copy snapshot relationships on snapshot update"):
+        self._copy_snapshot_relationships()
+      with benchmark("create audit relationships on snapshot update"):
+        self._create_audit_relationships()
     return result
 
   def _update(self, for_update, event, revisions, _filter):
@@ -307,10 +310,14 @@ class SnapshotGenerator(object):
 
     to_reindex = updated | created
     if not self.dry_run:
-      reindex_pairs(to_reindex)
-      self._remove_lost_snapshot_mappings()
-      self._copy_snapshot_relationships()
-      self._create_audit_relationships()
+      with benchmark("reindex_pairs on snapshot upsert"):
+        reindex_pairs(to_reindex)
+      with benchmark("remove lost snpashot mappings on snapshot upsert"):
+        self._remove_lost_snapshot_mappings()
+      with benchmark("copy snapshot relationships on snapshot upsert"):
+        self._copy_snapshot_relationships()
+      with benchmark("create audit relationships on snapshot upsert"):
+        self._create_audit_relationships()
     return OperationResponse("upsert", True, {
         "create": create,
         "update": update
@@ -342,9 +349,12 @@ class SnapshotGenerator(object):
         revisions=revisions, _filter=_filter)
     created = result.response
     if not self.dry_run:
-      reindex_pairs(created)
-      self._copy_snapshot_relationships()
-      self._create_audit_relationships()
+      with benchmark("reindex_pairs on snapshot create"):
+        reindex_pairs(created)
+      with benchmark("copy snapshot relationships on snapshot create"):
+        self._copy_snapshot_relationships()
+      with benchmark("create audit relationships on snapshot create"):
+        self._create_audit_relationships()
     return result
 
   def _create(self, for_create, event, revisions, _filter):
