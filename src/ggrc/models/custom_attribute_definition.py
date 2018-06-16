@@ -2,6 +2,7 @@
 # Licensed under http://www.apache.org/licenses/LICENSE-2.0 <see LICENSE file>
 
 """Custom attribute definition module"""
+from collections import defaultdict
 
 import flask
 from sqlalchemy import func
@@ -80,6 +81,12 @@ class CustomAttributeDefinition(attributevalidator.AttributeValidator,
 
   def get_indexed_value(self, value):
     return self.value_mapping.get(value, value)
+
+  @classmethod
+  def get_indexed_value_for(cls, attribute_type, value):
+    """Return indexed value for sent attribute_type and value."""
+    mapping = cls.ValidTypes.DEFAULT_VALUE_MAPPING.get(attribute_type) or {}
+    return mapping.get(value, value)
 
   @definition.setter
   def definition(self, value):
@@ -373,10 +380,27 @@ def get_custom_attributes_for(model_name, instance_id=None):
   definition_type = get_model_name_inflector_dict()[model_name]
   if not definition_type:
     return []
-  cads = get_global_cads(definition_type)
-  if instance_id is not None:
-    cads.extend(get_local_cads(definition_type, instance_id))
+  if hasattr(flask.g, "superhot_cads_cache"):
+    cads = flask.g.superhot_cads_cache[(definition_type, None)]
+    if instance_id is not None:
+      cads.extend(flask.g.superhot_cads_cache[(definition_type, instance_id)])
+  else:
+    cads = get_global_cads(definition_type)
+    if instance_id is not None:
+      cads.extend(get_local_cads(definition_type, instance_id))
   return cads
+
+
+def warm_up_cad_cache(model_type_names):
+  """Warm up cads cache and put results into into flask g."""
+  flask.g.superhot_cads_cache = defaultdict(list)
+  definition_mapping = {i: m for i, m in get_inflector_model_name_pairs()
+                        if m in model_type_names}
+  query = CustomAttributeDefinition.query.filter(
+      CustomAttributeDefinition.definition_type.in_(definition_mapping.keys()))
+  for cad in query:
+    key = (cad.definition_type, cad.definition_id)
+    flask.g.superhot_cads_cache[key].append(cad.log_json())
 
 
 class CustomAttributeMapable(object):
