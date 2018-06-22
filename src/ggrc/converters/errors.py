@@ -34,9 +34,8 @@ DUPLICATE_IN_MULTI_VALUE = (
     u"Duplicates: {duplicates}"
 )
 
-DUPLICATE_VALUE_IN_CSV = (u"Lines {line_list} have same {column_name}"
-                          u" '{value}'. Line{s} {ignore_lines} will be"
-                          u" ignored.")
+DUPLICATE_VALUE_IN_CSV = (u"Line {line} has the same {column_name} '{value}' "
+                          u"as {processed_line}. The line will be ignored.")
 
 MAP_UNMAP_CONFLICT = (u"Line {line}: Object '{slug}' scheduled for mapping and"
                       u" unmapping at the same time. Mapping rule update will"

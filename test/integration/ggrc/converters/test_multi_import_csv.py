@@ -72,17 +72,20 @@ class TestCsvImport(TestCase):
 
     expected_warnings = set([
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="5, 6", column_name="Title", value="dolor",
-            s="", ignore_lines="6"),
+            line="6", processed_line="5", column_name="Title", value="dolor",
+        ),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="6, 7", column_name="Code", value="p-4",
-            s="", ignore_lines="7"),
+            line="7", processed_line="6", column_name="Code", value="p-4",
+        ),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="21, 26", column_name="Title", value="meatloaf",
-            s="", ignore_lines="26"),
+            line="26", processed_line="21", column_name="Title", value="meatloaf",
+        ),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="21, 26, 27", column_name="Code", value="pro 1",
-            s="s", ignore_lines="26, 27"),
+            line="26", processed_line="21", column_name="Code", value="pro 1",
+        ),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="27", processed_line="21", column_name="Code", value="pro 1",
+        ),
         errors.OWNER_MISSING.format(line=26, column_name="Admin"),
         errors.MISSING_COLUMN.format(line=13, column_names="Admin", s=""),
         errors.MISSING_COLUMN.format(line=14, column_names="Admin", s=""),

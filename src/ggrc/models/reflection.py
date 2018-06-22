@@ -7,6 +7,7 @@ import bisect
 from collections import defaultdict
 
 import flask
+import sqlalchemy
 from sqlalchemy.sql.schema import UniqueConstraint
 
 from ggrc.utils import rules
@@ -245,19 +246,25 @@ class AttributeInfo(object):
     return cls.gather_attrs(tgt_class, '_update_raw')
 
   @classmethod
-  def get_acl_definitions(cls, object_class):
+  def get_acl_definitions(cls, object_class, fields=None):
     """Return list of ACL dicts."""
     from ggrc.access_control.role import AccessControlRole
     from ggrc import db
-    if not hasattr(flask.g, "acl_role_names"):
-      flask.g.acl_role_names = defaultdict(set)
-      names_query = db.session.query(
-          AccessControlRole.object_type,
-          AccessControlRole.name,
+    names_query = db.session.query(
+        AccessControlRole.name,
+        AccessControlRole.mandatory,
+    ).filter(
+        ~AccessControlRole.internal,
+        AccessControlRole.object_type == object_class.__name__,
+    )
+    if fields:
+      names_query = names_query.filter(sqlalchemy.or_(
+          AccessControlRole.name.in_(fields),
           AccessControlRole.mandatory,
-      ).filter(~AccessControlRole.internal)
-      for object_type, name, mandatory in names_query:
-        flask.g.acl_role_names[object_type].add((name, mandatory))
+      ))
+    acl_role_names = {
+        (name, mandatory) for name, mandatory in names_query
+    }
 
     return {
         u"{}:{}".format(cls.ALIASES_PREFIX, name): {
@@ -268,7 +275,7 @@ class AttributeInfo(object):
             "description": u"List of people with '{}' role".format(name),
             "type": cls.Type.AC_ROLE,
         }
-        for name, mandatory in flask.g.acl_role_names[object_class.__name__]
+        for name, mandatory in acl_role_names
     }
 
   @classmethod
@@ -322,7 +329,8 @@ class AttributeInfo(object):
     return definitions
 
   @classmethod
-  def get_custom_attr_definitions(cls, object_class, ca_cache=None):
+  def get_custom_attr_definitions(cls, object_class,
+                                  ca_cache=None, fields=None):
     """Get column definitions for custom attributes on object_class.
 
     Args:
@@ -341,7 +349,7 @@ class AttributeInfo(object):
     if isinstance(ca_cache, dict) and object_name:
       custom_attributes = ca_cache.get(object_name, [])
     else:
-      custom_attributes = object_class.get_custom_attribute_definitions()
+      custom_attributes = object_class.get_custom_attribute_definitions(fields)
     for attr in custom_attributes:
       description = attr.helptext or u""
       if (attr.attribute_type == attr.ValidTypes.DROPDOWN and
@@ -361,16 +369,16 @@ class AttributeInfo(object):
 
       definition_ids = definitions.get(attr_name, {}).get("definition_ids", [])
       definition_ids.append(attr.id)
-
-      definitions[attr_name] = {
-          "display_name": attr.title,
-          "attr_name": attr.title,
-          "mandatory": attr.mandatory,
-          "unique": False,
-          "description": description,
-          "type": ca_type,
-          "definition_ids": definition_ids,
-      }
+      if fields is None or attr.title.lower() in fields:
+        definitions[attr_name] = {
+            "display_name": attr.title,
+            "attr_name": attr.title,
+            "mandatory": attr.mandatory,
+            "unique": False,
+            "description": description,
+            "type": ca_type,
+            "definition_ids": definition_ids,
+        }
     return definitions
 
   @classmethod
@@ -383,7 +391,8 @@ class AttributeInfo(object):
     return set(sum(unique_columns, []))
 
   @classmethod
-  def get_object_attr_definitions(cls, object_class, ca_cache=None):
+  def get_object_attr_definitions(cls, object_class,
+                                  ca_cache=None, fields=None):
     """Get all column definitions for object_class.
 
     This function joins custom attribute definitions, mapping definitions and
@@ -424,11 +433,11 @@ class AttributeInfo(object):
         definition.update(value)
       definitions[key] = definition
 
-    definitions.update(cls.get_acl_definitions(object_class))
+    definitions.update(cls.get_acl_definitions(object_class, fields=fields))
 
     if object_class.__name__ not in EXCLUDE_CUSTOM_ATTRIBUTES:
       definitions.update(cls.get_custom_attr_definitions(
-          object_class, ca_cache=ca_cache
+          object_class, ca_cache=ca_cache, fields=fields
       ))
 
     if object_class.__name__ not in EXCLUDE_MAPPINGS:

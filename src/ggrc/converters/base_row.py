@@ -70,36 +70,6 @@ class ImportRowConverter(RowConverter):
     message = template.format(line=self.line, **kwargs)
     self.block_converter.row_warnings.append(message)
 
-  def handle_csv_row_data(self, field_list=None):
-    """ Pack row data with handlers """
-    handle_fields = self.headers if field_list is None else field_list
-    for i, (attr_name, header_dict) in enumerate(self.headers.items()):
-      if attr_name not in handle_fields or \
-              attr_name in self.attrs or \
-              self.is_delete:
-        continue
-      handler = header_dict["handler"]
-      item = handler(self, attr_name, parse=True,
-                     raw_value=self.row[i], **header_dict)
-      if header_dict.get("type") == AttributeInfo.Type.PROPERTY:
-        self.attrs[attr_name] = item
-      else:
-        self.objects[attr_name] = item
-      if not self.ignore:
-        if attr_name == "status" and hasattr(self.obj, "DEPRECATED"):
-          self.is_deprecated = (
-              self.obj.DEPRECATED == item.value != self.obj.status
-          )
-        if attr_name in ("slug", "email"):
-          self.id_key = attr_name
-          self.obj = self.get_or_generate_object(attr_name)
-          item.set_obj_attr()
-      item.check_unique_consistency()
-
-  def handle_row_data(self, field_list=None):
-    """Handle row data on import"""
-    self.handle_csv_row_data(field_list)
-
   def check_mandatory_fields(self):
     """Check if the new object contains all mandatory columns."""
     if not self.is_new or self.is_delete or self.ignore:

@@ -6,6 +6,7 @@
 import collections
 from logging import getLogger
 
+import sqlalchemy
 from sqlalchemy import and_
 from sqlalchemy import orm
 from sqlalchemy import or_
@@ -406,7 +407,7 @@ class CustomAttributable(object):
             }, service=self.__class__.__name__)
 
   @classmethod
-  def get_custom_attribute_definitions(cls):
+  def get_custom_attribute_definitions(cls, field_names=None):
     """Get all applicable CA definitions (even ones without a value yet)."""
     from ggrc.models.custom_attribute_definition import \
         CustomAttributeDefinition as cad
@@ -419,6 +420,10 @@ class CustomAttributable(object):
     else:
       query = cad.query.filter(
           cad.definition_type == utils.underscore_from_camelcase(cls.__name__)
+      )
+    if field_names:
+      query = query.filter(
+          sqlalchemy.or_(cad.title.in_(field_names), cad.mandatory)
       )
     return query.options(
         orm.undefer_group('CustomAttributeDefinition_complete')

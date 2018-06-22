@@ -317,11 +317,10 @@ class TestAssessmentImport(TestCase):
                     column_name="Audit"
                 ),
                 errors.DUPLICATE_VALUE_IN_CSV.format(
-                    line_list="20, 22",
+                    line="22",
+                    processed_line="20",
                     column_name="Code",
                     value="Assessment 22",
-                    s="",
-                    ignore_lines="22",
                 ),
             },
             "row_warnings": {

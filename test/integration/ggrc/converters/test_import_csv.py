@@ -38,7 +38,7 @@ class TestBasicCsvImport(TestCase):
     revisions = models.Revision.query.filter(
         models.Revision.resource_type == "Policy"
     ).count()
-    self.assertEqual(revisions, 6)
+    self.assertEqual(revisions, 3)
     policy = models.Policy.eager_query().first()
     self.assertEqual(policy.modified_by.email, "user@example.com")
 
@@ -97,14 +97,26 @@ class TestBasicCsvImport(TestCase):
 
     expected_errors = {
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="3, 4, 6, 10, 11", column_name="Title",
-            value="A title", s="s", ignore_lines="4, 6, 10, 11"),
+            line="4", processed_line="3", column_name="Title",
+            value="A title"),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="5, 7", column_name="Title", value="A different title",
-            s="", ignore_lines="7"),
+            line="6", processed_line="3", column_name="Title",
+            value="A title"),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line_list="8, 9, 10, 11", column_name="Code", value="code",
-            s="s", ignore_lines="9, 10, 11"),
+            line="10", processed_line="3", column_name="Title",
+            value="A title"),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="11", processed_line="3", column_name="Title",
+            value="A title"),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="7", processed_line="5", column_name="Title",
+            value="A different title"),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="9", processed_line="8", column_name="Code", value="code"),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="10", processed_line="8", column_name="Code", value="code"),
+        errors.DUPLICATE_VALUE_IN_CSV.format(
+            line="11", processed_line="8", column_name="Code", value="code"),
     }
     response_errors = response_json[0]["row_errors"]
     self.assertEqual(expected_errors, set(response_errors))

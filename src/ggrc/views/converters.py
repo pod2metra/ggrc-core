@@ -34,6 +34,7 @@ from ggrc.notifications import job_emails
 from ggrc.query.exceptions import BadQueryException
 from ggrc.query.builder import QueryHelper
 from ggrc.login import login_required, get_current_user
+from ggrc import settings
 from ggrc.utils import benchmark, get_url_root
 
 
@@ -106,6 +107,8 @@ def handle_export_request():
     raise InternalServerError(message)
   except Exception as e:  # pylint: disable=broad-except
     logger.exception("Export failed: %s", e.message)
+    if settings.TESTING:
+      raise
     raise InternalServerError("Export failed due to internal server error.")
 
 
@@ -166,6 +169,8 @@ def make_import(csv_data, dry_run):
     return converter.get_info()
   except Exception as e:  # pylint: disable=broad-except
     logger.exception("Import failed: %s", e.message)
+    if settings.TESTING:
+      raise
     raise BadRequest("Import failed due to server error: %s" % e.message)
 
 

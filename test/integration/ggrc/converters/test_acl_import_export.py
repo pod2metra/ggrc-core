@@ -325,8 +325,7 @@ class TestACLImportExport(TestCase):
     market_revisions = models.Revision.query.filter_by(
         resource_type="Market"
     ).count()
-    # One revision for created object and one for modified when acl was added
-    self.assertEqual(market_revisions, 2)
+    self.assertEqual(market_revisions, 1)
 
     acr_revisions = models.Revision.query.filter_by(
         resource_type="AccessControlRole"
