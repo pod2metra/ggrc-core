@@ -496,44 +496,47 @@ class ImportBlockConverter(BlockConverter):
           row.attrs[attr_name] = item
         else:
           row.objects[attr_name] = item
-        if not row.ignore:
-          if attr_name == "status" and hasattr(row.obj, "DEPRECATED"):
-            row.is_deprecated = (
-                row.obj.DEPRECATED == item.value != row.obj.status
-            )
-          if attr_name in ("slug", "email"):
-            row.id_key = attr_name
-            row.obj = row.get_or_generate_object(attr_name)
-            item.set_obj_attr()
-          if header_dict["unique"]:
-            value = row.get_value(attr_name)
-            if value:
-              if self.unique_values[attr_name].get(value) is not None:
-                row.add_error(
-                    errors.DUPLICATE_VALUE_IN_CSV.format(
-                        line=row.line,
-                        processed_line=self.unique_values[attr_name][value],
-                        column_name=header_dict["display_name"],
-                        value=value,
-                    ),
-                )
-                item.is_duplicate = True
-              else:
-                self.unique_values[attr_name][value] = row.line
+        if attr_name == "status" and hasattr(row.obj, "DEPRECATED"):
+          row.is_deprecated = (
+              row.obj.DEPRECATED == item.value != row.obj.status
+          )
+        if attr_name in ("slug", "email"):
+          row.id_key = attr_name
+          row.obj = row.get_or_generate_object(attr_name)
+          item.set_obj_attr()
+        if header_dict["unique"]:
+          value = row.get_value(attr_name)
+          if value:
+            if self.unique_values[attr_name].get(value) is not None:
+              row.add_error(
+                  errors.DUPLICATE_VALUE_IN_CSV.format(
+                      line=row.line,
+                      processed_line=self.unique_values[attr_name][value],
+                      column_name=header_dict["display_name"],
+                      value=value,
+                  ),
+              )
+              item.is_duplicate = True
+            else:
+              self.unique_values[attr_name][value] = row.line
         item.check_unique_consistency()
       row.check_mandatory_fields()
 
-      if self.ignore:
+      if row.ignore:
+        self._update_info(row)
         continue
+
       row.setup_object()
       self._check_object(row)
       obj = row.obj
       try:
         if row.do_not_expunge:
+          self._update_info(row)
           continue
         if row.ignore and obj in db.session:
           db.session.expunge(obj)
       except UnmappedInstanceError:
+        self._update_info(row)
         continue
 
       if self.ignore:
