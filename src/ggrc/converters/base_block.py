@@ -504,6 +504,13 @@ class ImportBlockConverter(BlockConverter):
           row.id_key = attr_name
           row.obj = row.get_or_generate_object(attr_name)
           item.set_obj_attr()
+          value = item.parse_item()
+          if row.is_new and value:
+            self.converter.new_objects[
+                row.obj.type
+            ][
+                value
+            ] = row.obj
         if header_dict["unique"]:
           value = row.get_value(attr_name)
           if value:
