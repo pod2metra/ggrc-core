@@ -4,6 +4,8 @@
 
 from collections import OrderedDict
 
+import ddt
+
 from ggrc import models
 from ggrc.converters import errors
 from integration.ggrc import TestCase
@@ -11,6 +13,7 @@ from integration.ggrc import generator
 from integration.ggrc.models import factories
 
 
+@ddt.ddt
 class TestBasicCsvImport(TestCase):
   """Test basic CSV imports."""
 
@@ -126,18 +129,77 @@ class TestBasicCsvImport(TestCase):
     for policy in policies:
       test_owners(policy)
 
-  def test_intermappings(self):
+  @ddt.data(True, False)
+  def test_intermappings(self, reversed):
     self.generate_people(["miha", "predrag", "vladan", "ivan"])
+    facility_data_block = [
+        OrderedDict([
+            ("object_type", "facility"),
+            ("Code*", "HOUSE-{}".format(idx)),
+            ("title", "Facility-{}".format(idx)),
+            ("admin", "user@example.com"),
+            ("map:facility", "" if idx == 1 else "HOUSE-{}".format(idx - 1)),
+        ])
+        for idx in (xrange(1, 5) if not reversed else xrange(4, 0, -1))
+    ]
+    objective_data_block = [
+        OrderedDict([
+            ("object_type", "objective"),
+            ("Code*", "O1"),
+            ("title", "House of cards"),
+            ("admin", "user@example.com"),
+            ("map:facility", "HOUSE-2"),
+            ("map:objective", ""),
+        ]),
+        OrderedDict([
+            ("object_type", "objective"),
+            ("Code*", "O2"),
+            ("title", "House of the rising sun"),
+            ("admin", "user@example.com"),
+            ("map:facility", "HOUSE-3"),
+            ("map:objective", "O1\nO2\nO3"),
+        ]),
+        OrderedDict([
+            ("object_type", "objective"),
+            ("Code*", "O3"),
+            ("title", "Yellow house"),
+            ("admin", "user@example.com"),
+            ("map:facility", "HOUSE-4"),
+            ("map:objective", ""),
+        ]),
+        OrderedDict([
+            ("object_type", "objective"),
+            ("Code*", "O4"),
+            ("title", "There is no place like home"),
+            ("admin", "user@example.com"),
+            ("map:facility", "HOUSE-1"),
+            ("map:objective", "O3\nO4\nO3"),
+        ]),
+    ]
 
-    filename = "intermappings.csv"
-    response_json = self.import_file(filename)
-
+    response_json = self.import_data(
+        *(facility_data_block + objective_data_block)
+    )
     self.assertEqual(4, response_json[0]["created"])  # Facility
     self.assertEqual(4, response_json[1]["created"])  # Objective
 
     response_warnings = response_json[0]["row_warnings"]
-    self.assertEqual(set(), set(response_warnings))
-    self.assertEqual(13, models.Relationship.query.count())
+    if reversed:
+        expected = set([
+            u"Line {line}: Facility 'house-{idx}' "
+            u"doesn't exist, so it can't be mapped/unmapped.".format(
+                idx=idx,
+                line=6 - idx
+            )
+            for idx in xrange(1, 4)
+        ])
+        rel_numbers = 8
+    else:
+        expected = set()
+        rel_numbers = 11
+
+    self.assertEqual(expected, set(response_warnings))
+    self.assertEqual(rel_numbers, models.Relationship.query.count())
 
     obj2 = models.Objective.query.filter_by(slug="O2").first()
     obj3 = models.Objective.query.filter_by(slug="O3").first()
