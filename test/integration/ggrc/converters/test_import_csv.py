@@ -183,9 +183,8 @@ class TestBasicCsvImport(TestCase):
     self.assertEqual(4, response_json[0]["created"])  # Facility
     self.assertEqual(4, response_json[1]["created"])  # Objective
 
-    response_warnings = response_json[0]["row_warnings"]
     if reversed:
-        expected = set([
+        expected_block_1 = set([
             u"Line {line}: Facility 'house-{idx}' "
             u"doesn't exist, so it can't be mapped/unmapped.".format(
                 idx=idx,
@@ -195,10 +194,15 @@ class TestBasicCsvImport(TestCase):
         ])
         rel_numbers = 8
     else:
-        expected = set()
+        expected_block_1 = set()
         rel_numbers = 11
 
-    self.assertEqual(expected, set(response_warnings))
+    expected_block_2 = {
+        u"Line 11: Objective 'o3' doesn't exist, "
+        u"so it can't be mapped/unmapped."
+    }
+    self.assertEqual(expected_block_1, set(response_json[0]["row_warnings"]))
+    self.assertEqual(expected_block_2, set(response_json[1]["row_warnings"]))
     self.assertEqual(rel_numbers, models.Relationship.query.count())
 
     obj2 = models.Objective.query.filter_by(slug="O2").first()
