@@ -552,8 +552,13 @@ class ImportBlockConverter(BlockConverter):
       if not self.converter.dry_run:
         row.send_pre_commit_signals()
         try:
+          import_event = log_event(db.session, None)
           row.insert_object()
           db.session.flush()
+          # This hack is needed only for snapshot creation
+          # for audit during import, this is really bad and
+          # need to be refactored
+          row.send_post_commit_signals(event=import_event)
         except exc.SQLAlchemyError as err:
           db.session.rollback()
           logger.exception("Import failed with: %s", err.message)
