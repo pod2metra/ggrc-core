@@ -249,17 +249,28 @@ class AttributeInfo(object):
   @classmethod
   def get_acl_definitions(cls, object_class):
     """Return list of ACL dicts."""
-    from ggrc.access_control.role import get_ac_roles_for
+    from ggrc.access_control.role import AccessControlRole
+    from ggrc import db
+    if not hasattr(flask.g, "acl_role_names"):
+      flask.g.acl_role_names = defaultdict(set)
+      names_query = db.session.query(
+          AccessControlRole.object_type,
+          AccessControlRole.name,
+          AccessControlRole.mandatory,
+      ).filter(~AccessControlRole.internal)
+      for object_type, name, mandatory in names_query:
+        flask.g.acl_role_names[object_type].add((name, mandatory))
+
     return {
-        u"{}:{}".format(cls.ALIASES_PREFIX, acr.name): {
-            "display_name": acr.name,
-            "attr_name": acr.name,
-            "mandatory": acr.mandatory,
+        u"{}:{}".format(cls.ALIASES_PREFIX, name): {
+            "display_name": name,
+            "attr_name": name,
+            "mandatory": mandatory,
             "unique": False,
-            "description": u"List of people with '{}' role".format(acr.name),
+            "description": u"List of people with '{}' role".format(name),
             "type": cls.Type.AC_ROLE,
         }
-        for acr in get_ac_roles_for(object_class.__name__).values()
+        for name, mandatory in flask.g.acl_role_names[object_class.__name__]
     }
 
   @classmethod
