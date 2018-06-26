@@ -83,12 +83,7 @@ class ImportConverter(BaseConverter):
 
     for converter in self.initialize_block_converters():
       if not converter.ignore:
-        handle_fields = [
-            k for k in converter.headers if k in self.priority_columns
-        ] + [
-            k for k in converter.headers if k not in self.priority_columns
-        ]
-        converter.import_csv_data(handle_fields)
+        converter.import_csv_data()
         revision_ids.extend(converter.revision_ids)
       self.response_data.append(converter.get_info())
 

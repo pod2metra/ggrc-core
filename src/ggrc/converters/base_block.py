@@ -479,13 +479,21 @@ class ImportBlockConverter(BlockConverter):
       yield base_row.ImportRowConverter(self, self.object_class, row=row,
                                         headers=self.headers, index=i)
 
-  def import_csv_data(self, handle_fields):
+  @property
+  def handle_fields(self):
+    return [
+        k for k in self.headers if k in self.converter.priority_columns
+    ] + [
+        k for k in self.headers if k not in self.converter.priority_columns
+    ]
+
+  def import_csv_data(self):
     for row in self.row_converters_from_csv():
       # initiate attrs in the right order for each row
       row_headers = {attr_name: (idx, header_dict)
                      for idx, (attr_name, header_dict)
                      in enumerate(row.headers.iteritems())}
-      for attr_name in handle_fields:
+      for attr_name in row.block_converter.handle_fields:
         if attr_name not in row_headers:
           continue
         if row.is_delete:
@@ -509,49 +517,49 @@ class ImportBlockConverter(BlockConverter):
         if header_dict["unique"]:
           value = row.get_value(attr_name)
           if value:
-            if self.unique_values[attr_name].get(value) is not None:
+            if row.block_converter.unique_values[attr_name].get(value) is not None:
               row.add_error(
                   errors.DUPLICATE_VALUE_IN_CSV.format(
                       line=row.line,
-                      processed_line=self.unique_values[attr_name][value],
+                      processed_line=row.block_converter.unique_values[attr_name][value],
                       column_name=header_dict["display_name"],
                       value=value,
                   ),
               )
               item.is_duplicate = True
             else:
-              self.unique_values[attr_name][value] = row.line
+              row.block_converter.unique_values[attr_name][value] = row.line
         item.check_unique_consistency()
       row.check_mandatory_fields()
 
       if row.ignore:
-        self._update_info(row)
+        row.block_converter._update_info(row)
         continue
       if row.is_new and getattr(row.obj, row.id_key):
         row.is_new_object_set = True
-        self.converter.new_objects[
+        row.block_converter.converter.new_objects[
             row.obj.__class__
         ][
             getattr(row.obj, row.id_key)
         ] = row.obj
 
       row.setup_object()
-      self._check_object(row)
+      row.block_converter._check_object(row)
       obj = row.obj
       try:
         if row.do_not_expunge:
-          self._update_info(row)
+          row.block_converter._update_info(row)
           continue
         if row.ignore and obj in db.session:
           db.session.expunge(obj)
       except UnmappedInstanceError:
-        self._update_info(row)
+        row.block_converter._update_info(row)
         continue
 
-      if self.ignore:
+      if row.block_converter.ignore:
         continue
 
-      if not self.converter.dry_run:
+      if not row.block_converter.converter.dry_run:
         row.send_pre_commit_signals()
         try:
           if row.object_class == all_models.Audit and row.is_new:
@@ -572,10 +580,10 @@ class ImportBlockConverter(BlockConverter):
           row.add_error(errors.UNKNOWN_ERROR)
         else:
           if row.is_new and not row.ignore:
-            self.send_collection_post_signals([row.obj])
+            row.block_converter.send_collection_post_signals([row.obj])
 
       row.setup_secondary_objects()
-      if not self.converter.dry_run:
+      if not row.block_converter.converter.dry_run:
         try:
           row.insert_secondary_objects()
         except exc.SQLAlchemyError as err:
@@ -583,12 +591,14 @@ class ImportBlockConverter(BlockConverter):
           logger.exception("Import failed with: %s", err.message)
           row.add_error(errors.UNKNOWN_ERROR)
 
-      if not self.converter.dry_run:
+      if not row.block_converter.converter.dry_run:
         try:
           modified_objects = get_modified_objects(db.session)
           import_event = log_event(db.session, None)
           cache_utils.update_memcache_before_commit(
-              self, modified_objects, CACHE_EXPIRY_IMPORT)
+              row.block_converter,
+              modified_objects,
+              CACHE_EXPIRY_IMPORT)
           try:
             row.send_before_commit_signals(import_event)
           except StatusValidationError as exp:
@@ -597,16 +607,16 @@ class ImportBlockConverter(BlockConverter):
                           column_name=status_alias,
                           message=exp.message)
           db.session.commit()
-          self._store_revision_ids(import_event)
+          row.block_converter._store_revision_ids(import_event)
           cache_utils.update_memcache_after_commit(self)
           update_snapshot_index(db.session, modified_objects)
         except exc.SQLAlchemyError as err:
           db.session.rollback()
           logger.exception("Import failed with: %s", err.message)
-          self.add_errors(errors.UNKNOWN_ERROR,
-                          line=self.offset + 2)
+          row.block_converter.add_errors(errors.UNKNOWN_ERROR,
+                                         line=self.offset + 2)
         row.send_post_commit_signals(event=import_event)
-      self._update_info(row)
+      row.block_converter._update_info(row)
 
   def get_unique_values_dict(self, object_class):
     """Get the varible to storing row numbers for unique values.
