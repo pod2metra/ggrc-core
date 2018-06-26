@@ -13,17 +13,13 @@ from collections import OrderedDict
 from collections import Counter
 
 from cached_property import cached_property
-from sqlalchemy import exc
 from sqlalchemy import or_
 from sqlalchemy import and_
-from sqlalchemy.orm.exc import UnmappedInstanceError
 from flask import _app_ctx_stack
 
 from ggrc import db
 from ggrc import models
-from ggrc.models import all_models
 from ggrc.rbac import permissions
-from ggrc.snapshotter import create_snapshots
 from ggrc.utils import benchmark
 from ggrc.utils import structures
 from ggrc.utils import list_chunks
@@ -33,22 +29,13 @@ from ggrc.converters import pre_commit_checks
 from ggrc.converters import base_row
 from ggrc.converters.import_helper import get_column_order
 from ggrc.converters.import_helper import get_object_column_definitions
-from ggrc.models.reflection import AttributeInfo
-from ggrc.services.common import get_modified_objects
-from ggrc.services.common import update_snapshot_index
-from ggrc.cache import utils as cache_utils
-from ggrc.utils.log_event import log_event
 from ggrc.services import signals
 from ggrc_workflows.models.cycle_task_group_object_task import \
     CycleTaskGroupObjectTask
 
-from ggrc.models.exceptions import StatusValidationError
-
 
 # pylint: disable=invalid-name
 logger = getLogger(__name__)
-
-CACHE_EXPIRY_IMPORT = 600
 
 
 class BlockConverter(object):
@@ -79,6 +66,9 @@ class BlockConverter(object):
             "valid_values": "list of valid values"
 
   """
+
+  CACHE_EXPIRY_IMPORT = 600
+
   def __init__(self, converter, object_class, class_name,
                operation, object_ids=None, raw_headers=None, offset=None,
                rows=None):
@@ -490,133 +480,8 @@ class ImportBlockConverter(BlockConverter):
   def import_csv_data(self):
     for row in self.row_converters_from_csv():
       # initiate attrs in the right order for each row
-      row_headers = {attr_name: (idx, header_dict)
-                     for idx, (attr_name, header_dict)
-                     in enumerate(row.headers.iteritems())}
-      for attr_name in row.block_converter.handle_fields:
-        if attr_name not in row_headers:
-          continue
-        if row.is_delete:
-          continue
-        idx, header_dict = row_headers[attr_name]
-        handler = header_dict["handler"]
-        item = handler(row, attr_name, parse=True,
-                       raw_value=row.row[idx], **header_dict)
-        if header_dict.get("type") == AttributeInfo.Type.PROPERTY:
-          row.attrs[attr_name] = item
-        else:
-          row.objects[attr_name] = item
-        if attr_name == "status" and hasattr(row.obj, "DEPRECATED"):
-          row.is_deprecated = (
-              row.obj.DEPRECATED == item.value != row.obj.status
-          )
-        if attr_name in ("slug", "email"):
-          row.id_key = attr_name
-          row.obj = row.get_or_generate_object(attr_name)
-          item.set_obj_attr()
-        if header_dict["unique"]:
-          value = row.get_value(attr_name)
-          if value:
-            if row.block_converter.unique_values[attr_name].get(value) is not None:
-              row.add_error(
-                  errors.DUPLICATE_VALUE_IN_CSV.format(
-                      line=row.line,
-                      processed_line=row.block_converter.unique_values[attr_name][value],
-                      column_name=header_dict["display_name"],
-                      value=value,
-                  ),
-              )
-              item.is_duplicate = True
-            else:
-              row.block_converter.unique_values[attr_name][value] = row.line
-        item.check_unique_consistency()
-      row.check_mandatory_fields()
-
-      if row.ignore:
-        row.block_converter._update_info(row)
-        continue
-      if row.is_new and getattr(row.obj, row.id_key):
-        row.is_new_object_set = True
-        row.block_converter.converter.new_objects[
-            row.obj.__class__
-        ][
-            getattr(row.obj, row.id_key)
-        ] = row.obj
-
-      row.setup_object()
-      row.block_converter._check_object(row)
-      obj = row.obj
-      try:
-        if row.do_not_expunge:
-          row.block_converter._update_info(row)
-          continue
-        if row.ignore and obj in db.session:
-          db.session.expunge(obj)
-      except UnmappedInstanceError:
-        row.block_converter._update_info(row)
-        continue
-
-      if row.block_converter.ignore:
-        continue
-
-      if not row.block_converter.converter.dry_run:
-        row.send_pre_commit_signals()
-        try:
-          if row.object_class == all_models.Audit and row.is_new:
-            # This hack is needed only for snapshot creation
-            # for audit during import, this is really bad and
-            # need to be refactored
-            import_event = log_event(db.session, None)
-          row.insert_object()
-          db.session.flush()
-          if row.object_class == all_models.Audit and row.is_new:
-            # This hack is needed only for snapshot creation
-            # for audit during import, this is really bad and
-            # need to be refactored
-            create_snapshots(row.obj, import_event)
-        except exc.SQLAlchemyError as err:
-          db.session.rollback()
-          logger.exception("Import failed with: %s", err.message)
-          row.add_error(errors.UNKNOWN_ERROR)
-        else:
-          if row.is_new and not row.ignore:
-            row.block_converter.send_collection_post_signals([row.obj])
-
-      row.setup_secondary_objects()
-      if not row.block_converter.converter.dry_run:
-        try:
-          row.insert_secondary_objects()
-        except exc.SQLAlchemyError as err:
-          db.session.rollback()
-          logger.exception("Import failed with: %s", err.message)
-          row.add_error(errors.UNKNOWN_ERROR)
-
-      if not row.block_converter.converter.dry_run:
-        try:
-          modified_objects = get_modified_objects(db.session)
-          import_event = log_event(db.session, None)
-          cache_utils.update_memcache_before_commit(
-              row.block_converter,
-              modified_objects,
-              CACHE_EXPIRY_IMPORT)
-          try:
-            row.send_before_commit_signals(import_event)
-          except StatusValidationError as exp:
-            status_alias = row.headers.get("status", {}).get("display_name")
-            row.add_error(errors.VALIDATION_ERROR,
-                          column_name=status_alias,
-                          message=exp.message)
-          db.session.commit()
-          row.block_converter._store_revision_ids(import_event)
-          cache_utils.update_memcache_after_commit(self)
-          update_snapshot_index(db.session, modified_objects)
-        except exc.SQLAlchemyError as err:
-          db.session.rollback()
-          logger.exception("Import failed with: %s", err.message)
-          row.block_converter.add_errors(errors.UNKNOWN_ERROR,
-                                         line=self.offset + 2)
-        row.send_post_commit_signals(event=import_event)
-      row.block_converter._update_info(row)
+      row.process_row()
+      self._update_info(row)
 
   def get_unique_values_dict(self, object_class):
     """Get the varible to storing row numbers for unique values.
