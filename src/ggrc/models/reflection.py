@@ -8,6 +8,7 @@ from collections import defaultdict
 
 import flask
 import sqlalchemy
+from sqlalchemy.orm import load_only
 from sqlalchemy.sql.schema import UniqueConstraint
 
 from ggrc.utils import rules
@@ -246,36 +247,19 @@ class AttributeInfo(object):
     return cls.gather_attrs(tgt_class, '_update_raw')
 
   @classmethod
-  def get_acl_definitions(cls, object_class, fields=None):
+  def get_acl_definitions(cls, object_class):
     """Return list of ACL dicts."""
-    from ggrc.access_control.role import AccessControlRole
-    from ggrc import db
-    names_query = db.session.query(
-        AccessControlRole.name,
-        AccessControlRole.mandatory,
-    ).filter(
-        ~AccessControlRole.internal,
-        AccessControlRole.object_type == object_class.__name__,
-    )
-    if fields:
-      names_query = names_query.filter(sqlalchemy.or_(
-          AccessControlRole.name.in_(fields),
-          AccessControlRole.mandatory,
-      ))
-    acl_role_names = {
-        (name, mandatory) for name, mandatory in names_query
-    }
-
+    from ggrc.access_control.role import get_ac_roles_for
     return {
-        u"{}:{}".format(cls.ALIASES_PREFIX, name): {
-            "display_name": name,
-            "attr_name": name,
-            "mandatory": mandatory,
+        u"{}:{}".format(cls.ALIASES_PREFIX, acr.name): {
+            "display_name": acr.name,
+            "attr_name": acr.name,
+            "mandatory": acr.mandatory,
             "unique": False,
-            "description": u"List of people with '{}' role".format(name),
+            "description": u"List of people with '{}' role".format(acr.name),
             "type": cls.Type.AC_ROLE,
         }
-        for name, mandatory in acl_role_names
+        for acr in get_ac_roles_for(object_class.__name__).values()
     }
 
   @classmethod
@@ -433,7 +417,7 @@ class AttributeInfo(object):
         definition.update(value)
       definitions[key] = definition
 
-    definitions.update(cls.get_acl_definitions(object_class, fields=fields))
+    definitions.update(cls.get_acl_definitions(object_class))
 
     if object_class.__name__ not in EXCLUDE_CUSTOM_ATTRIBUTES:
       definitions.update(cls.get_custom_attr_definitions(
