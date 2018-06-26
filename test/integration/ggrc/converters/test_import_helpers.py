@@ -44,7 +44,7 @@ class TestACLAttributeDefinitions(TestCase):
 
   @ddt.data(*models.all_models.all_models)
   def test_acl_definitions(self, model):
-    """Test ACL column definitions."""
+    """Test ACL column definitions for {0}."""
     with factories.single_commit():
       factory = factories.AccessControlRoleFactory
       factories.AccessControlRoleFactory(

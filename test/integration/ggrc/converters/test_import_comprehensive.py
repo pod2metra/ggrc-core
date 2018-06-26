@@ -50,7 +50,7 @@ class TestComprehensiveSheets(TestCase):
         "Objective": {
             "created": 8,
             "ignored": 7,
-            "row_errors": 5,
+            "row_errors": 7,
             "row_warnings": 4,
             "rows": 15,
         },
@@ -313,13 +313,13 @@ class TestComprehensiveSheets(TestCase):
                     line="4",
                     processed_line="3",
                     column_name="Code",
-                    value="a",
+                    value="A",
                 ),
                 errors.DUPLICATE_VALUE_IN_CSV.format(
                     line="4",
                     processed_line="3",
                     column_name="Title",
-                    value="a",
+                    value="A",
                 ),
             }
         }

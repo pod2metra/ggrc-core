@@ -21,7 +21,9 @@ from flask import _app_ctx_stack
 
 from ggrc import db
 from ggrc import models
+from ggrc.models import all_models
 from ggrc.rbac import permissions
+from ggrc.snapshotter import create_snapshots
 from ggrc.utils import benchmark
 from ggrc.utils import structures
 from ggrc.utils import list_chunks
@@ -504,13 +506,6 @@ class ImportBlockConverter(BlockConverter):
           row.id_key = attr_name
           row.obj = row.get_or_generate_object(attr_name)
           item.set_obj_attr()
-          value = item.parse_item()
-          if row.is_new and value:
-            self.converter.new_objects[
-                row.obj.type
-            ][
-                value
-            ] = row.obj
         if header_dict["unique"]:
           value = row.get_value(attr_name)
           if value:
@@ -533,6 +528,10 @@ class ImportBlockConverter(BlockConverter):
         self._update_info(row)
         continue
 
+      if row.is_new and value:
+        row.is_new_object_set = True
+        self.converter.new_objects[row.obj.__class__][row.id_key] = row.obj
+
       row.setup_object()
       self._check_object(row)
       obj = row.obj
@@ -552,13 +551,18 @@ class ImportBlockConverter(BlockConverter):
       if not self.converter.dry_run:
         row.send_pre_commit_signals()
         try:
-          import_event = log_event(db.session, None)
+          if row.object_class == all_models.Audit and row.is_new:
+            # This hack is needed only for snapshot creation
+            # for audit during import, this is really bad and
+            # need to be refactored
+            import_event = log_event(db.session, None)
           row.insert_object()
           db.session.flush()
-          # This hack is needed only for snapshot creation
-          # for audit during import, this is really bad and
-          # need to be refactored
-          row.send_post_commit_signals(event=import_event)
+          if row.object_class == all_models.Audit and row.is_new:
+            # This hack is needed only for snapshot creation
+            # for audit during import, this is really bad and
+            # need to be refactored
+            create_snapshots(row.obj, import_event)
         except exc.SQLAlchemyError as err:
           db.session.rollback()
           logger.exception("Import failed with: %s", err.message)
@@ -600,8 +604,6 @@ class ImportBlockConverter(BlockConverter):
                           line=self.offset + 2)
         row.send_post_commit_signals(event=import_event)
       self._update_info(row)
-      del row.attrs
-      del row.objects
 
   def get_unique_values_dict(self, object_class):
     """Get the varible to storing row numbers for unique values.

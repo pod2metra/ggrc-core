@@ -47,6 +47,7 @@ class ImportRowConverter(RowConverter):
     self.line = self.index + self.block_converter.offset + \
         self.block_converter.BLOCK_OFFSET
     self.initial_state = None
+    self.is_new_object_set = False
 
   def add_error(self, template, **kwargs):
     """Add error for current row.
@@ -60,10 +61,14 @@ class ImportRowConverter(RowConverter):
     """
     message = template.format(line=self.line, **kwargs)
     self.block_converter.row_errors.append(message)
-    new_objects = self.block_converter.converter.new_objects[self.object_class]
-    key = self.get_value(self.id_key)
-    if key in new_objects:
-      del new_objects[key]
+    if self.is_new_object_set:
+      new_objects = self.block_converter.converter.new_objects[
+          self.object_class
+      ]
+      key = self.get_value(self.id_key)
+      if key in new_objects:
+        del new_objects[key]
+      self.is_new_object_set = False
     self.ignore = True
 
   def add_warning(self, template, **kwargs):
