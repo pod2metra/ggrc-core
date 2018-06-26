@@ -527,10 +527,13 @@ class ImportBlockConverter(BlockConverter):
       if row.ignore:
         self._update_info(row)
         continue
-
-      if row.is_new and value:
+      if row.is_new and getattr(row.obj, row.id_key):
         row.is_new_object_set = True
-        self.converter.new_objects[row.obj.__class__][row.id_key] = row.obj
+        self.converter.new_objects[
+            row.obj.__class__
+        ][
+            getattr(row.obj, row.id_key)
+        ] = row.obj
 
       row.setup_object()
       self._check_object(row)
