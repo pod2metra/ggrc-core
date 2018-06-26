@@ -357,7 +357,7 @@ class TestImportExports(TestCase):
         all_models.Revision.resource_type == "Control",
         all_models.Revision.resource_id == control.id
     )
-    self.assertEqual({"created", "modified"}, {a[0] for a in revision_actions})
+    self.assertEqual({"created"}, {a[0] for a in revision_actions})
 
   @mock.patch(
       "ggrc.gdrive.file_actions.get_gdrive_file_data",
