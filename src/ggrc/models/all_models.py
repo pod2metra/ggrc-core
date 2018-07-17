@@ -5,6 +5,9 @@
 
 import sys
 
+from sqlalchemy import event
+
+from ggrc import db
 from ggrc.access_control.role import AccessControlRole
 from ggrc.access_control.list import AccessControlList
 from ggrc.data_platform.attribute_definitions import AttributeDefinitions
@@ -72,6 +75,7 @@ from ggrc.models.person_profile import PersonProfile
 from ggrc.models.metric import Metric
 from ggrc.models.product_group import ProductGroup
 from ggrc.models.technology_environment import TechnologyEnvironment
+from ggrc.models.bucket import Bucket
 
 all_models = [  # pylint: disable=invalid-name
     # data platform models
@@ -143,6 +147,7 @@ all_models = [  # pylint: disable=invalid-name
     ImportExport,
     TechnologyEnvironment,
     ProductGroup,
+    Bucket,
 ]
 
 __all__ = [m.__name__ for m in all_models]
@@ -180,3 +185,8 @@ def unregister_model(model):
     all_models.remove(model)
   if model.__name__ in __all__:
     __all__.remove(model.__name__)
+
+
+@event.listens_for(Relationship, "after_insert")
+def increase_bucket_scope(mapper, connection, target):
+  Bucket.propagate_bucket_via_relation(target)

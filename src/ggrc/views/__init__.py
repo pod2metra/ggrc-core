@@ -68,6 +68,38 @@ def propagate_acl(_):
   return app.make_response(("success", 200, [("Content-Type", "text/html")]))
 
 
+@app.route("/_background_tasks/bucketing", methods=["POST"])
+@queued_task
+@helpers.without_sqlalchemy_cache
+def bucketing(_):
+
+  def _get_query(id):
+    return all_models.Relationship.query.filter(
+        all_models.Relationship.id > id
+    ).order_by(
+        all_models.Relationship.id
+    ).limit(5000)
+  db.session.execute(
+      sqlalchemy.text(
+          "TRUNCATE TABLE {}".format(all_models.Bucket.__tablename__)
+      ).execution_options(autocommit=True),
+  )
+  max_id = -1
+  idx = 0
+  while 1:
+    rels = _get_query(max_id).all()
+    if not rels:
+      break
+    with benchmark("process chunk {}".format(idx)):
+      for rel in rels:
+        max_id = rel.id
+        all_models.Bucket.propagate_bucket_via_relation(rel)
+      db.session.flush()
+      db.session.expunge_all()
+    idx += 1
+  return app.make_response(("success", 200, [("Content-Type", "text/html")]))
+
+
 @app.route("/_background_tasks/create_missing_revisions", methods=["POST"])
 @queued_task
 def create_missing_revisions(_):
@@ -574,6 +606,22 @@ def admin_propagate_acl():
 
   task_queue = create_task("propagate_acl", url_for(
       propagate_acl.__name__), propagate_acl)
+  return task_queue.make_response(
+      app.make_response(("scheduled %s" % task_queue.name, 200,
+                         [('Content-Type', 'text/html')])))
+
+
+@app.route("/admin/bucketing", methods=["POST"])
+@login_required
+@admin_required
+def admin_bucketing():
+  """Propagates all ACL entries"""
+  admins = getattr(settings, "BOOTSTRAP_ADMIN_USERS", [])
+  if get_current_user().email not in admins:
+    raise exceptions.Forbidden()
+
+  task_queue = create_task("bucketing", url_for(
+      bucketing.__name__), bucketing)
   return task_queue.make_response(
       app.make_response(("scheduled %s" % task_queue.name, 200,
                          [('Content-Type', 'text/html')])))

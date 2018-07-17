@@ -44,6 +44,7 @@ class BenchmarkContextManager(object):
 
   def __exit__(self, exc_type, exc_value, exc_trace):
     end = time.time()
+    print "%.4f %s" % (end - self.start, self.message)
     logger.debug("%.4f %s", end - self.start, self.message)
 
 
