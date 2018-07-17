@@ -255,13 +255,14 @@ class Bucket(mapping_relation_factory("key_obj"),
           parent_bucket_id=bucket.id,
         ))
     @classmethod
-    def _propagate_bicket_step(cls,
+    def _propagate_bucket_step(cls,
                                relation,
                                key_obj_type,
                                key_obj_id,
                                scoped_obj_type,
                                scoped_obj_id):
       bucket = cls(
+          id=uuid.uuid4(),
           key_obj_type=key_obj_type,
           key_obj_id=key_obj_id,
           scoped_obj_type=scoped_obj_type,
@@ -269,14 +270,14 @@ class Bucket(mapping_relation_factory("key_obj"),
           parent_relationship=relation,
       )
       db.session.add(bucket)
-      scopes = set{db.session.query(
+      scopes = set(db.session.query(
           cls.scoped_obj_type.label("scoped_obj_type"),
           cls.scoped_obj_id.label("scoped_obj_id"),
           cls.parent_relationship_id.label("parent_relationship_id"),
       ).filter(
           cls.key_obj_type == scoped_obj_type,
           cls.key_obj_id == scoped_obj_id
-      )}
+      ))
       cls._propagate_scope_to_bucket(bucket, scopes)
       parent_buckets = set(cls.query.filter(
           cls.id.in_(
@@ -312,7 +313,11 @@ class Bucket(mapping_relation_factory("key_obj"),
       # inserter = table.insert()
       for key_obj_type, key_obj_id, scoped_obj_type, scoped_obj_id in scopes:
         with benchmark("bucket inserter"):
-          cls._propagate_bucket_step()
+          cls._propagate_bucket_step(relation,
+                                     key_obj_type,
+                                     key_obj_id,
+                                     scoped_obj_type,
+                                     scoped_obj_id)
 
         # with benchmark("building query"):
         #   new_bucket_id = uuid.uuid4()
