@@ -254,145 +254,164 @@ class Bucket(mapping_relation_factory("key_obj"),
           parent_relationship_id=relation_id,
           parent_bucket_id=bucket.id,
         ))
+    @classmethod
+    def _propagate_bicket_step(cls,
+                               relation,
+                               key_obj_type,
+                               key_obj_id,
+                               scoped_obj_type,
+                               scoped_obj_id):
+      bucket = cls(
+          key_obj_type=key_obj_type,
+          key_obj_id=key_obj_id,
+          scoped_obj_type=scoped_obj_type,
+          scoped_obj_id=scoped_obj_id,
+          parent_relationship=relation,
+      )
+      db.session.add(bucket)
+      scopes = set{db.session.query(
+          cls.scoped_obj_type.label("scoped_obj_type"),
+          cls.scoped_obj_id.label("scoped_obj_id"),
+          cls.parent_relationship_id.label("parent_relationship_id"),
+      ).filter(
+          cls.key_obj_type == scoped_obj_type,
+          cls.key_obj_id == scoped_obj_id
+      )}
+      cls._propagate_scope_to_bucket(bucket, scopes)
+      parent_buckets = set(cls.query.filter(
+          cls.id.in_(
+              db.session.query(
+                  functions.coalesce(
+                    cls.parent_bucket_id,
+                    cls.id
+                  )
+              ).filter(
+                  cls.scoped_obj_type == key_obj_type,
+                  cls.scoped_obj_id == key_obj_id,
+              )
+          )
+      ).options(
+        orm.load_only("id", "key_obj_type", "key_obj_id")
+      ))
+      scopes |= {(scoped_obj_type, scoped_obj_id, relation.id), }
+      for parent_bucket in parent_buckets:
+          db.session.add(cls(
+            key_obj_type=parent_bucket.key_obj_type,
+            key_obj_id=parent_bucket.key_obj_id,
+            scoped_obj_type=scoped_obj_type,
+            scoped_obj_id=scoped_obj_id,
+            parent_relationship=relation,
+            parent_bucket=parent_bucket,
+          ))
+          cls._propagate_scope_to_bucket(bucket, scopes)
 
     @classmethod
     def propagate_bucket_via_relation(cls, relation):
       scopes = cls.scopes_generation(relation)
       table = cls.__table__
-      inserter = table.insert()
+      # inserter = table.insert()
       for key_obj_type, key_obj_id, scoped_obj_type, scoped_obj_id in scopes:
-        # with benchmark("bucket inserter"):
+        with benchmark("bucket inserter"):
+          cls._propagate_bucket_step()
 
-          # bucket = cls(
-          #     id = new_bucket_id,
-          #     key_obj_type=key_obj_type,
-          #     key_obj_id=key_obj_id,
-          #     scoped_obj_type=scoped_obj_type,
-          #     scoped_obj_id=scoped_obj_id,
-          #     parent_relationship=relation,
-          # )
-          # db.session.add(bucket)
-          # cls._propagate_scope_to_bucket(bucket, scopes)
-
-
-
-        with benchmark("building query"):
-          new_bucket_id = uuid.uuid4()
-          select_new_bucket = db.session.query(
-              literal(new_bucket_id).label("id"),
-              literal(key_obj_type).label("key_obj_type"),
-              literal(key_obj_id).label("key_obj_id"),
-              literal(scoped_obj_type).label("scoped_obj_type"),
-              literal(scoped_obj_id).label("scoped_obj_id"),
-              literal(relation.id).label("parent_relationship_id"),
-              literal(None).label("parent_bucket_id"),
-          ).subquery()
-          new_bucket_scopes = db.session.query(
-              cls.scoped_obj_type.label("scoped_obj_type"),
-              cls.scoped_obj_id.label("scoped_obj_id"),
-              cls.parent_relationship_id.label("parent_relationship_id"),
-          ).filter(
-              cls.key_obj_type == scoped_obj_type,
-              cls.key_obj_id == scoped_obj_id
-          )
-          parent_scopes = new_bucket_scopes.union(
-              db.session.query(
-                  literal(scoped_obj_type).label("scoped_obj_type"),
-                  literal(scoped_obj_id).label("scoped_obj_id"),
-                  literal(relation.id).label("parent_relationship_id"),
-              )
-          ).subquery()
-          parent_buckets = db.session.query(
-              cls.key_obj_type.label("key_obj_type"),
-              cls.key_obj_id.label("key_obj_id"),
-              cls.id.label("parent_bucket_id"),
-          ).filter(
-              cls.id.in_(
-                  db.session.query(
-                      functions.coalesce(
-                        cls.parent_bucket_id,
-                        cls.id
-                      )
-                  ).filter(
-                      cls.scoped_obj_type == key_obj_type,
-                      cls.scoped_obj_id == key_obj_id,
-                  )
-              )
-          )
-          parent_select = sqlalchemy.join(
-              parent_scopes,
-              parent_buckets,
-              sqlalchemy.sql.true()
-          )
-          new_bucket_select = sqlalchemy.join(
-              new_bucket_scopes,
-              db.session.query(
-                  literal(key_obj_type).label("key_obj_type"),
-                  literal(key_obj_id).label("key_obj_type"),
-                  literal(new_bucket_id).label("parent_relationship_id"),
-              ).subquery(),
-              sqlalchemy.sql.true()
-          )
-          print
-          print parent_select
-          print
-          print new_bucket_select
-          select_statement = sqlalchemy.union(
-              select_new_bucket,
-              sqlalchemy.select(
-                  [
-                      literal(None).label("id"),
-                      "key_obj_type",
-                      "key_obj_id",
-                      "scoped_obj_id",
-                      "scoped_obj_type",
-                      "parent_relationship_id",
-                      "parent_bucket_id"
-                  ],
-                  from_obj=sqlalchemy.union(
-                      new_bucket_select,
-                      parent_select
-                  ),
-                  distinct=True,
-              )
-          )
-        with benchmark("raw bucket inserter"):
-          db.session.execute(
-              inserter.prefix_with("IGNORE").from_select(
-                  [
-                      table.c.id,
-                      table.c.key_obj_type,
-                      table.c.key_obj_id,
-                      table.c.scoped_obj_id,
-                      table.c.scoped_obj_type,
-                      table.c.parent_relationship_id,
-                      table.c.parent_bucket_id,
-                  ],
-                  select_statement
-              )
-          )
-        # parent_buckets = set(cls.query.filter(
-        #     cls.id.in_(
-        #         db.session.query(
-        #             functions.coalesce(
+        # with benchmark("building query"):
+        #   new_bucket_id = uuid.uuid4()
+        #   new_bucket_scopes = db.session.query(
+        #       cls.scoped_obj_type.label("scoped_obj_type"),
+        #       cls.scoped_obj_id.label("scoped_obj_id"),
+        #       cls.parent_relationship_id.label("parent_relationship_id"),
+        #   ).filter(
+        #       cls.key_obj_type == scoped_obj_type,
+        #       cls.key_obj_id == scoped_obj_id
+        #   )
+        #   parent_scopes = new_bucket_scopes.union(
+        #       db.session.query(
+        #           literal(scoped_obj_type).label("scoped_obj_type"),
+        #           literal(scoped_obj_id).label("scoped_obj_id"),
+        #           literal(relation.id).label("parent_relationship_id"),
+        #       )
+        #   ).subquery()
+        #   parent_buckets = db.session.query(
+        #       cls.key_obj_type.label("key_obj_type"),
+        #       cls.key_obj_id.label("key_obj_id"),
+        #       cls.id.label("parent_bucket_id"),
+        #   ).filter(
+        #       cls.id.in_(
+        #           db.session.query(
+        #               functions.coalesce(
         #                 cls.parent_bucket_id,
         #                 cls.id
-        #             )
-        #         ).filter(
-        #             cls.scoped_obj_type == key_obj_type,
-        #             cls.scoped_obj_id == key_obj_id,
-        #         )
+        #               )
+        #           ).filter(
+        #               cls.scoped_obj_type == key_obj_type,
+        #               cls.scoped_obj_id == key_obj_id,
+        #           )
+        #       )
+        #   )
+        #   parent_select = sqlalchemy.join(
+        #       parent_scopes,
+        #       parent_buckets,
+        #       sqlalchemy.sql.true()
+        #   )
+        #   new_bucket_select = sqlalchemy.join(
+        #       new_bucket_scopes,
+        #       db.session.query(
+        #           literal(key_obj_type).label("key_obj_type"),
+        #           literal(key_obj_id).label("key_obj_id"),
+        #           literal(new_bucket_id).label("parent_relationship_id"),
+        #       ).subquery(),
+        #       sqlalchemy.sql.true()
+        #   )
+        #   select_statement = sqlalchemy.select(
+        #       [
+        #           "key_obj_type",
+        #           "key_obj_id",
+        #           "scoped_obj_type",
+        #           "scoped_obj_id",
+        #           "parent_relationship_id",
+        #           "parent_bucket_id"
+        #       ],
+        #       from_obj=sqlalchemy.union(
+        #         new_bucket_select,
+        #          parent_select
+        #      ),
+        #      distinct=True,
+        #  )
+
+        # with benchmark("raw bucket inserter"):
+        #   db.session.execute(
+        #     inserter.prefix_with("IGNORE").from_select(
+        #       [
+        #           table.c.id,
+        #           table.c.key_obj_type,
+        #           table.c.key_obj_id,
+        #           table.c.scoped_obj_type,
+        #           table.c.scoped_obj_id,
+        #           table.c.parent_relationship_id,
+        #           table.c.parent_bucket_id,
+        #       ],
+        #       db.session.query(
+        #           literal(new_bucket_id).label("id"),
+        #           literal(key_obj_type).label("key_obj_type"),
+        #           literal(key_obj_id).label("key_obj_id"),
+        #           literal(scoped_obj_type).label("scoped_obj_type"),
+        #           literal(scoped_obj_id).label("scoped_obj_id"),
+        #           literal(relation.id).label("parent_relationship_id"),
+        #           literal(None).label("parent_bucket_id"),
+        #       ).subquery()
         #     )
-        # ).options(
-        #     orm.load_only("id", "key_obj_type", "key_obj_id")
-        # ))
-        # for parent_bucket in parent_buckets:
-        #     db.session.add(cls(
-        #         key_obj_type=parent_bucket.key_obj_type,
-        #         key_obj_id=parent_bucket.key_obj_id,
-        #         scoped_obj_type=scoped_obj_type,
-        #         scoped_obj_id=scoped_obj_id,
-        #         parent_relationship=relation,
-        #         parent_bucket=parent_bucket,
-        #     ))
-        #     cls._propagate_scope_to_bucket(bucket, scopes)
+        #   )
+        #   db.session.execute(
+        #       inserter.prefix_with("IGNORE").from_select(
+        #           [
+        #               table.c.key_obj_type,
+        #               table.c.key_obj_id,
+        #               table.c.scoped_obj_id,
+        #               table.c.scoped_obj_type,
+        #               table.c.parent_relationship_id,
+        #               table.c.parent_bucket_id,
+        #           ],
+        #           select_statement
+        #       )
+        #   )
+#
