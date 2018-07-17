@@ -9,7 +9,6 @@ from ggrc.models.deferred import deferred
 from ggrc.models.inflector import ModelInflectorDescriptor
 from ggrc.models.reflection import AttributeInfo
 from ggrc.utils import benchmark
-import pdb; pdb.set_trace()
 from sqlalchemy_utils.types import UUIDType
 
 
@@ -295,7 +294,7 @@ class Bucket(mapping_relation_factory("key_obj"),
           ).filter(
               cls.key_obj_type == scoped_obj_type,
               cls.key_obj_id == scoped_obj_id
-          ).subquery()
+          )
           parent_scopes = new_bucket_scopes.union(
               db.session.query(
                   literal(scoped_obj_type).label("scoped_obj_type"),
@@ -320,11 +319,29 @@ class Bucket(mapping_relation_factory("key_obj"),
                   )
               )
           )
+          parent_select = sqlalchemy.join(
+              parent_scopes,
+              parent_buckets,
+              sqlalchemy.sql.true()
+          )
+          new_bucket_select = sqlalchemy.join(
+              new_bucket_scopes,
+              db.session.query(
+                  literal(key_obj_type).label("key_obj_type"),
+                  literal(key_obj_id).label("key_obj_type"),
+                  literal(new_bucket_id).label("parent_relationship_id"),
+              ).subquery(),
+              sqlalchemy.sql.true()
+          )
+          print
+          print parent_select
+          print
+          print new_bucket_select
           select_statement = sqlalchemy.union(
               select_new_bucket,
               sqlalchemy.select(
                   [
-                      None,
+                      literal(None).label("id"),
                       "key_obj_type",
                       "key_obj_id",
                       "scoped_obj_id",
@@ -333,20 +350,8 @@ class Bucket(mapping_relation_factory("key_obj"),
                       "parent_bucket_id"
                   ],
                   from_obj=sqlalchemy.union(
-                    sqlalchemy.join(
-                        scopes,
-                        db.session.query(
-                            select_new_bucket.c.key_obj_type,
-                            select_new_bucket.c.key_obj_id,
-                            select_new_bucket.c.id.label("parent_relationship_id"),
-                        ).subquery(),
-                        sqlalchemy.sql.true()
-                    ),
-                    sqlalchemy.join(
-                          parent_scopes,
-                          parent_buckets,
-                          sqlalchemy.sql.true()
-                      ),
+                      new_bucket_select,
+                      parent_select
                   ),
                   distinct=True,
               )
