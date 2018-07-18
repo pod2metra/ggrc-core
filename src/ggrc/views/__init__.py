@@ -94,6 +94,7 @@ def bucketing(_):
       for rel in rels:
         max_id = rel.id
         all_models.Bucket.propagate_bucket_via_relation(rel)
+        db.session.flush()
       db.session.plain_commit()
       db.session.expunge_all()
     idx += 1
