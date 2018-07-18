@@ -47,22 +47,6 @@ def mapping_relation_factory(relation_name):
   )
 
 
-BUCKETING_RULLES = {
-    "Program": ["Audit",
-                "Assessment",
-                "Control",
-                "Risk",
-                "Issue",
-                "Comment",
-                "Document",
-                "Evidence",
-                "AssessmentTemplate",
-
-                ]
-
-
-}
-
 
 class Bucket(Identifiable,
              mapping_relation_factory("key_obj"),
@@ -72,7 +56,7 @@ class Bucket(Identifiable,
     __tablename__ = "bucket_items"
 
     _inflector = ModelInflectorDescriptor()
-
+    path = db.Column(db.String, nullable=False)
     parent_relationship_id = deferred(
         db.Column(
             db.Integer,
@@ -121,88 +105,88 @@ class Bucket(Identifiable,
       )
 
     SCOPED_DICT = {
-        "TechnologyEnvironment": ["Comment", "Document"],
-        "OrgGroup": ["Comment", "Document"],
-        "Section": ["Document", "Comment"],
-        "AccessGroup": ["Comment", "Document"],
-        "System": ["Comment", "Document"],
-        "ProductGroup": ["Comment", "Document"],
-        "Objective": ["Document", "Comment"],
-        "Regulation": ["Document", "Comment"],
-        "Program": ["AssessmentTemplate",
-                    "Assessment",
-                    "Comment",
-                    "Document",
-                    "OrgGroup",
-                    "Proposal",
-                    "AccessGroup",
-                    "Audit",
-                    "Clause",
-                    "Comment",
-                    "Contract",
-                    "Control",
-                    "DataAsset",
-                    "Document",
-                    "Evidence" ,
-                    "Facility",
-                    "Issue",
-                    "Issue",
-                    "Market",
-                    "Metric",
-                    "Objective",
-                    "Process",
-                    "Product",
-                    "ProductGroup",
-                    "Project",
-                    "Regulation",
-                    "Risk",
-                    "RiskAssessment",
-                    "Section",
-                    "Snapshot",
-                    "Standard",
-                    "System",
-                    "TechnologyEnvironment",
-                    "Threat",
-                    "Vendor"],
-
-      "Policy": ["Comment", "Document"],
-      "Document": ["Comment"],
-      "Issue": ["Document", "Comment"],
-      "Product": ["Comment", "Document"],
-      "Vendor": ["Comment", "Document"],
-      "Risk": ["Comment",
-               "Document",
-               "Proposal"],
-      "Workflow": [],
-      "CycleTaskGroupObjectTask": [],
-      "Assessment": ["Issue",
-                     "Document",
-                     "Comment",
-                     "Snapshot",
-                     "Evidence"],
-      "Standard": ["Comment", "Document"],
-      "Audit": ["Assessment",
-                "AssessmentTemplate",
-                "Comment",
-                "Evidence",
-                "Issue",
-                "Snapshot",
-                "Comment",
-                "Document"],
-      "Control": ["Document", "Comment", "Proposal"],
-      "Contract": ["Document", "Comment"],
-      "Project": ["Comment", "Document"],
-      "DataAsset": ["Comment", "Document"],
-      "Threat": ["Comment", "Document"],
-      "TaskGroupTask": [],
-      "Comment": [],
-      "Facility": ["Document", "Comment"],
-      "Process": ["Comment", "Document"],
-      "Clause": ["Comment", "Document"],
-      "Metric": ["Document", "Comment"],
-      "Evidence": ["Comment"],
-      "Market": ["Document", "Comment"],
-    }
+        u'AccessGroup': set([u'Comment', u'Document', u'Relationship']),
+        u'Assessment': set([# u'Audit',
+                            u'Comment',
+                            u'Document',
+                            u'Evidence',
+                            u'Issue',
+                            u'Relationship',
+                            u'Snapshot']),
+        u'Audit': set([u'Assessment',
+                       u'AssessmentTemplate',
+                       u'Comment',
+                       u'Document',
+                       u'Evidence',
+                       u'Issue',
+                       u'Relationship',
+                       u'Snapshot']),
+        u'Clause': set([u'Comment', u'Document', u'Relationship']),
+        u'Comment': set([]),
+        u'Contract': set([u'Comment', u'Document', u'Relationship']),
+        u'Control': set([u'Comment', u'Document', u'Proposal', u'Relationship']),
+        u'CycleTaskGroupObjectTask': set([]),
+        u'DataAsset': set([u'Comment', u'Document', u'Relationship']),
+        u'Document': set([u'Comment', u'Relationship']),
+        u'Evidence': set([u'Comment', u'Relationship']),
+        u'Facility': set([u'Comment', u'Document', u'Relationship']),
+        u'Issue': set([u'Comment', u'Document', u'Relationship']),
+        u'Market': set([u'Comment', u'Document', u'Relationship']),
+        u'Metric': set([u'Comment', u'Document', u'Relationship']),
+        u'Objective': set([u'Comment', u'Document', u'Relationship']),
+        u'OrgGroup': set([u'Comment', u'Document', u'Relationship']),
+        u'Policy': set([u'Comment', u'Document', u'Relationship']),
+        u'Process': set([u'Comment', u'Document', u'Relationship']),
+        u'Product': set([u'Comment', u'Document', u'Relationship']),
+        u'ProductGroup': set([u'Comment', u'Document', u'Relationship']),
+        u'Program': set([u'AccessGroup',
+                         u'Assessment',
+                         u'AssessmentTemplate',
+                         u'Audit',
+                         u'Clause',
+                         u'Comment',
+                         u'Contract',
+                         u'Control',
+                         u'DataAsset',
+                         u'Document',
+                         u'Evidence',
+                         u'Facility',
+                         u'Issue',
+                         u'Market',
+                         u'Metric',
+                         u'Objective',
+                         u'OrgGroup',
+                         u'Policy',
+                         u'Process',
+                         u'Product',
+                         u'ProductGroup',
+                         u'Project',
+                         u'Proposal',
+                         u'Regulation',
+                         u'Relationship',
+                         u'Risk',
+                         u'RiskAssessment',
+                         u'Section',
+                         u'Snapshot',
+                         u'Standard',
+                         u'System',
+                         u'TechnologyEnvironment',
+                         u'Threat',
+                         u'Vendor']),
+        u'Project': set([u'Comment', u'Document', u'Relationship']),
+        u'Proposal': set([]),
+        u'Regulation': set([u'Comment', u'Document', u'Relationship']),
+        u'Risk': set([u'Comment', u'Document', u'Proposal', u'Relationship']),
+        u'Section': set([u'Comment', u'Document', u'Relationship']),
+        u'Snapshot': set([]),
+        u'Standard': set([u'Comment', u'Document', u'Relationship']),
+        u'System': set([u'Comment', u'Document', u'Relationship']),
+        u'TaskGroupTask': set([]),
+        u'TechnologyEnvironment': set([u'Comment', u'Document', u'Relationship']),
+        u'Threat': set([u'Comment', u'Document', u'Relationship']),
+        u'Vendor': set([u'Comment', u'Document', u'Relationship']),
+        u'Workflow': set([])
+     }
 
     @classmethod
     def scopes_generation(cls, relation):
@@ -221,7 +205,7 @@ class Bucket(Identifiable,
 
     @classmethod
     def _propagate_scope_to_bucket(cls, bucket, scopes):
-      for scope_type, scope_id, relation_id in scopes:
+      for scope_type, scope_id, relation_id, path in scopes:
         db.session.add(cls(
           key_obj_type=bucket.key_obj_type,
           key_obj_id=bucket.key_obj_id,
@@ -229,6 +213,7 @@ class Bucket(Identifiable,
           scoped_obj_id=scope_id,
           parent_relationship_id=relation_id,
           parent_bucket=bucket,
+          path="{}->{}".format(bucket.key_obj_type, path)
         ))
     @classmethod
     def _propagate_bucket_step(cls,
@@ -243,6 +228,7 @@ class Bucket(Identifiable,
           scoped_obj_type=scoped_obj_type,
           scoped_obj_id=scoped_obj_id,
           parent_relationship=relation,
+          path="{}->{}".format(key_obj_type, scoped_obj_type)
       )
       db.session.add(bucket)
       scopes = set(
@@ -250,6 +236,7 @@ class Bucket(Identifiable,
               cls.scoped_obj_type.label("scoped_obj_type"),
               cls.scoped_obj_id.label("scoped_obj_id"),
               cls.parent_relationship_id.label("parent_relationship_id"),
+              cls.path.label("path"),
           ).filter(
               cls.key_obj_type == scoped_obj_type,
               cls.key_obj_id == scoped_obj_id
@@ -269,7 +256,7 @@ class Bucket(Identifiable,
               )
           )
       ).options(
-          orm.load_only("id", "key_obj_type", "key_obj_id")
+          orm.load_only("id", "key_obj_type", "key_obj_id", "path")
       ))
       for parent_bucket in parent_buckets:
           db.session.add(cls(
@@ -279,6 +266,9 @@ class Bucket(Identifiable,
             scoped_obj_id=scoped_obj_id,
             parent_relationship=relation,
             parent_bucket=parent_bucket,
+            path="{}->{}->{}".format(parent_bucket.key_obj_type,
+                                     key_obj_type,
+                                     scoped_obj_type)
           ))
           cls._propagate_scope_to_bucket(parent_bucket, scopes)
 

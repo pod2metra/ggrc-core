@@ -29,12 +29,26 @@ def upgrade():
     sa.Column('scoped_obj_id', sa.Integer(), nullable=False),
     sa.Column('parent_relationship_id', sa.Integer(), nullable=False),
     sa.Column('parent_bucket_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['parent_bucket_id'], ['bucket_items.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['parent_relationship_id'], ['relationships.id'], ondelete='CASCADE'),
+    sa.Column('path', sa.String(length=250 * 10), nullable=False),
+    sa.ForeignKeyConstraint(['parent_bucket_id'],
+                            ['bucket_items.id'],
+                            ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['parent_relationship_id'],
+                            ['relationships.id'],
+                            ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('key_obj_id', 'key_obj_type', 'scoped_obj_id', 'scoped_obj_type', 'parent_relationship_id', 'parent_bucket_id')
+    sa.UniqueConstraint('key_obj_id',
+                        'key_obj_type',
+                        'scoped_obj_id',
+                        'scoped_obj_type',
+                        'parent_relationship_id',
+                        'parent_bucket_id',
+                        'path')
     )
-    op.create_index('ix_scoped_obj', 'bucket_items', ['scoped_obj_type', 'scoped_obj_id'], unique=False)
+    op.create_index('ix_scoped_obj',
+                    'bucket_items',
+                    ['scoped_obj_type', 'scoped_obj_id'],
+                    unique=False)
     # ### end Alembic commands ###
 
 def downgrade():
