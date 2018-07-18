@@ -78,7 +78,7 @@ def bucketing(_):
         all_models.Relationship.id > id
     ).order_by(
         all_models.Relationship.id
-    ).limit(5000)
+    ).limit(10000)
   db.session.execute(
       sqlalchemy.text(
           "TRUNCATE TABLE {}".format(all_models.Bucket.__tablename__)
@@ -94,7 +94,7 @@ def bucketing(_):
       for rel in rels:
         max_id = rel.id
         all_models.Bucket.propagate_bucket_via_relation(rel)
-      db.session.flush()
+      db.session.plain_commit()
       db.session.expunge_all()
     idx += 1
   return app.make_response(("success", 200, [("Content-Type", "text/html")]))

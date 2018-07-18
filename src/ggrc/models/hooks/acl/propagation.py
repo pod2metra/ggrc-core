@@ -397,24 +397,23 @@ def propagate_all():
         logger.info("Propagating ACL entries: %s/%s", propagated_count, count)
         _delete_propagated_acls(acl_ids)
 
-        flask.g.new_acl_ids = acl_ids
-        flask.g.new_relationship_ids = set()
-        flask.g.deleted_objects = set()
-        propagate()
+        # flask.g.new_acl_ids = acl_ids
+        # flask.g.new_relationship_ids = set()
+        # flask.g.deleted_objects = set()
+        # propagate()
 
-    with utils.benchmark("Propagate WF related acl entries"):
-      count = len(wf_acl_ids)
-      propagated_count = 0
-      for acl_ids in utils.list_chunks(wf_acl_ids):
-        propagated_count += len(acl_ids)
-        logger.info(
-            "Propagating WF ACL entries: %s/%s",
-            propagated_count,
-            count
-        )
-        _delete_propagated_acls(acl_ids)
-
-        flask.g.new_wf_acls = set(acl_ids)
-        flask.g.new_wf_comment_ct_ids = set()
-        flask.g.deleted_wf_objects = set()
-        workflow.handle_acl_changes()
+    # with utils.benchmark("Propagate WF related acl entries"):
+    #   count = len(wf_acl_ids)
+    #   propagated_count = 0
+    #   for acl_ids in utils.list_chunks(wf_acl_ids):
+    #     propagated_count += len(acl_ids)
+    #     logger.info(
+    #         "Propagating WF ACL entries: %s/%s",
+    #         propagated_count,
+    #         count
+    #     )
+    #     _delete_propagated_acls(acl_ids)
+    #     flask.g.new_wf_acls = set(acl_ids)
+    #     flask.g.new_wf_comment_ct_ids = set()
+    #     flask.g.deleted_wf_objects = set()
+    #     workflow.handle_acl_changes()
