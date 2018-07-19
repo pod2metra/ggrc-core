@@ -6,6 +6,7 @@
 import collections
 
 import sqlalchemy as sa
+from cached_property import cached_property
 from sqlalchemy import inspect
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.session import Session
@@ -14,6 +15,7 @@ import flask
 from werkzeug.exceptions import Forbidden
 
 from ggrc import db
+from ggrc.access_control.mixins import PermissionMixin
 from ggrc.models import mixins
 from ggrc.models import reflection
 from ggrc.models.mixins import attributevalidator
@@ -21,8 +23,12 @@ from ggrc.models.mixins import base
 from ggrc.fulltext.mixin import Indexed
 
 
-class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
-                        base.ContextRBAC, mixins.Base, db.Model):
+class AccessControlRole(Indexed,
+                        attributevalidator.AttributeValidator,
+                        base.ContextRBAC,
+                        PermissionMixin,
+                        mixins.Base,
+                        db.Model):
   """Access Control Role
 
   Model holds all roles in the application. These roles can be added
@@ -34,9 +40,6 @@ class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
   object_type = db.Column(db.String)
   tooltip = db.Column(db.String)
 
-  read = db.Column(db.Boolean, nullable=False, default=True)
-  update = db.Column(db.Boolean, nullable=False, default=True)
-  delete = db.Column(db.Boolean, nullable=False, default=True)
   my_work = db.Column(db.Boolean, nullable=False, default=True)
   mandatory = db.Column(db.Boolean, nullable=False, default=False)
   non_editable = db.Column(db.Boolean, nullable=False, default=False)
@@ -124,6 +127,37 @@ class AccessControlRole(Indexed, attributevalidator.AttributeValidator,
                        u"already exists for this object type"
                        .format(name))
     return value
+
+
+class PropagatedAccessControlRole(PermissionMixin,
+                                  mixins.Base,
+                                  db.Model):
+
+  __tablename__ = 'propagated_access_control_roles'
+
+  for_path = db.Column(db.String, nullable=False)
+  parent_id = db.Column(
+      db.Integer,
+      db.ForeignKey('access_control_roles.id', ondelete='CASCADE'),
+      nullable=True,
+  )
+  parent = db.relationship(
+      # pylint: disable=undefined-variable
+      lambda: AccessControlRole,
+      remote_side=lambda: AccessControlRole.id
+  )
+
+  @cached_property
+  def nodes(self):
+    return self.for_path.split("->")
+
+  @property
+  def is_right(self):
+    return self.parent.object_type == self.nodes[-1]
+
+  @property
+  def is_left(self):
+    return self.parent.object_type == self.nodes[0]
 
 
 def invalidate_acr_caches(mapper, content, target):
