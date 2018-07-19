@@ -1,6 +1,6 @@
 import uuid
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy import func, orm, literal
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import functions
@@ -49,8 +49,8 @@ def mapping_relation_factory(relation_name):
 
 
 class Bucket(Identifiable,
-             mapping_relation_factory("key_obj"),
-             mapping_relation_factory("scoped_obj"),
+             mapping_relation_factory("left_obj"),
+             mapping_relation_factory("right_obj"),
              db.Model):
 
     __tablename__ = "bucket_items"
@@ -90,24 +90,27 @@ class Bucket(Identifiable,
     def _extra_table_args(klass):
       return (
           db.UniqueConstraint(
-              'key_obj_id',
-              'key_obj_type',
-              'scoped_obj_id',
-              'scoped_obj_type',
+              'left_obj_id',
+              'left_obj_type',
+              'right_obj_id',
+              'right_obj_type',
               'parent_relationship_id',
               'parent_bucket_id',
           ),
           db.Index(
               'ix_scoped_ob',
-              'scoped_obj_type',
-              'scoped_obj_id',
+              'right_obj_type',
+              'right_obj_id',
           ),
       )
 
+    UPPER_SCOPED_DICT = {
+        u"Assessment": set([u"Audit"]),
+    }
+
     SCOPED_DICT = {
         u'AccessGroup': set([u'Comment', u'Document', u'Relationship']),
-        u'Assessment': set([# u'Audit',
-                            u'Comment',
+        u'Assessment': set([u'Comment',
                             u'Document',
                             u'Evidence',
                             u'Issue',
@@ -205,41 +208,43 @@ class Bucket(Identifiable,
 
     @classmethod
     def _propagate_scope_to_bucket(cls, bucket, scopes):
-      for scope_type, scope_id, relation_id, path in scopes:
+      for right_type, right_id, relation_id, path in scopes:
         db.session.add(cls(
-          key_obj_type=bucket.key_obj_type,
-          key_obj_id=bucket.key_obj_id,
-          scoped_obj_type=scope_type,
-          scoped_obj_id=scope_id,
+          left_obj_type=bucket.left_obj_type,
+          left_obj_id=bucket.left_obj_id,
+          right_obj_type=right_type,
+          right_obj_id=right_id,
           parent_relationship_id=relation_id,
           parent_bucket=bucket,
-          path="{}->{}".format(bucket.key_obj_type, path)
+          path="{}->{}".format(bucket.left_obj_type, path)
         ))
+
     @classmethod
     def _propagate_bucket_step(cls,
                                relation,
-                               key_obj_type,
-                               key_obj_id,
-                               scoped_obj_type,
-                               scoped_obj_id):
+                               left_obj_type,
+                               left_obj_id,
+                               right_obj_type,
+                               right_obj_id):
+
       bucket = cls(
-          key_obj_type=key_obj_type,
-          key_obj_id=key_obj_id,
-          scoped_obj_type=scoped_obj_type,
-          scoped_obj_id=scoped_obj_id,
+          left_obj_type=left_obj_type,
+          left_obj_id=left_obj_id,
+          right_obj_type=right_obj_type,
+          right_obj_id=right_obj_id,
           parent_relationship=relation,
-          path="{}->{}".format(key_obj_type, scoped_obj_type)
+          path="{}->{}".format(left_obj_type, right_obj_type)
       )
       db.session.add(bucket)
       scopes = set(
           db.session.query(
-              cls.scoped_obj_type.label("scoped_obj_type"),
-              cls.scoped_obj_id.label("scoped_obj_id"),
+              cls.right_obj_type.label("right_obj_type"),
+              cls.right_obj_id.label("right_obj_id"),
               cls.parent_relationship_id.label("parent_relationship_id"),
               cls.path.label("path"),
           ).filter(
-              cls.key_obj_type == scoped_obj_type,
-              cls.key_obj_id == scoped_obj_id
+              cls.left_obj_type == right_obj_type,
+              cls.left_obj_id == right_obj_id
           )
       )
       cls._propagate_scope_to_bucket(bucket, scopes)
@@ -251,33 +256,33 @@ class Bucket(Identifiable,
                     cls.id
                   )
               ).filter(
-                  cls.scoped_obj_type == key_obj_type,
-                  cls.scoped_obj_id == key_obj_id,
+                  cls.right_obj_type == left_obj_type,
+                  cls.right_obj_id == left_obj_id,
               )
           )
       ).options(
-          orm.load_only("id", "key_obj_type", "key_obj_id", "path")
+          orm.load_only("id", "left_obj_type", "left_obj_id", "path")
       ))
       for parent_bucket in parent_buckets:
           db.session.add(cls(
-            key_obj_type=parent_bucket.key_obj_type,
-            key_obj_id=parent_bucket.key_obj_id,
-            scoped_obj_type=scoped_obj_type,
-            scoped_obj_id=scoped_obj_id,
+            left_obj_type=parent_bucket.left_obj_type,
+            left_obj_id=parent_bucket.left_obj_id,
+            right_obj_type=right_obj_type,
+            right_obj_id=right_obj_id,
             parent_relationship=relation,
             parent_bucket=parent_bucket,
-            path="{}->{}->{}".format(parent_bucket.key_obj_type,
-                                     key_obj_type,
-                                     scoped_obj_type)
+            path="{}->{}->{}".format(parent_bucket.left_obj_type,
+                                     left_obj_type,
+                                     right_obj_type)
           ))
           cls._propagate_scope_to_bucket(parent_bucket, scopes)
 
     @classmethod
     def propagate_bucket_via_relation(cls, relation):
       scopes = cls.scopes_generation(relation)
-      for key_obj_type, key_obj_id, scoped_obj_type, scoped_obj_id in scopes:
+      for left_obj_type, left_obj_id, right_obj_type, right_obj_id in scopes:
         cls._propagate_bucket_step(relation,
-                                   key_obj_type,
-                                   key_obj_id,
-                                   scoped_obj_type,
-                                   scoped_obj_id)
+                                   left_obj_type,
+                                   left_obj_id,
+                                   right_obj_type,
+                                   right_obj_id)
