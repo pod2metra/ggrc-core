@@ -10,6 +10,7 @@ import json
 import logging
 
 import sqlalchemy
+from sqlalchemy.orm.session import Session
 from sqlalchemy import true
 from flask import flash
 from flask import Response
@@ -78,28 +79,34 @@ def bucketing(_):
         all_models.Relationship.id > id
     ).order_by(
         all_models.Relationship.id
-    ).limit(10000)
+    ).limit(1000)
   db.session.execute(
       sqlalchemy.text(
           "TRUNCATE TABLE {}".format(all_models.Bucket.__tablename__)
       ).execution_options(autocommit=True),
   )
-  max_id = -1
-  idx = 0
-  while 1:
-    rels = _get_query(max_id).all()
-    if not rels:
-      break
-    with benchmark("process chunk {}".format(idx)):
-      for rel in rels:
-        max_id = rel.id
-        all_models.Bucket.propagate_bucket_via_relation(rel)
-        db.session.flush()
-      db.session.plain_commit()
-      db.session.expunge_all()
-    idx += 1
-  return app.make_response(("success", 200, [("Content-Type", "text/html")]))
+  sqlalchemy.event.remove(Session, "before_flush", models.snapshot.handle_post_flush)
+  try:
+    max_id = -1
+    idx = 0
+    while 1:
+      rels = _get_query(max_id).all()
+      if not rels:
+        break
+      with benchmark("process chunk {}".format(idx)):
+        for rel in rels:
+          max_id = rel.id
+          all_models.Bucket.propagate_bucket_via_relation(rel)
+          db.session.flush()
+        db.session.plain_commit()
+        db.session.expunge_all()
+      idx += 1
+    return app.make_response(("success", 200, [("Content-Type", "text/html")]))
 
+  finally:
+    sqlalchemy.event.listen(Session,
+                            "before_flush",
+                            models.snapshot.handle_post_flush)
 
 @app.route("/_background_tasks/create_missing_revisions", methods=["POST"])
 @queued_task
