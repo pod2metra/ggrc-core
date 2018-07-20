@@ -3,14 +3,22 @@
 
 """Access Control List model"""
 
+import sqlalchemy as sa
+
 from ggrc import db
+from ggrc.access_control.role import PropagatedAccessControlRole
 from ggrc.builder import simple_property
 from ggrc.models import mixins
 from ggrc.models import reflection
+from ggrc.models.deferred import deferred
 from ggrc.models.mixins import base
+from ggrc.access_control import mixins as acl_mixins
 
 
-class AccessControlList(base.ContextRBAC, mixins.Base, db.Model):
+class AccessControlList(base.ContextRBAC,
+                        acl_mixins.PermissionMixin,
+                        mixins.Base,
+                        db.Model):
   """Access Control List
 
   Model is a mapping between a role a person and an object. It gives the
@@ -26,8 +34,14 @@ class AccessControlList(base.ContextRBAC, mixins.Base, db.Model):
   )
 
   person_id = db.Column(db.Integer, db.ForeignKey('people.id'), nullable=False)
-  ac_role_id = db.Column(db.Integer, db.ForeignKey(
-      'access_control_roles.id'), nullable=False)
+  ac_role_id = db.Column(
+      db.Integer,
+      db.ForeignKey('access_control_roles.id'),
+      nullable=True)
+  p_ac_role_id = db.Column(
+      db.Integer,
+      db.ForeignKey('propagated_access_control_roles.id'),
+      nullable=True)
   object_id = db.Column(db.Integer, nullable=False)
   object_type = db.Column(db.String, nullable=False)
 
@@ -45,6 +59,15 @@ class AccessControlList(base.ContextRBAC, mixins.Base, db.Model):
       lambda: AccessControlList,  # pylint: disable=undefined-variable
       remote_side=lambda: AccessControlList.id
   )
+  parent_bucket_id = db.Column(
+      db.Integer,
+      db.ForeignKey(
+          'bucket_items.id',
+          ondelete='CASCADE',
+      ),
+      nullable=True,
+  )
+
 
   @simple_property
   def person_email(self):
