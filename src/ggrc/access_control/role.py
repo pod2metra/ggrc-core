@@ -151,14 +151,6 @@ class PropagatedAccessControlRole(PermissionMixin,
   def nodes(self):
     return self.for_path.split("->")
 
-  @property
-  def is_right(self):
-    return self.parent.object_type == self.nodes[-1]
-
-  @property
-  def is_left(self):
-    return self.parent.object_type == self.nodes[0]
-
 
 def invalidate_acr_caches(mapper, content, target):
   # pylint: disable=unused-argument
