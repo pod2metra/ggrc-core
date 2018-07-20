@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from ggrc import db
 from ggrc import login
 from ggrc import utils
-from ggrc.utils import helpers
+from ggrc.utils import helpers, benchmark
 from ggrc.access_control import utils as acl_utils
 from ggrc.models import all_models
 
@@ -342,30 +342,38 @@ def propagate():
     new_acl_ids: list of newly created ACL ids,
     new_relationship_ids: list of newly created relationship ids,
   """
-  if not (hasattr(flask.g, "new_acl_ids") and
-          hasattr(flask.g, "new_relationship_ids") and
-          hasattr(flask.g, "deleted_objects")):
-    return
-
-  if flask.g.deleted_objects:
-    with utils.benchmark("Delete internal ACL entries for deleted objects"):
-      _delete_orphan_acl_entries(flask.g.deleted_objects)
-
-  # The order of propagation of relationships and other ACLs is important
-  # because relationship code excludes other ACLs from propagating.
-  if flask.g.new_relationship_ids:
-    with utils.benchmark("Propagate ACLs for new relationships"):
-      _propagate_relationships(
-          flask.g.new_relationship_ids,
-          flask.g.new_acl_ids,
-      )
-  if flask.g.new_acl_ids:
-    with utils.benchmark("Propagate new ACL entries"):
-      _propagate(flask.g.new_acl_ids)
-
-  del flask.g.new_acl_ids
-  del flask.g.new_relationship_ids
-  del flask.g.deleted_objects
+  acl_ids = []
+  if hasattr(flask.g, "new_acl_ids"):
+    acl_ids.extend(flask.g.new_acl_ids)
+    delattr(flask.g, "new_acl_ids")
+  if hasattr(flask.g, "new_relationship_ids"):
+    if flask.g.new_relationship_ids:
+      objs_query = db.session.query(
+          all_models.Relationship.source_type.label("obj_type"),
+          all_models.Relationship.source_id.label("obj_id"),
+      ).filter(
+          all_models.Relationship.id.in_(flask.g.new_relationship_ids)
+      ).union(
+          db.session.query(
+              all_models.Relationship.destination_type.label("obj_type"),
+              all_models.Relationship.destination_id.label("obj_id"),
+          ).filter(
+            all_models.Relationship.id.in_(flask.g.new_relationship_ids)
+          )
+      ).subquery()
+      with benchmark("populate acl ids by relationships"):
+        acl_ids.extend(
+            i for i, in db.session.query(
+                all_models.AccessControlList.id
+            ).filter(
+                all_models.AccessControlList.object_type == objs_query.c.obj_type,
+                all_models.AccessControlList.object_id == objs_query.c.obj_id,
+                all_models.AccessControlList.parent_id.is_(None)
+            )
+        )
+    delattr(flask.g, "new_relationship_ids")
+  all_models.AccessControlList.propagate_ids(*acl_ids)
+  db.session.plain_commit()
 
 
 @helpers.without_sqlalchemy_cache
@@ -392,28 +400,26 @@ def propagate_all():
     with utils.benchmark("Propagate normal acl entries"):
       count = len(non_wf_acl_ids)
       propagated_count = 0
-      for acl_ids in utils.list_chunks(non_wf_acl_ids):
+      for acl_ids in utils.list_chunks(non_wf_acl_ids, 1000):
         propagated_count += len(acl_ids)
         logger.info("Propagating ACL entries: %s/%s", propagated_count, count)
         _delete_propagated_acls(acl_ids)
 
-        # flask.g.new_acl_ids = acl_ids
-        # flask.g.new_relationship_ids = set()
-        # flask.g.deleted_objects = set()
-        # propagate()
+        flask.g.new_acl_ids = set(acl_ids)
+        propagate()
 
-    # with utils.benchmark("Propagate WF related acl entries"):
-    #   count = len(wf_acl_ids)
-    #   propagated_count = 0
-    #   for acl_ids in utils.list_chunks(wf_acl_ids):
-    #     propagated_count += len(acl_ids)
-    #     logger.info(
-    #         "Propagating WF ACL entries: %s/%s",
-    #         propagated_count,
-    #         count
-    #     )
-    #     _delete_propagated_acls(acl_ids)
-    #     flask.g.new_wf_acls = set(acl_ids)
-    #     flask.g.new_wf_comment_ct_ids = set()
-    #     flask.g.deleted_wf_objects = set()
-    #     workflow.handle_acl_changes()
+    with utils.benchmark("Propagate WF related acl entries"):
+      count = len(wf_acl_ids)
+      propagated_count = 0
+      for acl_ids in utils.list_chunks(wf_acl_ids):
+        propagated_count += len(acl_ids)
+        logger.info(
+            "Propagating WF ACL entries: %s/%s",
+            propagated_count,
+            count
+        )
+        _delete_propagated_acls(acl_ids)
+        flask.g.new_wf_acls = set(acl_ids)
+        flask.g.new_wf_comment_ct_ids = set()
+        flask.g.deleted_wf_objects = set()
+        workflow.handle_acl_changes()
