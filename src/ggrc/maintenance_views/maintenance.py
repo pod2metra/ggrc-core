@@ -77,7 +77,7 @@ def trigger_migration():
     else:
       maint_row = Maintenance(under_maintenance=True)
       db.session.add(maint_row)
-    db.session.commit()
+    db.session.plain_commit()
   except sqlalchemy.exc.ProgrammingError as e:
     if re.search(r"""\(1146, "Table '.+' doesn't exist"\)$""", e.message):
       mig_row = None
@@ -118,7 +118,7 @@ def _turn_off_maintenance_mode():
   if db_row:
     db_row.under_maintenance = False
     db.session.add(db_row)
-    db.session.commit()
+    db.session.plain_commit()
     return "Maintenance mode turned off successfully"
 
 
