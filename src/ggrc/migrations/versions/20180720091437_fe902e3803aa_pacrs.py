@@ -3571,4 +3571,8 @@ def upgrade():
 
 def downgrade():
     """Downgrade database schema and/or data back to the previous revision."""
-    return
+    connection = op.get_bind()
+    connection.execute(
+        "Delete from access_control_list where p_ac_role_id is not Null"
+    )
+    connection.execute("delete from propagated_access_control_roles;")
