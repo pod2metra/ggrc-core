@@ -98,9 +98,16 @@ class Bucket(Identifiable,
               'parent_bucket_id',
           ),
           db.Index(
-              'ix_scoped_ob',
+              'ix_right_obj_path',
               'right_obj_type',
               'right_obj_id',
+              'path',
+          ),
+          db.Index(
+              'ix_left_obj_path',
+              'left_obj_type',
+              'left_obj_id',
+              'path',
           ),
       )
 
