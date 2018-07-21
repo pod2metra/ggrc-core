@@ -82,7 +82,7 @@ def bucketing(_):
     ).limit(1000)
   db.session.execute(
       sqlalchemy.text(
-          "TRUNCATE TABLE {}".format(all_models.Bucket.__tablename__)
+          "delete from {}".format(all_models.Bucket.__tablename__)
       ).execution_options(autocommit=True),
   )
   sqlalchemy.event.remove(Session, "before_flush", models.snapshot.handle_post_flush)
