@@ -372,7 +372,12 @@ def propagate():
             )
         )
     delattr(flask.g, "new_relationship_ids")
-  all_models.AccessControlList.propagate_ids(*acl_ids)
+
+  with benchmark("propagate chunk"):
+    for acl in all_models.AccessControlList.query.filter(
+        all_models.AccessControlList.id.in_(acl_ids)
+    ):
+      acl.propagate()
   db.session.plain_commit()
 
 

@@ -157,7 +157,7 @@ class AccessControlList(base.ContextRBAC,
             rel_statement,
         )
         if len(pacr.nodes) == 1:
-          yield  r_buckets
+          yield r_buckets
         else:
           r_buckets = r_buckets.subquery()
           yield db.session.query(
@@ -194,6 +194,29 @@ class AccessControlList(base.ContextRBAC,
             rel_statement,
         )
 
+  def propagate(self):
+    queries = [i for i in self.propagated_acl_generator(None)
+               if i is not None]
+    if not queries:
+      return
+    db.session.execute(
+      self.__table__.insert().from_select(
+        [
+          "parent_bucket_id",
+          "object_type",
+          "object_id",
+          "p_ac_role_id",
+          "read",
+          "update",
+          "delete",
+          "person_id",
+          "parent_id"
+        ],
+        sa.union_all(*queries)
+      )
+    )
+
+
   @classmethod
   def propagate_ids(cls, *acl_ids, **kwargs):
     if not acl_ids:
@@ -205,7 +228,7 @@ class AccessControlList(base.ContextRBAC,
     queries = [q for q in queries if q is not None]
     if not queries:
       return
-    for chunk in list_chunks(queries, 10):
+    for chunk in list_chunks(queries, 1000):
         db.session.execute(
             cls.__table__.insert().from_select(
                 [
@@ -219,7 +242,7 @@ class AccessControlList(base.ContextRBAC,
                     "person_id",
                     "parent_id"
                 ],
-                sa.union(*chunk)
+                sa.union_all(*chunk)
             )
         )
 
