@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from ggrc import db
 from ggrc import login
 from ggrc import utils
-from ggrc.utils import helpers, benchmark
+from ggrc.utils import helpers, benchmark, list_chunks
 from ggrc.access_control import utils as acl_utils
 from ggrc.models import all_models
 
@@ -343,6 +343,7 @@ def propagate():
     new_relationship_ids: list of newly created relationship ids,
   """
   acl_ids = []
+  relationship_ids = []
   if hasattr(flask.g, "new_acl_ids"):
     acl_ids.extend(flask.g.new_acl_ids)
     delattr(flask.g, "new_acl_ids")
@@ -371,10 +372,13 @@ def propagate():
                 all_models.AccessControlList.parent_id.is_(None)
             )
         )
+      relationship_ids = flask.g.new_relationship_ids
     delattr(flask.g, "new_relationship_ids")
 
   with benchmark("propagate chunk"):
-    all_models.AccessControlList.propagate_ids(*acl_ids)
+    all_models.AccessControlList.propagate_ids(
+        acl_ids,
+        relationship_ids)
     db.session.plain_commit()
 
 
@@ -402,7 +406,7 @@ def propagate_all():
     with utils.benchmark("Propagate normal acl entries"):
       count = len(non_wf_acl_ids)
       propagated_count = 0
-      for acl_ids in utils.list_chunks(non_wf_acl_ids, 1000):
+      for acl_ids in utils.list_chunks(non_wf_acl_ids, 100):
         propagated_count += len(acl_ids)
         logger.info("Propagating ACL entries: %s/%s", propagated_count, count)
         _delete_propagated_acls(acl_ids)

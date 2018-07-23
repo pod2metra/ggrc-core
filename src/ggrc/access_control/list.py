@@ -219,9 +219,12 @@ class AccessControlList(base.ContextRBAC,
 
 
   @classmethod
-  def propagate_ids(cls, *acl_ids, **kwargs):
+  def propagate_ids(cls, acl_ids, relationship_ids):
     if not acl_ids:
       return
+    rel_statement = True
+    if relationship_ids:
+      rel_statement = all_models.Bucket.parent_relationship_id.in_(relationship_ids)
     from ggrc.models import all_models
     simple_propagation = db.session.query(
         all_models.Bucket.id,
@@ -247,7 +250,8 @@ class AccessControlList(base.ContextRBAC,
             all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_down_path,
             all_models.PropagatedAccessControlRole.for_up_path == "",
             all_models.Bucket.left_obj_type == cls.object_type,
-            all_models.Bucket.left_obj_id == cls.object_id
+            all_models.Bucket.left_obj_id == cls.object_id,
+            rel_statement
         )
     ).filter(
         cls.id.in_(acl_ids)
@@ -276,7 +280,8 @@ class AccessControlList(base.ContextRBAC,
             all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_up_path,
             all_models.PropagatedAccessControlRole.for_down_path == "",
             all_models.Bucket.right_obj_type == cls.object_type,
-            all_models.Bucket.right_obj_id == cls.object_id
+            all_models.Bucket.right_obj_id == cls.object_id,
+            rel_statement
         )
     ).filter(
         cls.id.in_(acl_ids)
@@ -318,6 +323,12 @@ class AccessControlList(base.ContextRBAC,
     ).filter(
         cls.id.in_(acl_ids)
     )
+    import ipdb; ipdb.set_trace()
+    print sa.union_all(
+                simple_propagation,
+                parent_propagation,
+                parant_scope_propagation,
+            )
     db.session.execute(
         cls.__table__.insert().from_select(
             [
