@@ -135,7 +135,8 @@ class PropagatedAccessControlRole(PermissionMixin,
 
   __tablename__ = 'propagated_access_control_roles'
 
-  for_path = db.Column(db.String, nullable=False)
+  for_down_path = db.Column(db.String, nullable=False)
+  for_up_path = db.Column(db.String, nullable=False)
   parent_id = db.Column(
       db.Integer,
       db.ForeignKey('access_control_roles.id', ondelete='CASCADE'),
