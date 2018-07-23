@@ -8,6 +8,7 @@ from collections import defaultdict
 import flask
 import sqlalchemy as sa
 from sqlalchemy import distinct, literal
+from sqlalchemy.orm import aliased
 
 from ggrc import db
 from ggrc.access_control.role import PropagatedAccessControlRole
@@ -221,30 +222,122 @@ class AccessControlList(base.ContextRBAC,
   def propagate_ids(cls, *acl_ids, **kwargs):
     if not acl_ids:
       return
-    queries = itertools.chain(*[
-        a.propagated_acl_generator(kwargs.get("relationship_ids"))
-        for a in cls.query.filter(cls.id.in_(acl_ids))
-    ])
-    queries = [q for q in queries if q is not None]
-    if not queries:
-      return
-    for chunk in list_chunks(queries, 1000):
-        db.session.execute(
-            cls.__table__.insert().from_select(
-                [
-                    "parent_bucket_id",
-                    "object_type",
-                    "object_id",
-                    "p_ac_role_id",
-                    "read",
-                    "update",
-                    "delete",
-                    "person_id",
-                    "parent_id"
-                ],
-                sa.union_all(*chunk)
+    from ggrc.models import all_models
+    simple_propagation = db.session.query(
+        all_models.Bucket.id,
+        all_models.Bucket.right_obj_type,
+        all_models.Bucket.right_obj_id,
+        all_models.PropagatedAccessControlRole.id.label("pacr_id"),
+        all_models.PropagatedAccessControlRole.read,
+        all_models.PropagatedAccessControlRole.update,
+        all_models.PropagatedAccessControlRole.delete,
+        cls.person_id.label("person_id"),
+        cls.id.label("parent_id"),
+    ).select_from(
+        cls
+    ).join(
+        all_models.AccessControlRole,
+        all_models.AccessControlRole.id == cls.ac_role_id
+    ).join(
+        all_models.PropagatedAccessControlRole,
+        all_models.PropagatedAccessControlRole.parent_id == all_models.AccessControlRole.id
+    ).join(
+        all_models.Bucket,
+        sa.and_(
+            all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_down_path,
+            all_models.PropagatedAccessControlRole.for_up_path == "",
+            all_models.Bucket.left_obj_type == cls.object_type,
+            all_models.Bucket.left_obj_id == cls.object_id
+        )
+    ).filter(
+        cls.id.in_(acl_ids)
+    )
+    parent_propagation = db.session.query(
+        all_models.Bucket.id,
+        all_models.Bucket.left_obj_type,
+        all_models.Bucket.left_obj_id,
+        all_models.PropagatedAccessControlRole.id.label("pacr_id"),
+        all_models.PropagatedAccessControlRole.read,
+        all_models.PropagatedAccessControlRole.update,
+        all_models.PropagatedAccessControlRole.delete,
+        cls.person_id.label("person_id"),
+        cls.id.label("parent_id"),
+    ).select_from(
+        cls
+    ).join(
+        all_models.AccessControlRole,
+        all_models.AccessControlRole.id == cls.ac_role_id
+    ).join(
+        all_models.PropagatedAccessControlRole,
+        all_models.PropagatedAccessControlRole.parent_id == all_models.AccessControlRole.id
+    ).join(
+        all_models.Bucket,
+        sa.and_(
+            all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_up_path,
+            all_models.PropagatedAccessControlRole.for_down_path == "",
+            all_models.Bucket.left_obj_type == cls.object_type,
+            all_models.Bucket.left_obj_id == cls.object_id
+        )
+    ).filter(
+        cls.id.in_(acl_ids)
+    )
+    pb = aliased(all_models.Bucket)
+    parant_scope_propagation = db.session.query(
+        all_models.Bucket.id,
+        all_models.Bucket.right_obj_type,
+        all_models.Bucket.right_obj_id,
+        all_models.PropagatedAccessControlRole.id.label("pacr_id"),
+        all_models.PropagatedAccessControlRole.read,
+        all_models.PropagatedAccessControlRole.update,
+        all_models.PropagatedAccessControlRole.delete,
+        cls.person_id.label("person_id"),
+        cls.id.label("parent_id"),
+  ).select_from(
+        cls
+    ).join(
+        all_models.AccessControlRole,
+        all_models.AccessControlRole.id == cls.ac_role_id
+    ).join(
+        all_models.PropagatedAccessControlRole,
+        all_models.PropagatedAccessControlRole.parent_id == all_models.AccessControlRole.id
+    ).join(
+        pb,
+        sa.and_(
+            pb.path == all_models.PropagatedAccessControlRole.for_up_path,
+            all_models.PropagatedAccessControlRole.for_down_path != "",
+            pb.left_obj_type == cls.object_type,
+            pb.left_obj_id == cls.object_id
+        )
+    ).join(
+        all_models.Bucket,
+        sa.and_(
+            all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_down_path,
+            all_models.Bucket.left_obj_type == pb.right_obj_type,
+            all_models.Bucket.left_obj_id == pb.right_obj_id
+        )
+    ).filter(
+        cls.id.in_(acl_ids)
+    )
+    db.session.execute(
+        cls.__table__.insert().from_select(
+            [
+                "parent_bucket_id",
+                "object_type",
+                "object_id",
+                "p_ac_role_id",
+                "read",
+                "update",
+                "delete",
+                "person_id",
+                "parent_id"
+            ],
+            sa.union_all(
+                simple_propagation,
+                parent_propagation,
+                parant_scope_propagation,
             )
         )
+    )
 
   @classmethod
   def propagate_via_relationships(cls, relationship):
