@@ -8,7 +8,7 @@ import sys
 from sqlalchemy import event
 
 from ggrc import db
-from ggrc.access_control.role import AccessControlRole
+from ggrc.access_control.role import AccessControlRole, PropagatedAccessControlRole
 from ggrc.access_control.list import AccessControlList
 from ggrc.data_platform.attribute_definitions import AttributeDefinitions
 from ggrc.data_platform.attribute_templates import AttributeTemplates
@@ -90,6 +90,7 @@ all_models = [  # pylint: disable=invalid-name
 
     # ggrc models
     AccessControlRole,
+    PropagatedAccessControlRole,
     AccessControlList,
     AccessGroup,
     Assessment,
