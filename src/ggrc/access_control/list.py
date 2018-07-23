@@ -275,8 +275,8 @@ class AccessControlList(base.ContextRBAC,
         sa.and_(
             all_models.Bucket.path == all_models.PropagatedAccessControlRole.for_up_path,
             all_models.PropagatedAccessControlRole.for_down_path == "",
-            all_models.Bucket.left_obj_type == cls.object_type,
-            all_models.Bucket.left_obj_id == cls.object_id
+            all_models.Bucket.right_obj_type == cls.object_type,
+            all_models.Bucket.right_obj_id == cls.object_id
         )
     ).filter(
         cls.id.in_(acl_ids)
@@ -305,8 +305,8 @@ class AccessControlList(base.ContextRBAC,
         sa.and_(
             pb.path == all_models.PropagatedAccessControlRole.for_up_path,
             all_models.PropagatedAccessControlRole.for_down_path != "",
-            pb.left_obj_type == cls.object_type,
-            pb.left_obj_id == cls.object_id
+            pb.right_obj_type == cls.object_type,
+            pb.right_obj_id == cls.object_id
         )
     ).join(
         all_models.Bucket,
