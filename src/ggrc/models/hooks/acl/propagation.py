@@ -406,7 +406,7 @@ def propagate_all():
     with utils.benchmark("Propagate normal acl entries"):
       count = len(non_wf_acl_ids)
       propagated_count = 0
-      for acl_ids in utils.list_chunks(non_wf_acl_ids, 100):
+      for acl_ids in utils.list_chunks(non_wf_acl_ids, 1000):
         propagated_count += len(acl_ids)
         logger.info("Propagating ACL entries: %s/%s", propagated_count, count)
         _delete_propagated_acls(acl_ids)

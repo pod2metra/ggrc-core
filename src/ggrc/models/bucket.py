@@ -287,9 +287,10 @@ class Bucket(Identifiable,
     @classmethod
     def propagate_bucket_via_relation(cls, relation):
       scopes = cls.scopes_generation(relation)
-      for left_obj_type, left_obj_id, right_obj_type, right_obj_id in scopes:
-        cls._propagate_bucket_step(relation,
-                                   left_obj_type,
-                                   left_obj_id,
-                                   right_obj_type,
-                                   right_obj_id)
+      with benchmark("propagate_bucket"):
+        for left_obj_type, left_obj_id, right_obj_type, right_obj_id in scopes:
+          cls._propagate_bucket_step(relation,
+                                     left_obj_type,
+                                     left_obj_id,
+                                     right_obj_type,
+                                     right_obj_id)

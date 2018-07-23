@@ -222,10 +222,10 @@ class AccessControlList(base.ContextRBAC,
   def propagate_ids(cls, acl_ids, relationship_ids):
     if not acl_ids:
       return
+    from ggrc.models import all_models
     rel_statement = True
     if relationship_ids:
       rel_statement = all_models.Bucket.parent_relationship_id.in_(relationship_ids)
-    from ggrc.models import all_models
     simple_propagation = db.session.query(
         all_models.Bucket.id,
         all_models.Bucket.right_obj_type,
@@ -236,6 +236,7 @@ class AccessControlList(base.ContextRBAC,
         all_models.PropagatedAccessControlRole.delete,
         cls.person_id.label("person_id"),
         cls.id.label("parent_id"),
+        cls.id.label("parent_id_nn"),
     ).select_from(
         cls
     ).join(
@@ -266,6 +267,7 @@ class AccessControlList(base.ContextRBAC,
         all_models.PropagatedAccessControlRole.delete,
         cls.person_id.label("person_id"),
         cls.id.label("parent_id"),
+        cls.id.label("parent_id_nn"),
     ).select_from(
         cls
     ).join(
@@ -297,6 +299,7 @@ class AccessControlList(base.ContextRBAC,
         all_models.PropagatedAccessControlRole.delete,
         cls.person_id.label("person_id"),
         cls.id.label("parent_id"),
+        cls.id.label("parent_id_nn"),
   ).select_from(
         cls
     ).join(
@@ -323,12 +326,6 @@ class AccessControlList(base.ContextRBAC,
     ).filter(
         cls.id.in_(acl_ids)
     )
-    import ipdb; ipdb.set_trace()
-    print sa.union_all(
-                simple_propagation,
-                parent_propagation,
-                parant_scope_propagation,
-            )
     db.session.execute(
         cls.__table__.insert().from_select(
             [
@@ -340,7 +337,8 @@ class AccessControlList(base.ContextRBAC,
                 "update",
                 "delete",
                 "person_id",
-                "parent_id"
+                "parent_id",
+                "parent_id_nn",
             ],
             sa.union_all(
                 simple_propagation,
